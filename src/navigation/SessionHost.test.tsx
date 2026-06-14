@@ -14,6 +14,11 @@ import { SessionHost } from './index';
 import type { ServiceBundle } from '../services';
 import type { ReviewItem } from '../types/reviewItem';
 
+// SessionHost renders with INJECTED fake services and never touches the real client, but importing
+// ./index pulls AuthProvider -> supabaseClient (which constructs a network client at import). Stub
+// it so the suite doesn't build a real Supabase client.
+jest.mock('../services/supabaseClient', () => ({ supabase: {} }));
+
 jest.setTimeout(30000);
 
 const itemA: ReviewItem = {

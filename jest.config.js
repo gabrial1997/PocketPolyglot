@@ -18,6 +18,7 @@ module.exports = {
       preset: 'jest-expo',
       testMatch: ['**/*.test.tsx'],
       moduleNameMapper: mapper,
+      setupFiles: ['<rootDir>/jest.setup.components.js'],
     },
   ],
 };

@@ -1,11 +1,15 @@
 // App root + minimal stack. Wraps everything in ThemeProvider + ServiceProvider and renders a
 // simple two-route stack (home -> session). A real navigator (react-navigation/expo-router) can
 // replace this; the load-bearing piece is the CARD_REGISTRY keyed by stable CardKind strings.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
+import { AuthProvider, useAuth } from '../auth/AuthProvider';
+import { SignInScreen } from '../auth/SignInScreen';
+import { createSupabaseServices } from '../services/supabase';
+import { supabase } from '../services/supabaseClient';
 import { useSession } from '../session/sessionController';
 import { useReviewCardHandlers } from '../session/useReviewCardHandlers';
 import { CARD_REGISTRY } from './registry';
@@ -132,13 +136,36 @@ function Root(): React.JSX.Element {
   );
 }
 
+/**
+ * AuthGate — the session boundary. Signed out -> SignInScreen; signed in -> the app backed by the
+ * REAL Supabase services (createSupabaseServices) scoped to the user. Until an auth session exists
+ * the app never touches user data (RLS would deny it anyway).
+ */
+function AuthGate(): React.JSX.Element {
+  const { session, user, loading } = useAuth();
+  // Build the real, user-scoped service bundle once per signed-in user.
+  const services = useMemo(
+    () => (user ? createSupabaseServices(supabase, user.id) : null),
+    [user?.id], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  if (loading) return <SessionPlaceholder label="Loading…" />;
+  if (!session || !user || !services) return <SignInScreen />;
+
+  return (
+    <ServiceProvider services={services}>
+      <Root />
+    </ServiceProvider>
+  );
+}
+
 export function App(): React.JSX.Element {
   return (
     <ThemeProvider>
-      <ServiceProvider>
+      <AuthProvider>
         <StatusBar style="auto" />
-        <Root />
-      </ServiceProvider>
+        <AuthGate />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
