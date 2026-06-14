@@ -1,7 +1,11 @@
-// Integration test for the session loop across MORE THAN ONE item — the case single-card tests
-// miss. Two consecutive items of the same CardKind must each start fresh: the card's ephemeral
-// state (stage, first-try miss) and the recording buffer must NOT leak from item 1 into item 2.
-// Drives the real SessionController + CardHost with injected fake services.
+// Integration test across MORE THAN ONE item — the case single-card tests miss. Two consecutive
+// items of the same CardKind must each start fresh: the card's ephemeral state (stage, first-try
+// `missed`) and the recording buffer must NOT leak from item 1 into item 2. This exercises the
+// real SessionController + the key={item.id} on CardHost.
+//
+// `settle()` advances the controller's async work with REAL timer ticks. React 18 runs passive
+// effects on a macrotask, so microtask-only flushing can starve the async data load under CI load
+// (an earlier version did exactly that and was flaky). Real ticks + a bounded deadline are robust.
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
@@ -9,6 +13,8 @@ import { ServiceProvider } from '../services/ServiceProvider';
 import { SessionHost } from './index';
 import type { ServiceBundle } from '../services';
 import type { ReviewItem } from '../types/reviewItem';
+
+jest.setTimeout(30000);
 
 const itemA: ReviewItem = {
   id: 'a',
@@ -62,13 +68,20 @@ function renderHost(batch: ReviewItem[]) {
   );
 }
 
-// Deterministically flush the controller's async chains (reload effect, submit -> setIndex) and
-// apply the resulting state updates. Avoids waitFor's polling, which is timing-fragile under
-// jest-expo in CI.
-async function flush() {
-  await act(async () => {
-    for (let i = 0; i < 8; i++) await Promise.resolve();
-  });
+// Poll with REAL timer ticks until `check` passes or the deadline elapses (then rethrow).
+async function settle(check: () => void, stepMs = 25, maxSteps = 200) {
+  for (let i = 0; i < maxSteps; i++) {
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, stepMs));
+    });
+    try {
+      check();
+      return;
+    } catch {
+      /* not ready yet — keep ticking */
+    }
+  }
+  check(); // final attempt: throw the real assertion error if still failing
 }
 
 // choose -> speak -> rec -> result -> Continue, optionally missing the first answer.
@@ -89,17 +102,14 @@ it('starts each item fresh — stage/miss/recording do not leak across cards', a
   const u = renderHost([itemA, itemB]);
 
   // Item A loads at the choose stage.
-  await flush();
-  expect(u.getByText('māja')).toBeTruthy();
+  await settle(() => expect(u.getByText('māja')).toBeTruthy());
 
   // Complete A with a wrong first answer (so its `missed` flag is set), then advance.
   completeCard(u, 'māja', 'maize', { miss: true });
-  await flush();
 
   // Item B must begin at its OWN choose stage — not stuck on A's result screen.
-  // 'paldies' is B's distractor, rendered ONLY at the choose stage, so it is an unambiguous
-  // signal that the card remounted fresh (the hero text would match 'labrīt' even when stuck).
-  expect(u.getByText('paldies')).toBeTruthy();
+  // 'paldies' is B's distractor, rendered ONLY at the choose stage.
+  await settle(() => expect(u.getByText('paldies')).toBeTruthy());
   expect(u.queryByText('Continue')).toBeNull();
   expect(u.queryByText('māja')).toBeNull(); // item A's content is gone
 });

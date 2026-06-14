@@ -53,7 +53,7 @@ function TabBar({ route, onNavigate }: { route: Route; onNavigate: (r: Route) =>
  * CardHost — mounts the card for the current item with service-backed callbacks. Split out so
  * useReviewCardHandlers (a hook) is always called when a card renders, never conditionally.
  */
-function CardHost({
+export function CardHost({
   item,
   kind,
   submit,
