@@ -1,11 +1,23 @@
-// Jest config. Uses ts-jest for fast, dependency-light unit tests of pure logic
-// (renderFor + types). The CI smoke test runs `jest`; renderFor.test.ts is the real coverage.
-// jest-expo is installed for when RN component tests are added later.
+// Jest config — two projects so pure logic and RN components test under the right environment:
+//  - "logic":      *.test.ts  via ts-jest in node (fast, dependency-light: renderFor, cardWiring).
+//  - "components": *.test.tsx via jest-expo (RN renderer) for snapshot/behavior tests of cards.
+// CI runs `jest`, which runs both projects.
+const mapper = { '^@/(.*)$': '<rootDir>/src/$1' };
+
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  testMatch: ['**/*.test.ts', '**/*.test.tsx'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-  },
+  projects: [
+    {
+      displayName: 'logic',
+      preset: 'ts-jest',
+      testEnvironment: 'node',
+      testMatch: ['**/*.test.ts'],
+      moduleNameMapper: mapper,
+    },
+    {
+      displayName: 'components',
+      preset: 'jest-expo',
+      testMatch: ['**/*.test.tsx'],
+      moduleNameMapper: mapper,
+    },
+  ],
 };

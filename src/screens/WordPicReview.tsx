@@ -1,7 +1,7 @@
 // word/pic-review — THE core loop, picture-prompted (BACKEND_INTEGRATION §4, README 02.2).
 // Stages: choose -> speak -> rec -> result. Picture+audio in -> pick word -> say it -> compare.
 // Out: { correct, spoke:true, recording }. Owns only stage/picked (useLoopStage).
-import React from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
 import { PlayOrb, MicOrb, ChoiceButton, CtaButton, Waveform, SpeedChip } from '../components';
 import { CardShell } from './CardShell';
@@ -13,6 +13,9 @@ type Props = RecordingCardProps & ChoiceCardProps;
 export function WordPicReview(props: Props): React.JSX.Element {
   const { item, onPlay, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete } = props;
   const m = useLoopStage();
+  // Ephemeral UI state only: whether the first answer was wrong, so the result reports honest
+  // first-try correctness (the SRS interval depends on it). The recorder owns the take, not us.
+  const [missed, setMissed] = useState(false);
   const choices = item.choices ?? [];
 
   return (
@@ -27,9 +30,11 @@ export function WordPicReview(props: Props): React.JSX.Element {
               key={c.value}
               label={c.value}
               gloss={c.gloss}
+              state={m.stage === 'choose' && !c.correct && missed ? 'wrong' : 'idle'}
               onPress={() => {
                 onAnswer(c.value, c.correct);
                 if (c.correct) m.pick(c.value);
+                else setMissed(true); // wrong: stay on choose, remember the miss
               }}
             />
           ))
@@ -41,7 +46,7 @@ export function WordPicReview(props: Props): React.JSX.Element {
         <MicOrb
           rec
           onPress={() => {
-            onRecordStop('stub://recording');
+            onRecordStop(); // signal stop; the injected RecorderService produces the take
             m.finishRec();
           }}
         />
@@ -56,7 +61,12 @@ export function WordPicReview(props: Props): React.JSX.Element {
           <CtaButton
             title="Continue"
             onPress={() =>
-              onComplete({ itemId: item.id, cardKind: 'word/pic-review', correct: true, spoke: true })
+              onComplete({
+                itemId: item.id,
+                cardKind: 'word/pic-review',
+                correct: !missed,
+                spoke: true,
+              })
             }
           />
         </View>

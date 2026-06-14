@@ -23,7 +23,12 @@ export interface BaseCardProps {
 /** Cards that capture a recording (pic-review, say, sayit, drill, pron). */
 export interface RecordingCardProps extends BaseCardProps {
   onRecordStart: () => void;
-  onRecordStop: (recording: Blob | string) => void;
+  /**
+   * Signal that recording stopped. The injected RecorderService produces the actual take
+   * (a pure card cannot), so the card calls this with no argument; the controller captures the
+   * recording and merges it into the CardResult (see session/cardWiring.ts).
+   */
+  onRecordStop: (recording?: Blob | string) => void;
   onPlayCompare?: (which: 'native' | 'you') => void;
 }
 
