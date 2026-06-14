@@ -248,7 +248,7 @@ create table public.review_log (
   spoke          boolean,                         -- CardResult.spoke
   self_rating    text,                            -- 'good'|'again' (phrase sayit) CardResult.selfRating
   latency_ms     integer,                         -- CardResult.latencyMs
-  recording_id   uuid references public.recordings(id) on delete set null, -- set if the user recorded
+  recording_id   uuid,                            -- set if the user recorded; FK added below (recordings is declared after this table)
   interval_label text,                            -- "next review in N days" handed back to the card
   created_at     timestamptz not null default now(),
 
