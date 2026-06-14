@@ -19,6 +19,7 @@ android/
 
 # Generated TTS audio (content pipeline)
 content-pipeline/out/
+content-pipeline/voice-test/
 
 # Logs / OS
 npm-debug.*
