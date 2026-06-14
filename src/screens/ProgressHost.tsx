@@ -15,9 +15,14 @@ export function ProgressHost(): React.JSX.Element {
 
   useEffect(() => {
     let active = true;
-    void progress.getCoverage().then((c) => {
-      if (active) setCoverage(c);
-    });
+    void progress
+      .getCoverage()
+      .then((c) => {
+        if (active) setCoverage(c);
+      })
+      .catch(() => {
+        /* keep defaults on failure */
+      });
     return () => {
       active = false;
     };

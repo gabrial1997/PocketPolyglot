@@ -58,11 +58,11 @@ function fakeServices(batch: ReviewItem[]): ServiceBundle {
   };
 }
 
-function renderHost(batch: ReviewItem[]) {
+function renderHost(batch: ReviewItem[], onExit: () => void = () => undefined) {
   return render(
     <ThemeProvider>
       <ServiceProvider services={fakeServices(batch)}>
-        <SessionHost onExit={() => undefined} />
+        <SessionHost onExit={onExit} />
       </ServiceProvider>
     </ThemeProvider>,
   );
@@ -112,4 +112,13 @@ it('starts each item fresh — stage/miss/recording do not leak across cards', a
   await settle(() => expect(u.getByText('paldies')).toBeTruthy());
   expect(u.queryByText('Continue')).toBeNull();
   expect(u.queryByText('māja')).toBeNull(); // item A's content is gone
+});
+
+it('bounces to home on an empty batch — via effect, not the misleading prog screen', async () => {
+  const onExit = jest.fn();
+  const u = renderHost([], onExit);
+  // The finished/empty branch calls onExit from an effect (never setState during render)...
+  await settle(() => expect(onExit).toHaveBeenCalled());
+  // ...and never shows the "N / 1000 words" coverage screen as a loading/empty state.
+  expect(u.queryByText(/words/)).toBeNull();
 });

@@ -1,7 +1,7 @@
 // App root + minimal stack. Wraps everything in ThemeProvider + ServiceProvider and renders a
 // simple two-route stack (home -> session). A real navigator (react-navigation/expo-router) can
 // replace this; the load-bearing piece is the CARD_REGISTRY keyed by stable CardKind strings.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
@@ -9,7 +9,8 @@ import { ServiceProvider } from '../services/ServiceProvider';
 import { useSession } from '../session/sessionController';
 import { useReviewCardHandlers } from '../session/useReviewCardHandlers';
 import { CARD_REGISTRY } from './registry';
-import { ProgressScreen, HomeHost, PodcastHost, ProgressHost } from '../screens';
+import { Screen } from '../components';
+import { HomeHost, PodcastHost, ProgressHost } from '../screens';
 import { type } from '../theme/tokens';
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardKind } from '../types/cardKind';
@@ -34,7 +35,7 @@ function TabBar({ route, onNavigate }: { route: Route; onNavigate: (r: Route) =>
         return (
           <Pressable
             key={tab.route}
-            accessibilityRole="button"
+            accessibilityRole="tab"
             accessibilityState={{ selected: active }}
             onPress={() => onNavigate(tab.route)}
             style={styles.tab}
@@ -70,16 +71,32 @@ export function CardHost({
   return <Card item={item} {...handlers} nextReviewLabel={nextReviewLabel} />;
 }
 
+/** Neutral full-screen placeholder for loading / between cards (NOT the prog coverage screen). */
+function SessionPlaceholder({ label }: { label?: string }): React.JSX.Element {
+  const T = useTheme();
+  return (
+    <Screen>
+      <View style={styles.placeholder}>
+        {label ? <Text style={{ color: T.faint, fontSize: type.body }}>{label}</Text> : null}
+      </View>
+    </Screen>
+  );
+}
+
 /** SessionHost — pulls the controller state and mounts the card for the current item. */
 export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Element {
   const session = useSession();
+  const finished = !session.loading && (session.done || !session.current);
 
-  if (session.loading) return <ProgressScreen known={0} total={1000} />;
-  if (session.done || !session.current) {
-    // Empty batch / finished — bounce back to home.
-    onExit();
-    return <ProgressScreen known={0} total={1000} />;
-  }
+  // Empty batch / finished — bounce back to home in an effect, never via setState during render.
+  useEffect(() => {
+    if (finished) onExit();
+  }, [finished, onExit]);
+
+  // Loading or finished: show a neutral placeholder (a "0 / 1000 words" progress bar here would
+  // misread as the user knowing nothing — that's the Tier-B prog screen, not a loading state).
+  if (session.loading) return <SessionPlaceholder label="Loading your session…" />;
+  if (!session.current) return <SessionPlaceholder />; // also narrows current for the card below
 
   return (
     // key on item id: remount a fresh card per item so ephemeral state (stage, first-try miss)
@@ -129,6 +146,7 @@ export function App(): React.JSX.Element {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   screen: { flex: 1 },
+  placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tabBar: {
     flexDirection: 'row',
     borderTopWidth: StyleSheet.hairlineWidth,

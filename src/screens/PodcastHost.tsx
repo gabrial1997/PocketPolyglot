@@ -13,9 +13,14 @@ export function PodcastHost(): React.JSX.Element {
 
   useEffect(() => {
     let alive = true;
-    podcast.getEpisode().then((e) => {
-      if (alive) setEp(e);
-    });
+    void podcast
+      .getEpisode()
+      .then((e) => {
+        if (alive) setEp(e);
+      })
+      .catch(() => {
+        /* keep the screen's defaults on failure */
+      });
     return () => {
       alive = false;
     };

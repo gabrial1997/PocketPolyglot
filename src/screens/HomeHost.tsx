@@ -14,9 +14,14 @@ export function HomeHost({ onStart }: { onStart?: () => void }): React.JSX.Eleme
 
   useEffect(() => {
     let active = true;
-    void srs.getDueSummary().then((s) => {
-      if (active) setSummary(s);
-    });
+    void srs
+      .getDueSummary()
+      .then((s) => {
+        if (active) setSummary(s);
+      })
+      .catch(() => {
+        /* keep defaults on failure */
+      });
     return () => {
       active = false;
     };
