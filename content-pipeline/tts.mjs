@@ -55,20 +55,15 @@ async function generate(manifest) {
   const voice = manifest.voice || 'alloy';
   const baseInstr =
     manifest.instructions || 'Clear, warm, natural native Latvian for a language learner.';
-  const slowInstr =
-    (manifest.slowInstructions || baseInstr) +
-    ' Speak slowly and very clearly, leaving a little space between syllables.';
 
+  // One clip per item. "Slow" is done in-app via pitch-corrected playback rate (SpeedChip),
+  // which is deterministic — the model's "speak slowly" steering is unreliable.
   for (const item of manifest.items) {
     const native = await synth(client, item.text, voice, baseInstr);
-    fs.writeFileSync(path.join(OUT_DIR, `${item.slug}.native.mp3`), native);
-    const slow = await synth(client, item.text, voice, slowInstr);
-    fs.writeFileSync(path.join(OUT_DIR, `${item.slug}.slow.mp3`), slow);
-    console.log(
-      `✓ ${item.slug.padEnd(14)} "${item.text}"  native ${(native.length / 1024).toFixed(1)}kB / slow ${(slow.length / 1024).toFixed(1)}kB`,
-    );
+    fs.writeFileSync(path.join(OUT_DIR, `${item.slug}.mp3`), native);
+    console.log(`✓ ${item.slug.padEnd(14)} "${item.text}"  ${(native.length / 1024).toFixed(1)}kB`);
   }
-  console.log(`\nGenerated ${manifest.items.length} items (native + slow) -> ${OUT_DIR}`);
+  console.log(`\nGenerated ${manifest.items.length} clips -> ${OUT_DIR}`);
 }
 
 async function seed(manifest) {
@@ -83,10 +78,10 @@ async function seed(manifest) {
   // Ensure the public content bucket exists (idempotent).
   await db.storage.createBucket(BUCKET, { public: true }).catch(() => {});
 
-  async function upload(slug, rate) {
-    const local = path.join(OUT_DIR, `${slug}.${rate}.mp3`);
+  async function upload(slug) {
+    const local = path.join(OUT_DIR, `${slug}.mp3`);
     if (!fs.existsSync(local)) return null;
-    const key = `${slug}.${rate}.mp3`;
+    const key = `${slug}.mp3`;
     const { error } = await db.storage
       .from(BUCKET)
       .upload(key, fs.readFileSync(local), { contentType: 'audio/mpeg', upsert: true });
@@ -95,8 +90,7 @@ async function seed(manifest) {
   }
 
   for (const item of manifest.items) {
-    const nativeUrl = await upload(item.slug, 'native');
-    const slowUrl = await upload(item.slug, 'slow');
+    const nativeUrl = await upload(item.slug); // slow is in-app playback rate, not a separate file
     if (item.type === 'phrase') {
       await db.from('phrases').insert({ target: item.text, gloss_en: item.gloss, audio_url: nativeUrl });
     } else if (item.type === 'pair') {
@@ -113,7 +107,6 @@ async function seed(manifest) {
         gloss_en: item.gloss,
         word_class: item.wordClass || 'concrete',
         native_url: nativeUrl,
-        slow_url: slowUrl,
         qa_status: 'draft',
       });
     }

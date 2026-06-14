@@ -1,7 +1,8 @@
 // Supabase service implementations — barrel + factory.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ServiceBundle } from '../index';
-import { StubAudioService, StubRecorderService } from '../stubs';
+import { StubRecorderService } from '../stubs';
+import { ExpoAudioService } from '../device/ExpoAudioService';
 import { SupabaseSrsService } from './SupabaseSrsService';
 import { SupabaseKnownWordsStore } from './SupabaseKnownWordsStore';
 import { SupabaseProgressService } from './SupabaseProgressService';
@@ -17,16 +18,16 @@ export { SupabasePodcastService } from './SupabasePodcastService';
 /**
  * Build a ServiceBundle backed by Supabase for a given authenticated user.
  *
- * NOTE: audio + recorder remain DEVICE stubs (StubAudioService / StubRecorderService) for now.
- * They are device concerns (playback, mic permission) wired separately later with expo-audio;
- * the data-layer services (srs/known/progress/podcast) are the real Supabase implementations.
+ * Audio is the real device player (ExpoAudioService — pitch-corrected rate for "slow"). The
+ * recorder remains a stub until the mic capture + upload flow is wired. The data-layer services
+ * (srs/known/progress/podcast) are the real Supabase implementations.
  */
 export function createSupabaseServices(
   client: SupabaseClient,
   userId: string,
 ): ServiceBundle {
   return {
-    audio: new StubAudioService(),
+    audio: new ExpoAudioService(),
     recorder: new StubRecorderService(),
     srs: new SupabaseSrsService(client, userId),
     known: new SupabaseKnownWordsStore(client, userId),
