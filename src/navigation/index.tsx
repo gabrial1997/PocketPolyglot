@@ -37,7 +37,7 @@ function CardHost({
 }
 
 /** SessionHost — pulls the controller state and mounts the card for the current item. */
-function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Element {
+export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Element {
   const session = useSession();
 
   if (session.loading) return <ProgressScreen known={0} total={1000} />;
@@ -48,7 +48,10 @@ function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Element {
   }
 
   return (
+    // key on item id: remount a fresh card per item so ephemeral state (stage, first-try miss)
+    // and the recording buffer never leak from one review into the next.
     <CardHost
+      key={session.current.item.id}
       item={session.current.item}
       kind={session.current.kind}
       submit={session.submit}

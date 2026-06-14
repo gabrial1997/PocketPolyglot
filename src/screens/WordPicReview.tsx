@@ -17,6 +17,11 @@ export function WordPicReview(props: Props): React.JSX.Element {
   // first-try correctness (the SRS interval depends on it). The recorder owns the take, not us.
   const [missed, setMissed] = useState(false);
   const choices = item.choices ?? [];
+  // Starting to speak always begins recording, whether the user taps the prompt or the mic orb.
+  const startRec = () => {
+    onRecordStart();
+    m.beginRec();
+  };
 
   return (
     <CardShell eyebrow="Picture review" target={m.stage === 'choose' ? undefined : item.target}>
@@ -40,7 +45,7 @@ export function WordPicReview(props: Props): React.JSX.Element {
           ))
         : null}
 
-      {m.stage === 'speak' ? <CtaButton title="Now say it" onPress={m.beginRec} /> : null}
+      {m.stage === 'speak' ? <CtaButton title="Now say it" onPress={startRec} /> : null}
 
       {m.stage === 'rec' ? (
         <MicOrb
@@ -51,13 +56,15 @@ export function WordPicReview(props: Props): React.JSX.Element {
           }}
         />
       ) : null}
-      {m.stage === 'speak' ? <MicOrb onPress={() => { onRecordStart(); m.beginRec(); }} /> : null}
+      {m.stage === 'speak' ? <MicOrb onPress={startRec} /> : null}
 
       {m.stage === 'result' ? (
         <View style={{ rowGap: 12 }}>
           <Waveform seed={`${item.id}-native`} played={1} />
           <Waveform seed={`${item.id}-you`} played={1} />
-          <CtaButton title="Play back-to-back" variant="outline" onPress={() => onPlayCompare?.('native')} />
+          {/* A/B self-compare (a locked product pillar): replay the native model and your take. */}
+          <CtaButton title="Play original" variant="outline" onPress={() => onPlayCompare?.('native')} />
+          <CtaButton title="Play yours" variant="outline" onPress={() => onPlayCompare?.('you')} />
           <CtaButton
             title="Continue"
             onPress={() =>

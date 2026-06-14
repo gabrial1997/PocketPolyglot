@@ -121,6 +121,15 @@ hands back (or hides it).
 > Props every card also takes: `theme`/tokens and any i18n. Below lists only the
 > data + behavior contract.
 
+> **Realized boundary note (`onRecordStop`).** The signatures below write `onRecordStop(blob)`,
+> mirroring the web prototype where recording happened in-card. In the RN app the locked
+> "cards are pure" boundary takes precedence: a pure, snapshot-testable card cannot produce real
+> audio, so **the injected `RecorderService` owns the take**. Cards call `onRecordStop()` with no
+> argument (a stop signal); the controller wiring (`src/session/cardWiring.ts`) captures the
+> recording from `RecorderService.stop()` and merges it into the `CardResult`. The prop type is
+> `onRecordStop(recording?: Blob | string)` for back-compat. This is the only intentional
+> deviation from the literal signatures here.
+
 ### `word/learn-concrete` · `word/learn-abstract` · `word/learn-function`
 - **In:** `item` (uses `target`, `gloss`, `pron`, `audio`, and one of `media` /
   `mnemonic` / `examples` by class).

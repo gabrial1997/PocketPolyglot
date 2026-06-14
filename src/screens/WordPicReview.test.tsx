@@ -97,4 +97,20 @@ describe('WordPicReview', () => {
     expect(u.props.onRecordStop).toHaveBeenCalledTimes(1);
     expect(u.props.onRecordStop).not.toHaveBeenCalledWith('stub://recording');
   });
+
+  it('lets the user replay both the original and their own take (A/B self-compare)', () => {
+    const u = renderCard();
+    runLoop(u);
+    fireEvent.press(u.getByText('Play original'));
+    expect(u.props.onPlayCompare).toHaveBeenCalledWith('native');
+    fireEvent.press(u.getByText('Play yours'));
+    expect(u.props.onPlayCompare).toHaveBeenCalledWith('you');
+  });
+
+  it('begins recording from the speak prompt, not only the mic orb', () => {
+    const u = renderCard();
+    fireEvent.press(u.getByText('māja')); // choose -> speak
+    fireEvent.press(u.getByText('Now say it'));
+    expect(u.props.onRecordStart).toHaveBeenCalled();
+  });
 });

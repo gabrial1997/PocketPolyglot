@@ -43,9 +43,11 @@ export interface CardHandlers {
  * Holds the take captured by RecorderService between onRecordStop and onComplete/onPlayCompare.
  * The recorder — not the pure card — is the source of truth for the blob/URI (a pure, snapshot-
  * testable card cannot produce real audio data), so the card calls onRecordStop() as a signal.
+ * `pending` is the in-flight recorder.stop() so onComplete can await it before submitting.
  */
 export interface RecordingStore {
   current: Blob | string | null;
+  pending?: Promise<void> | null;
 }
 
 export function createCardHandlers(deps: {
@@ -67,10 +69,11 @@ export function createCardHandlers(deps: {
     },
     onRecordStart: () => {
       store.current = null; // drop any prior take before a new attempt
+      store.pending = null;
       void recorder.start();
     },
     onRecordStop: () => {
-      void Promise.resolve(recorder.stop()).then((take) => {
+      store.pending = Promise.resolve(recorder.stop()).then((take) => {
         store.current = take;
       });
     },
@@ -79,7 +82,10 @@ export function createCardHandlers(deps: {
       if (typeof url === 'string' && url) void audio.play(url);
     },
     onComplete: (result) => {
-      void submit(withRecording(result, store.current));
+      // If a recorder.stop() is still in flight, wait for the take so it is never dropped.
+      const finish = () => submit(withRecording(result, store.current));
+      if (store.pending) void store.pending.then(finish);
+      else void finish();
     },
   };
 }

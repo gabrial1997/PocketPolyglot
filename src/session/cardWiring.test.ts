@@ -140,7 +140,7 @@ describe('createCardHandlers — the core loop reaches every service', () => {
   it('onRecordStop stops the recorder and captures the take', async () => {
     const { handlers, events, store } = setup();
     handlers.onRecordStop();
-    await Promise.resolve(); // let recorder.stop() resolve
+    await store.pending; // let recorder.stop() resolve and the take be stored
     expect(events).toEqual(['stop']);
     expect(store.current).toBe('rec://take1');
   });
@@ -159,6 +159,38 @@ describe('createCardHandlers — the core loop reaches every service', () => {
     handlers.onComplete({ itemId: 'maja', cardKind: 'word/pic-review', correct: false, spoke: true });
     expect(submitted).toEqual([
       { itemId: 'maja', cardKind: 'word/pic-review', correct: false, spoke: true, recording: 'rec://take1' },
+    ]);
+  });
+
+  it('onComplete waits for an in-flight recorder.stop() so the take is never dropped', async () => {
+    const { audio } = fakeAudio();
+    let resolveStop!: (take: string) => void;
+    const recorder: RecorderService = {
+      async start() {},
+      stop: () => new Promise<string>((res) => (resolveStop = res)),
+      isRecording: () => false,
+    };
+    const store: RecordingStore = { current: null };
+    const submitted: CardResult[] = [];
+    const handlers = createCardHandlers({
+      item: item(),
+      audio,
+      recorder,
+      store,
+      submit: (r) => {
+        submitted.push(r);
+      },
+    });
+
+    handlers.onRecordStop(); // stop is in flight, not resolved yet
+    handlers.onComplete({ itemId: 'maja', cardKind: 'word/pic-review', correct: true, spoke: true });
+    expect(submitted).toHaveLength(0); // must not submit before the take is captured
+
+    resolveStop('rec://late');
+    await store.pending; // the stop resolves and the take is stored
+    await Promise.resolve(); // let onComplete's continuation run
+    expect(submitted).toEqual([
+      { itemId: 'maja', cardKind: 'word/pic-review', correct: true, spoke: true, recording: 'rec://late' },
     ]);
   });
 });
