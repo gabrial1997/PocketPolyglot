@@ -57,3 +57,4 @@ export interface ServiceBundle {
 export * from './stubs';
 export * from './ServiceProvider';
 export { supabase } from './supabaseClient';
+export * from './supabase';
