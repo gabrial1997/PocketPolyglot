@@ -1,0 +1,15 @@
+{
+  "voice": "alloy",
+  "instructions": "You are a calm, warm native Latvian speaker recording reference audio for a language-learning app. Pronounce each item naturally and clearly, with correct Latvian stress (first syllable) and vowel length.",
+  "items": [
+    { "slug": "maja", "type": "lemma", "wordClass": "concrete", "text": "māja", "gloss": "house" },
+    { "slug": "udens", "type": "lemma", "wordClass": "concrete", "text": "ūdens", "gloss": "water" },
+    { "slug": "labrit", "type": "lemma", "wordClass": "function", "text": "labrīt", "gloss": "good morning" },
+    { "slug": "paldies", "type": "lemma", "wordClass": "function", "text": "paldies", "gloss": "thank you" },
+    { "slug": "loti", "type": "lemma", "wordClass": "function", "text": "ļoti", "gloss": "very" },
+    { "slug": "gimene", "type": "lemma", "wordClass": "concrete", "text": "ģimene", "gloss": "family" },
+    { "slug": "keve", "type": "lemma", "wordClass": "concrete", "text": "ķēve", "gloss": "mare" },
+    { "slug": "phrase-kafija", "type": "phrase", "text": "Es dzeru kafiju", "gloss": "I drink coffee" },
+    { "slug": "phrase-cik", "type": "phrase", "text": "Cik tas maksā?", "gloss": "How much is it?" }
+  ]
+}

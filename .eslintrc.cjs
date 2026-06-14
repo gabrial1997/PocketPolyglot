@@ -17,5 +17,5 @@ module.exports = {
     'react/react-in-jsx-scope': 'off', // not needed with the new JSX transform
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
   },
-  ignorePatterns: ['node_modules/', 'dist/', '.expo/', 'babel.config.js'],
+  ignorePatterns: ['node_modules/', 'dist/', '.expo/', 'babel.config.js', 'content-pipeline/'],
 };

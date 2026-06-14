@@ -17,6 +17,9 @@ android/
 .env.local
 .env.*.local
 
+# Generated TTS audio (content pipeline)
+content-pipeline/out/
+
 # Logs / OS
 npm-debug.*
 yarn-error.*
