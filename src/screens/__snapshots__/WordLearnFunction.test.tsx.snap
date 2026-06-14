@@ -1,0 +1,406 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WordLearnFunction renders the example sentences from item data (snapshot) 1`] = `
+<RCTSafeAreaView
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#F4F2ED",
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "flex": 1,
+        },
+        {
+          "paddingHorizontal": 24,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "justifyContent": "center",
+          "rowGap": 12,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 11.5,
+              "fontWeight": "700",
+              "letterSpacing": 1.3,
+            },
+            {
+              "color": "rgba(26,39,51,0.34)",
+            },
+          ]
+        }
+      >
+        NEW WORD
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 52,
+              "letterSpacing": -0.8,
+            },
+            {
+              "color": "#1A2733",
+              "fontFamily": "Spectral_500Medium",
+            },
+          ]
+        }
+      >
+        uz
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14,
+            },
+            {
+              "color": "rgba(26,39,51,0.34)",
+            },
+          ]
+        }
+      >
+        OOZ
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+            },
+            {
+              "color": "rgba(26,39,51,0.58)",
+            },
+          ]
+        }
+      >
+        on / to
+      </Text>
+      <View
+        style={
+          {
+            "marginTop": 24,
+            "rowGap": 16,
+          }
+        }
+      >
+        <View
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            [
+              {
+                "borderRadius": 16,
+                "borderWidth": 1.5,
+                "padding": 14,
+                "rowGap": 4,
+              },
+              {
+                "borderColor": "rgba(26,39,51,0.09)",
+              },
+            ]
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#1A2733",
+                "fontSize": 16,
+              }
+            }
+          >
+            Grāmata ir
+            <Text
+              style={
+                {
+                  "color": "#2C5E8C",
+                }
+              }
+            >
+               
+              uz
+               
+            </Text>
+            galda.
+          </Text>
+          <Text
+            style={
+              {
+                "color": "rgba(26,39,51,0.34)",
+                "fontSize": 13,
+              }
+            }
+          >
+            The book is on the table.
+          </Text>
+        </View>
+        <View
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            [
+              {
+                "borderRadius": 16,
+                "borderWidth": 1.5,
+                "padding": 14,
+                "rowGap": 4,
+              },
+              {
+                "borderColor": "rgba(26,39,51,0.09)",
+              },
+            ]
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#1A2733",
+                "fontSize": 16,
+              }
+            }
+          >
+            Es eju
+            <Text
+              style={
+                {
+                  "color": "#2C5E8C",
+                }
+              }
+            >
+               
+              uz
+               
+            </Text>
+            mājām.
+          </Text>
+          <Text
+            style={
+              {
+                "color": "rgba(26,39,51,0.34)",
+                "fontSize": 13,
+              }
+            }
+          >
+            I am going home.
+          </Text>
+        </View>
+        <View
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            [
+              {
+                "borderRadius": 16,
+                "borderWidth": 1.5,
+                "padding": 14,
+                "rowGap": 4,
+              },
+              {
+                "borderColor": "rgba(26,39,51,0.09)",
+              },
+            ]
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#1A2733",
+                "fontSize": 16,
+              }
+            }
+          >
+            Skaties
+            <Text
+              style={
+                {
+                  "color": "#2C5E8C",
+                }
+              }
+            >
+               
+              uz
+               
+            </Text>
+            mani.
+          </Text>
+          <Text
+            style={
+              {
+                "color": "rgba(26,39,51,0.34)",
+                "fontSize": 13,
+              }
+            }
+          >
+            Look at me.
+          </Text>
+        </View>
+        <View
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": false,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            [
+              {
+                "alignItems": "center",
+                "borderRadius": 18,
+                "height": 56,
+                "justifyContent": "center",
+                "width": "100%",
+              },
+              {
+                "backgroundColor": "#2C5E8C",
+                "borderColor": "#2C5E8C",
+                "borderWidth": 0,
+                "opacity": 1,
+              },
+            ]
+          }
+        >
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 16,
+                  "fontWeight": "600",
+                },
+                {
+                  "color": "#FFFFFF",
+                },
+              ]
+            }
+          >
+            First review tomorrow
+          </Text>
+        </View>
+      </View>
+    </View>
+  </View>
+</RCTSafeAreaView>
+`;

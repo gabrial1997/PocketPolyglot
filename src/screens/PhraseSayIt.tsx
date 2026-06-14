@@ -26,7 +26,7 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
         </>
       ) : null}
       {stage === 'rec' ? (
-        <MicOrb rec onPress={() => { onRecordStop('stub://recording'); setStage('compare'); }} />
+        <MicOrb rec onPress={() => { onRecordStop(); setStage('compare'); }} />
       ) : null}
       {stage === 'compare' ? (
         <View style={{ rowGap: 12 }}>

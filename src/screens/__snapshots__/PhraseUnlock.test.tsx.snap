@@ -1,0 +1,106 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PhraseUnlock renders the unlock reveal from item data (snapshot) 1`] = `
+<RCTSafeAreaView
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#F4F2ED",
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "flex": 1,
+        },
+        {
+          "paddingHorizontal": 24,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "justifyContent": "center",
+          "rowGap": 12,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 11.5,
+              "fontWeight": "700",
+              "letterSpacing": 1.3,
+            },
+            {
+              "color": "rgba(26,39,51,0.34)",
+            },
+          ]
+        }
+      >
+        UNLOCKED
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 52,
+              "letterSpacing": -0.8,
+            },
+            {
+              "color": "#1A2733",
+              "fontFamily": "Spectral_500Medium",
+            },
+          ]
+        }
+      >
+        Labrīt!
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+            },
+            {
+              "color": "rgba(26,39,51,0.58)",
+            },
+          ]
+        }
+      >
+        Good morning!
+      </Text>
+      <View
+        style={
+          {
+            "marginTop": 24,
+            "rowGap": 16,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#2E7D5B",
+              "fontSize": 16,
+            }
+          }
+        >
+          New phrase unlocked
+        </Text>
+      </View>
+    </View>
+  </View>
+</RCTSafeAreaView>
+`;

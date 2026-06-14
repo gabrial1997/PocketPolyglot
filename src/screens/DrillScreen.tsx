@@ -31,7 +31,7 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
         <MicOrb onPress={() => { onRecordStart(); setSay('rec'); }} />
       ) : null}
       {say === 'rec' ? (
-        <MicOrb rec onPress={() => { onRecordStop('stub://recording'); setSay('done'); }} />
+        <MicOrb rec onPress={() => { onRecordStop(); setSay('done'); }} />
       ) : null}
       {say === 'done' ? (
         <CtaButton

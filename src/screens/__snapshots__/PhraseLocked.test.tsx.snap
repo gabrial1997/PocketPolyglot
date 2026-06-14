@@ -1,0 +1,94 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PhraseLocked renders the locked state from item data (snapshot) 1`] = `
+<RCTSafeAreaView
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#F4F2ED",
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "flex": 1,
+        },
+        {
+          "paddingHorizontal": 24,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "justifyContent": "center",
+          "rowGap": 12,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 11.5,
+              "fontWeight": "700",
+              "letterSpacing": 1.3,
+            },
+            {
+              "color": "rgba(26,39,51,0.34)",
+            },
+          ]
+        }
+      >
+        LOCKED PHRASE
+      </Text>
+      <View
+        style={
+          {
+            "marginTop": 24,
+            "rowGap": 16,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "rowGap": 6,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "rgba(26,39,51,0.34)",
+                "fontSize": 16,
+              }
+            }
+          >
+            Labrīt!
+          </Text>
+          <Text
+            style={
+              {
+                "color": "rgba(26,39,51,0.34)",
+                "fontSize": 13,
+              }
+            }
+          >
+            Unlocks when you know its words.
+          </Text>
+        </View>
+      </View>
+    </View>
+  </View>
+</RCTSafeAreaView>
+`;

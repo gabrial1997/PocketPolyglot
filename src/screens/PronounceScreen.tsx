@@ -22,13 +22,15 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
         </>
       ) : null}
       {stage === 'rec' ? (
-        <MicOrb rec onPress={() => { onRecordStop('stub://recording'); setStage('compare'); }} />
+        <MicOrb rec onPress={() => { onRecordStop(); setStage('compare'); }} />
       ) : null}
       {stage === 'compare' ? (
         <View style={{ rowGap: 12 }}>
           <Waveform seed={`${item.id}-native`} played={1} />
           <Waveform seed={`${item.id}-you`} played={1} />
-          <CtaButton title="Play back-to-back" variant="outline" onPress={() => onPlayCompare?.('native')} />
+          {/* A/B self-compare (a locked product pillar): replay the native model and your take. */}
+          <CtaButton title="Play original" variant="outline" onPress={() => onPlayCompare?.('native')} />
+          <CtaButton title="Play yours" variant="outline" onPress={() => onPlayCompare?.('you')} />
           <CtaButton
             title="Continue"
             onPress={() => onComplete({ itemId: item.id, cardKind: 'pron', spoke: true })}
