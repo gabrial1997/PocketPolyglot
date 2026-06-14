@@ -77,22 +77,43 @@ tabs. Start session bounces (empty batch) — no content yet. Web preview is an 
 
 # TODO — next session (ordered)
 
-### 1. Procure the top ~1000 words  ← START HERE
+### 0. (Only if you want to test on the iPhone) Upgrade Expo SDK 51 → 54
+App Store **Expo Go only runs the latest SDK (54)**; our project is 51, so it can't open on the
+phone. Upgrade is a real breaking jump: **RN 0.74→~0.81, React 18→19, New Architecture default,
+`expo-av` REMOVED in 54 → migrate `ExpoAudioService` to `expo-audio`** (pitch-corrected rate still
+supported), bump `jest-expo`/`react-native-svg`/AsyncStorage, then re-green all four CI checks.
+`npx expo install expo@^54 && npx expo install --fix` is the start; do it deliberately, not blind.
+(Web preview was attempted as a no-phone alternative but `@supabase/supabase-js` imports an optional
+`@opentelemetry/api` that Metro can't resolve for web — would need a resolver stub; deprioritized in
+favor of the SDK upgrade. Web deps were reverted, tree is clean.)
+
+### 1. Procure the top ~1000 words  ← START HERE (content track)
 Build `content-pipeline/frequency.mjs` (same shape as `tts.mjs`):
 1. Pull OpenSubtitles Latvian frequency ([hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) `lv_full.txt`).
 2. **Lemmatize** (essential for Latvian) via UDPipe [LINDAT REST API](https://lindat.mff.cuni.cz/services/udpipe/) (model `latvian-lvtb`) — collapse inflected forms → lemma + POS, sum counts.
 3. Aggregate → rank → band (`freq_rank`/`freq_count`/`freq_band`). Clean: drop PROPN/NUM/foreign/
    profanity/interjections/subtitle artifacts.
-4. LLM pass (OpenAI) to draft `gloss` (EN) + `word_class` (concrete/abstract/function) per lemma.
+4. LLM pass to draft `gloss` (EN) + `word_class` + examples/mnemonics per lemma — use the new
+   **`latvian-linguist` agent** (`.claude/agents/latvian-linguist.md`, runs on opus; drafts content,
+   flags confidence, feeds the human QA gate). For best Latvian, cross-check a frontier model
+   (Claude Opus and/or OpenAI **GPT-5.4 Thinking/Pro** — the mini-tts model is for AUDIO only, not text).
 5. Output a **reviewable candidate `manifest.json`** of ~1200 lemmas (+ phrases later) for founder +
    Elizabete QA → lock the ~1000 (`qa_status`). NB: frequency ≠ teaching order; sequencing is a
-   separate layer.
+   separate layer. **A native human sign-off is mandatory — the LLM is a drafter, not a native.**
 
 ### 2. TTS — MALE + FEMALE voices (new requirement, 2026-06-14)
 The user wants **two voices (one male, one female); the user can pick one, or mix & match.**
-- Pick best-sounding Latvian voices from OpenAI's set — candidates: **male** = `onyx`/`ash`/`echo`,
-  **female** = `nova`/`shimmer`/`coral`. A/B them on the hard sounds (ļ/ņ/ķ/ģ, ā/ē/ī/ū) before
-  committing. Quality varies by voice.
+- **Voice A/B is already generated**: `content-pipeline/voice-test.mjs` made 2 hard Latvian phrases ×
+  all 11 OpenAI voices → `content-pipeline/voice-test/` (gitignored). **Elizabete picks the best
+  male + female** (most intelligible on ļ/ņ/ķ/ģ + vowel length).
+- **BUT reconsider the provider.** OpenAI voices are English-trained speaking Latvian — fine, but
+  for a *pronunciation model* native-trained voices likely sound more authentic. A/B OpenAI vs:
+  **Azure Neural TTS lv-LV** (`NilsNeural` male + `EveritaNeural` female — already one of each,
+  purpose-built Latvian), **Google Cloud lv-LV**, **ElevenLabs** (multilingual + voice cloning —
+  could clone a real native like Elizabete = gold standard), **Tilde** (Latvian specialist). Need
+  Azure/ElevenLabs API keys to extend `voice-test.mjs`. Let the native ear decide.
+- Once chosen: generate **both voices per item** into `audio_assets` (`voice_id`/`rate`);
+  `profiles.settings.voicePreference: 'male'|'female'|'mix'`; mapper resolves URL by preference.
 - Extend `tts.mjs` to generate **both voices per item** → store in the **`audio_assets`** table
   (which exists for exactly this: `owner_type`/`owner_id`/`voice_id`/`rate`/`storage_path`).
   `voice_id` = `'male'`/`'female'` (or the OpenAI voice name). Keep `lemmas.native_url` as a default
