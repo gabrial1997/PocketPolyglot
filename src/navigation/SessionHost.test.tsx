@@ -3,7 +3,7 @@
 // state (stage, first-try miss) and the recording buffer must NOT leak from item 1 into item 2.
 // Drives the real SessionController + CardHost with injected fake services.
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { SessionHost } from './index';
@@ -60,6 +60,15 @@ function renderHost(batch: ReviewItem[]) {
   );
 }
 
+// Deterministically flush the controller's async chains (reload effect, submit -> setIndex) and
+// apply the resulting state updates. Avoids waitFor's polling, which is timing-fragile under
+// jest-expo in CI.
+async function flush() {
+  await act(async () => {
+    for (let i = 0; i < 8; i++) await Promise.resolve();
+  });
+}
+
 // choose -> speak -> rec -> result -> Continue, optionally missing the first answer.
 function completeCard(
   u: ReturnType<typeof renderHost>,
@@ -78,15 +87,17 @@ it('starts each item fresh — stage/miss/recording do not leak across cards', a
   const u = renderHost([itemA, itemB]);
 
   // Item A loads at the choose stage.
-  await waitFor(() => expect(u.getByText('māja')).toBeTruthy());
+  await flush();
+  expect(u.getByText('māja')).toBeTruthy();
 
-  // Complete A with a wrong first answer (so its `missed` flag is set).
+  // Complete A with a wrong first answer (so its `missed` flag is set), then advance.
   completeCard(u, 'māja', 'maize', { miss: true });
+  await flush();
 
   // Item B must begin at its OWN choose stage — not stuck on A's result screen.
   // 'paldies' is B's distractor, rendered ONLY at the choose stage, so it is an unambiguous
   // signal that the card remounted fresh (the hero text would match 'labrīt' even when stuck).
-  await waitFor(() => expect(u.getByText('paldies')).toBeTruthy());
+  expect(u.getByText('paldies')).toBeTruthy();
   expect(u.queryByText('Continue')).toBeNull();
   expect(u.queryByText('māja')).toBeNull(); // item A's content is gone
 });
