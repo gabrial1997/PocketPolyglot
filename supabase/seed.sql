@@ -1,0 +1,30 @@
+-- =====================================================================
+-- PocketPolyglot — seed.sql  (INTENTIONALLY EMPTY / PLACEHOLDER)
+-- ---------------------------------------------------------------------
+-- No seed data yet — on purpose.
+--
+-- The DB STRUCTURE can be built now, but POPULATING it cannot, because the
+-- curated lemma list does not exist yet. Seeding waits on the linguistics
+-- pipeline (see docs/technical/database-schema-seed.md §8):
+--
+--   1. Raw         — docs/linguistics/lv-frequency-top1000.csv (uncleaned). EXISTS.
+--   2. Lemmatize   — collapse forms to lemmas, clean, re-rank
+--                    -> fills lemmas.freq_rank / freq_band.        (Linguistics Expert — not done)
+--   3. LVTB        — per-case form frequencies
+--                    -> fills wordforms.freq_count + the teach_mode cutoff.
+--   4. Enrich      — gloss, word_class, audio (TTS + Elizabete native), image,
+--                    mnemonic, examples; build phrases + phrase_components +
+--                    minimal_pairs. Elizabete QA flips qa_status -> 'native_ok'.
+--   5. Seed        — load content tables; only qa_status <> 'draft' surfaces.
+--
+-- WHEN READY, this file (or per-table seed files invoked from here) will
+-- bulk-load the curated content. Reminder of the data switch to apply at
+-- seed time:
+--   * wordforms.teach_mode = 'explicit'   for gram_case in (nom, acc, dat, loc)
+--   * wordforms.teach_mode = 'incidental' for genitive (and anything else)
+--
+-- Until then: no rows. This keeps `supabase db reset` reproducible with an
+-- empty-but-valid content library.
+-- =====================================================================
+
+-- (no statements)

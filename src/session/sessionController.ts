@@ -1,0 +1,81 @@
+// SessionController — the one stateful piece (BACKEND_INTEGRATION §2).
+// Flow: getDueBatch -> renderFor(item) -> mount card with item + callbacks -> on complete,
+// submit(result) to SRS and advance. The card stays pure; this hook owns batch + services.
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useServices } from '../services/ServiceProvider';
+import { renderFor } from './renderFor';
+import type { ReviewItem } from '../types/reviewItem';
+import type { CardResult } from '../types/cardResult';
+import type { CardKind } from '../types/cardKind';
+
+export interface SessionState {
+  loading: boolean;
+  done: boolean;
+  /** Current item + the CardKind to render for it (null when loading/done). */
+  current: { item: ReviewItem; kind: CardKind } | null;
+  /** 1-based position for the SessionTop progress dots. */
+  step: number;
+  total: number;
+  /** Last "next review in N days" label handed back by SRS (cards display this). */
+  lastReviewLabel: string | null;
+  /** Submit a card's result, post to SRS, advance to the next item. */
+  submit: (result: CardResult) => Promise<void>;
+  /** Reload a fresh batch. */
+  reload: () => Promise<void>;
+}
+
+/**
+ * useSession — drives one daily batch. Phrase lock state (locked/unlock) is resolved here
+ * against KnownWordsStore before deciding the kind; renderFor() handles the review kinds.
+ */
+export function useSession(): SessionState {
+  const { srs, known } = useServices();
+  const [batch, setBatch] = useState<ReviewItem[]>([]);
+  const [index, setIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [lastReviewLabel, setLastReviewLabel] = useState<string | null>(null);
+
+  const reload = useCallback(async () => {
+    setLoading(true);
+    await known.refresh();
+    const items = await srs.getDueBatch();
+    setBatch(items);
+    setIndex(0);
+    setLoading(false);
+  }, [srs, known]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  const item = batch[index];
+
+  const kind: CardKind | null = useMemo(() => {
+    if (!item) return null;
+    // Phrase gating: if any required component lemma is unknown, show the locked screen.
+    // (Full gating logic comes from phrase_components vs known_lemmas — schema §2/§3.)
+    return renderFor(item);
+  }, [item]);
+
+  const submit = useCallback(
+    async (result: CardResult) => {
+      const { nextReviewLabel } = await srs.submit(result);
+      setLastReviewLabel(nextReviewLabel);
+      setIndex((i) => i + 1);
+    },
+    [srs],
+  );
+
+  const done = !loading && index >= batch.length;
+
+  return {
+    loading,
+    done,
+    current: item && kind ? { item, kind } : null,
+    step: Math.min(index + 1, batch.length || 1),
+    total: batch.length,
+    lastReviewLabel,
+    submit,
+    reload,
+  };
+}

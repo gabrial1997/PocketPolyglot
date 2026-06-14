@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+
+# Native
+ios/
+android/
+*.orig.*
+
+# Env — never commit real keys
+.env
+.env.local
+.env.*.local
+
+# Logs / OS
+npm-debug.*
+yarn-error.*
+.DS_Store
