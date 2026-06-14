@@ -2,18 +2,52 @@
 // simple two-route stack (home -> session). A real navigator (react-navigation/expo-router) can
 // replace this; the load-bearing piece is the CARD_REGISTRY keyed by stable CardKind strings.
 import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { ThemeProvider } from '../theme/ThemeProvider';
+import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { useSession } from '../session/sessionController';
 import { useReviewCardHandlers } from '../session/useReviewCardHandlers';
 import { CARD_REGISTRY } from './registry';
-import { HomeScreen, ProgressScreen } from '../screens';
+import { ProgressScreen, HomeHost, PodcastHost, ProgressHost } from '../screens';
+import { type } from '../theme/tokens';
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardKind } from '../types/cardKind';
 import type { CardResult } from '../types/cardResult';
 
-type Route = 'home' | 'session';
+type Route = 'home' | 'pod' | 'prog' | 'session';
+
+/** The Tier-B tabs (session is a focused flow, not a tab). */
+const TABS: { route: Route; label: string }[] = [
+  { route: 'home', label: 'Home' },
+  { route: 'pod', label: 'Podcast' },
+  { route: 'prog', label: 'Progress' },
+];
+
+/** Minimal placeholder tab bar — a real navigator (expo-router/react-navigation) replaces this. */
+function TabBar({ route, onNavigate }: { route: Route; onNavigate: (r: Route) => void }): React.JSX.Element {
+  const T = useTheme();
+  return (
+    <View style={[styles.tabBar, { borderTopColor: T.hair, backgroundColor: T.bg }]}>
+      {TABS.map((tab) => {
+        const active = tab.route === route;
+        return (
+          <Pressable
+            key={tab.route}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            onPress={() => onNavigate(tab.route)}
+            style={styles.tab}
+          >
+            <Text style={{ color: active ? T.primary : T.faint, fontSize: type.label, fontWeight: active ? '700' : '500' }}>
+              {tab.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
 
 /**
  * CardHost — mounts the card for the current item with service-backed callbacks. Split out so
@@ -60,18 +94,46 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
   );
 }
 
-export function App(): React.JSX.Element {
+/** Routes the three Tier-B hosts + the focused session flow. */
+function Root(): React.JSX.Element {
   const [route, setRoute] = useState<Route>('home');
+
+  if (route === 'session') {
+    // Session is a focused flow with no tab bar; exit returns to home.
+    return <SessionHost onExit={() => setRoute('home')} />;
+  }
+
+  return (
+    <View style={styles.root}>
+      <View style={styles.screen}>
+        {route === 'home' ? <HomeHost onStart={() => setRoute('session')} /> : null}
+        {route === 'pod' ? <PodcastHost /> : null}
+        {route === 'prog' ? <ProgressHost /> : null}
+      </View>
+      <TabBar route={route} onNavigate={setRoute} />
+    </View>
+  );
+}
+
+export function App(): React.JSX.Element {
   return (
     <ThemeProvider>
       <ServiceProvider>
         <StatusBar style="auto" />
-        {route === 'home' ? (
-          <HomeScreen onStart={() => setRoute('session')} />
-        ) : (
-          <SessionHost onExit={() => setRoute('home')} />
-        )}
+        <Root />
       </ServiceProvider>
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  screen: { flex: 1 },
+  tabBar: {
+    flexDirection: 'row',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingBottom: 24,
+    paddingTop: 10,
+  },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 },
+});

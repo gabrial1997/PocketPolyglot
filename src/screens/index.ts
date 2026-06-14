@@ -15,4 +15,8 @@ export { PronounceScreen } from './PronounceScreen';
 export { HomeScreen } from './HomeScreen';
 export { PodcastScreen } from './PodcastScreen';
 export { ProgressScreen } from './ProgressScreen';
+// Tier-B hosts — pull their own data from injected services (WIRING_MAP §3).
+export { HomeHost } from './HomeHost';
+export { PodcastHost } from './PodcastHost';
+export { ProgressHost } from './ProgressHost';
 export * from './cardProps';

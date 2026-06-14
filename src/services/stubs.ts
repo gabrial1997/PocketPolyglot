@@ -6,6 +6,8 @@ import type {
   RecorderService,
   SrsService,
   KnownWordsStore,
+  ProgressService,
+  PodcastService,
   ServiceBundle,
 } from './index';
 import type { ReviewItem } from '../types/reviewItem';
@@ -63,6 +65,19 @@ export class StubKnownWordsStore implements KnownWordsStore {
   }
 }
 
+export class StubProgressService implements ProgressService {
+  async getCoverage(): Promise<{ known: number; total: number }> {
+    return { known: 0, total: 1000 }; // real impl: known_lemmas count vs core list (schema §3)
+  }
+}
+
+export class StubPodcastService implements PodcastService {
+  async getEpisode(): Promise<{ title: string; transcript: string; audioUrl: string }> {
+    // real impl: PodcastService builds an episode from the known-word set (WIRING_MAP §3).
+    return { title: 'Today’s episode', transcript: '', audioUrl: 'stub://episode' };
+  }
+}
+
 /** Default bundle of stubs for local dev / tests. */
 export function createStubServices(): ServiceBundle {
   return {
@@ -70,5 +85,7 @@ export function createStubServices(): ServiceBundle {
     recorder: new StubRecorderService(),
     srs: new StubSrsService(),
     known: new StubKnownWordsStore(),
+    progress: new StubProgressService(),
+    podcast: new StubPodcastService(),
   };
 }

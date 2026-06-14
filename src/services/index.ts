@@ -33,12 +33,25 @@ export interface KnownWordsStore {
   refresh(): Promise<void>;
 }
 
+/** Tier-B `prog` screen: coverage of the ~1,000 core words (WIRING_MAP §3). NOT a card. */
+export interface ProgressService {
+  getCoverage(): Promise<{ known: number; total: number }>;
+}
+
+/** Tier-B `pod` screen: a generated episode built from the known-word set (WIRING_MAP §3). */
+export interface PodcastService {
+  getEpisode(): Promise<{ title: string; transcript: string; audioUrl: string }>;
+}
+
 /** Everything injected through ServiceProvider. */
 export interface ServiceBundle {
   audio: AudioService;
   recorder: RecorderService;
   srs: SrsService;
   known: KnownWordsStore;
+  /** Tier-B standalone-screen services (home reuses srs.getDueSummary). */
+  progress: ProgressService;
+  podcast: PodcastService;
 }
 
 export * from './stubs';

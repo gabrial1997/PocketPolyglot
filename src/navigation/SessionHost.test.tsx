@@ -47,6 +47,8 @@ function fakeServices(batch: ReviewItem[]): ServiceBundle {
       getDueSummary: async () => ({ newCount: 0, reviewCount: 0 }),
     },
     known: { has: () => false, all: () => new Set<string>(), refresh: async () => {} },
+    progress: { getCoverage: async () => ({ known: 0, total: 1000 }) },
+    podcast: { getEpisode: async () => ({ title: 'x', transcript: '', audioUrl: 'x' }) },
   };
 }
 
