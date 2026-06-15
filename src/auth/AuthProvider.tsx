@@ -1,16 +1,23 @@
-// AuthProvider — minimal Supabase email-OTP auth context for the app.
+// AuthProvider — minimal Supabase email + password auth context for the app.
 // Seeds the session on mount, subscribes to auth state changes, and exposes the
-// OTP send/verify + sign-out actions. Wired into App by the founder (not here).
+// sign-in / sign-up / sign-out actions. Wired into App by the founder (not here).
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
+
+/** Result of a sign-up: an error message, plus whether email confirmation is pending
+ *  (Supabase returns no session until the user confirms, when confirmations are on). */
+interface SignUpResult {
+  error: string | null;
+  confirmationRequired: boolean;
+}
 
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  signInWithOtp: (email: string) => Promise<{ error: string | null }>;
-  verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
 }
 
@@ -46,13 +53,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       session,
       user: session?.user ?? null,
       loading,
-      signInWithOtp: async (email: string) => {
-        const { error } = await supabase.auth.signInWithOtp({ email });
+      signInWithPassword: async (email: string, password: string) => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         return { error: error?.message ?? null };
       },
-      verifyOtp: async (email: string, token: string) => {
-        const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
-        return { error: error?.message ?? null };
+      signUp: async (email: string, password: string) => {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        // When email confirmation is on, Supabase returns no session until the user
+        // confirms; surface that so the screen can prompt them to check their inbox.
+        return {
+          error: error?.message ?? null,
+          confirmationRequired: !error && !data.session,
+        };
       },
       signOut: async () => {
         await supabase.auth.signOut();

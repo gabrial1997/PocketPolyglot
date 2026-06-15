@@ -39,7 +39,9 @@ export interface ReviewItem {
   pron?: string; // e.g. "MAH-ya"
   wordClass?: 'concrete' | 'abstract' | 'function';
 
-  audio: { nativeUrl: string; slowUrl?: string };
+  // `envelope`: precomputed RMS amplitude (0..1 per ~30ms frame) for the live soundbar
+  // (LiveWaveform). Produced by content-pipeline/tts.mjs alongside the clip; optional.
+  audio: { nativeUrl: string; slowUrl?: string; envelope?: number[] };
   media?: { imageUrl?: string; imageUrlDark?: string };
 
   mnemonic?: ReviewMnemonic; // abstract learn card

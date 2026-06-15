@@ -1,5 +1,9 @@
 # PocketPolyglot App
 
+> **Proprietary — All Rights Reserved. NOT open source.** This repository and its contents are the
+> confidential, proprietary property of PocketPolyglot. No license to use, copy, modify, or
+> distribute is granted. See [`LICENSE`](./LICENSE).
+
 Audio-first, speaking-first iOS app (Expo / React Native + TypeScript) that takes an English
 speaker to casual conversational Latvian as fast as possible. A spaced-repetition (FSRS) trainer
 over the ~1,000 most common Latvian words, plus phrase cards, minimal-pair perception drills,

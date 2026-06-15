@@ -17,7 +17,19 @@
 
 ## Product / pedagogy
 
-- **Audio-first, speaking-first.** Core loop: *audio in → meaning in → meaning out → audio out.*
+- **Multi-modal practice (NOT "audio-first") — changed 2026-06-15 (`../APP_HANDOFF.md`).**
+  Listening is one of several EQUAL modalities (hear / choose / say). Core loop shape unchanged:
+  *hear → understand → produce meaning → say it aloud.* Lead positioning with "the first 1,000
+  words," not audio.
+- **Wrong answers do NOT advance — new 2026-06-15 (`../APP_HANDOFF.md`).** Incorrect MC pick:
+  no advance/unlock, red "Try again", chosen option red, correct answer NOT revealed, copy "Not
+  quite — give it another try." Correct → green + advance. Ref impl: prototype `demo-phone.jsx`.
+- **Progress = coverage, never points — reaffirmed 2026-06-15.** % of everyday speech the learner
+  can follow (first ~1,000 words ≈ 80%). No streaks/XP/leagues.
+- **Live audio visualizer — new 2026-06-15.** Waveform moves with real audio amplitude (precomputed
+  envelope synced to playback; no RN AnalyserNode). See `docs/` soundbar guide.
+- **Copy/brand — 2026-06-15:** no time claims; no literal word "quiet" in UI copy; Home greeting
+  "Gabrial"; calm/serious/literate, encouraging on errors.
 - **NOT gamified.** No streaks, no confetti, no XP. The phrase-unlock chime is the only
   celebratory beat. Anti-Duolingo / anti-Motion: calm, premium, evidence-grounded.
 - **Scope = Phase 0 + Phase 1.** Phase 0 = record + A/B self-compare + minimal-pair drills (no

@@ -35,15 +35,39 @@ function readManifest(argPath) {
   return { file, manifest: JSON.parse(fs.readFileSync(file, 'utf8')) };
 }
 
-async function synth(client, text, voice, instructions) {
+async function synth(client, text, voice, instructions, format = 'mp3') {
   const res = await client.audio.speech.create({
     model: TTS_MODEL,
     voice,
     input: text,
     instructions,
-    response_format: 'mp3',
+    response_format: format,
   });
   return Buffer.from(await res.arrayBuffer());
+}
+
+// Compute a normalized RMS amplitude envelope from raw PCM (16-bit LE mono, 24kHz — OpenAI's
+// `pcm` format). One value per ~`frameMs` window, 0..1. This is the data the in-app LiveWaveform
+// uses to make the bars "move with the voice" WITHOUT realtime DSP on device (soundbar.md, Option A).
+const PCM_RATE = 24000;
+function computeEnvelope(pcm, frameMs = 30) {
+  const samplesPerFrame = Math.round((PCM_RATE * frameMs) / 1000);
+  const count = Math.floor(pcm.length / 2 / samplesPerFrame);
+  const env = [];
+  let peak = 0;
+  for (let f = 0; f < count; f++) {
+    let sumSq = 0;
+    const base = f * samplesPerFrame * 2;
+    for (let i = 0; i < samplesPerFrame; i++) {
+      const s = pcm.readInt16LE(base + i * 2) / 32768; // -1..1
+      sumSq += s * s;
+    }
+    const rms = Math.sqrt(sumSq / samplesPerFrame);
+    env.push(rms);
+    if (rms > peak) peak = rms;
+  }
+  // Normalize to 0..1 against the clip's own peak; round to keep the JSON small.
+  return env.map((v) => Number((peak > 0 ? v / peak : 0).toFixed(3)));
 }
 
 async function generate(manifest) {
@@ -58,12 +82,22 @@ async function generate(manifest) {
 
   // One clip per item. "Slow" is done in-app via pitch-corrected playback rate (SpeedChip),
   // which is deterministic — the model's "speak slowly" steering is unreliable.
+  // We also fetch PCM once per item to compute the amplitude envelope for the live soundbar
+  // (it ships next to the clip as <slug>.envelope.json and is seeded onto audio.envelope).
   for (const item of manifest.items) {
-    const native = await synth(client, item.text, voice, baseInstr);
+    // mp3 (playback) and pcm (envelope) are independent — fetch concurrently.
+    const [native, pcm] = await Promise.all([
+      synth(client, item.text, voice, baseInstr, 'mp3'),
+      synth(client, item.text, voice, baseInstr, 'pcm'),
+    ]);
     fs.writeFileSync(path.join(OUT_DIR, `${item.slug}.mp3`), native);
-    console.log(`✓ ${item.slug.padEnd(14)} "${item.text}"  ${(native.length / 1024).toFixed(1)}kB`);
+    const envelope = computeEnvelope(pcm);
+    fs.writeFileSync(path.join(OUT_DIR, `${item.slug}.envelope.json`), JSON.stringify(envelope));
+    console.log(
+      `✓ ${item.slug.padEnd(14)} "${item.text}"  ${(native.length / 1024).toFixed(1)}kB  env:${envelope.length}f`,
+    );
   }
-  console.log(`\nGenerated ${manifest.items.length} clips -> ${OUT_DIR}`);
+  console.log(`\nGenerated ${manifest.items.length} clips (+ envelopes) -> ${OUT_DIR}`);
 }
 
 async function seed(manifest) {

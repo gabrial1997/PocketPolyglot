@@ -13,17 +13,52 @@ real lessons.**
 - Latest commit: `e0e5c03`. 14 commits, every one CI-green. Suite: **116 tests** (2 jest projects).
 - Live Supabase project ref: **`necfghfotwykjsykccsa`** (`https://necfghfotwykjsykccsa.supabase.co`).
 
-## How to run / view the app
+## ⚠️ Direction changes — 2026-06-15 (`../APP_HANDOFF.md`, founder workflow/UX update)
+Reflected in `CLAUDE.md` + `DECISIONS.md`. Root prototype + APP_HANDOFF win over older snapshots.
+1. **Multi-modal, NOT "audio-first"** — hear / choose / say are equal. Lead with "first 1,000 words."
+2. **Wrong answers do NOT advance** (NEW, not yet implemented) — incorrect MC pick: no advance/unlock,
+   red "Try again", chosen option red, correct answer NOT revealed ("Not quite — give it another
+   try."), correct → green + advance. Ref: prototype `demo-phone.jsx` `check` stage. **Implement
+   across `WordPicReview`/`WordSay`/`Drill`/any MC step.**
+3. **Live audio visualizer** (NEW) — the playback waveform must move with REAL audio amplitude, not a
+   static/timer fill. Spec: `../docs/soundbar.md` + `../docs/Dynamic Soundbar - Code & Integration.md`.
+   ⚠️ **OPEN DECISION (see bottom):** the web prototype is realtime via Web Audio AnalyserNode, which
+   **does not exist in RN**. The docs recommend **precomputed RMS envelope per clip** (Option A) for
+   RN playback — but the founder wanted to AVOID pre-generation. Resolve approach before building.
+4. **Copy/brand:** no time claims ("ten minutes a day"); no literal word **"quiet"** in UI copy;
+   Home greeting **"Gabrial"**; calm/serious/literate tone.
+   - ✅ DONE: `SignInScreen` subtitle fixed (was "ten quiet minutes a day" → "Sign in to pick up
+     where you left off." / "Create your account and start the first 1,000 words.").
+   - TODO: audit Home/other screens for "Gabrial" + any time claims once those screens have real copy.
+
+## How to run / view the app — TWO previews (mobile-only product; web is dev-only)
 ```bash
 cd ~/workspace/pocketpolyglot/pocketpolyglot-app
-npx expo start --tunnel          # @expo/ngrok is installed locally (--no-save); .env is set
+npx expo start --web              # fast dev loop in Chrome (hot reload). Frame to iPhone size
+                                  # via Chrome DevTools device mode. NOT a shipping target.
+npx expo start --tunnel           # @expo/ngrok installed locally (--no-save); real iOS via Expo Go
 ```
-The project is now **SDK 54** (upgraded 2026-06-15), so the App Store **Expo Go opens it directly
-on an iPhone** — no SDK mismatch anymore. Scan the QR with **Expo Go** (iOS: Camera app; if "no usable data", enlarge the terminal or use
-Expo Go → "Enter URL manually" with the `exp://…exp.direct` URL). You'll get: **Sign-in (email
-OTP)** → enter email → 6-digit code from email → **Home** ("0 new / 0 to review") + Podcast/Progress
-tabs. Start session bounces (empty batch) — no content yet. Web preview is an option too
-(`expo start --web`, needs `react-native-web` + `@expo/metro-runtime`).
+**Web preview (set up 2026-06-15):** `react-native-web` + `@expo/metro-runtime` installed and
+`react-dom` pinned to `19.1.0` (matches React 19.1 / SDK 54 — newer react-dom wants a newer React
+and breaks `npm i`). `metro.config.js` surgically stubs `@supabase/supabase-js`'s optional
+`@opentelemetry/api` import (the old web blocker) → `metro-empty-module.js`; verified by a clean
+`expo export --platform web`. **`app.config.ts` has NO `web` block on purpose** — web is a dev
+preview only; `app.config.ts`, the `build` script (`expo export --platform ios`), and the store
+targets stay iOS/Android. `metro.config.js` + `metro-empty-module.js` are in the eslint ignore list.
+
+**iPhone:** SDK 54, so App Store **Expo Go opens it directly**. Scan the QR with Expo Go (iOS:
+Camera app; if "no usable data", enlarge the terminal or Expo Go → "Enter URL manually" with the
+`exp://…exp.direct` URL). There is **no iOS Simulator** option on this Windows/WSL2 box (Mac-only).
+
+**Sign-in flow (redesigned 2026-06-15 — now email + PASSWORD, was email-OTP):** the login mockup
+(`../PocketPolyglot Login (standalone).html`) is ported in `src/auth/SignInScreen.tsx` — wordmark,
+"Sveiki." headline, quiet email + password fields, Continue, "Create account" toggle. **Email +
+password are wired** (`AuthProvider.signInWithPassword` / `signUp`); **Apple, Google, and "Forgot
+password?" are intentionally cosmetic** (no-op, wire up later). After sign-in you land on **Home**
+("0 new / 0 to review") + Podcast/Progress tabs; Start session bounces (empty batch — no content).
+⚠️ **Supabase email-confirmation:** with confirmations ON (default), `signUp` returns no session and
+the screen shows "Check your email to confirm…". For a faster dev loop, disable **Auth → Email →
+Confirm email** in the Supabase dashboard (or confirm via the emailed link).
 
 `.env` (gitignored) is already populated with the Supabase URL + anon key. `OPENAI_API_KEY` lives in
 `../.env` (parent dir) and is used by the TTS pipeline.
@@ -44,7 +79,8 @@ tabs. Start session bounces (empty batch) — no content yet. Web preview is an 
 - **Real services:** `src/services/supabase/` — `SupabaseSrsService` / `KnownWordsStore` /
   `ProgressService` / `PodcastService` + pure mappers (row→ReviewItem, CardResult→FSRS rating,
   `ts-fsrs` scheduling; 22 mapper tests).
-- **Auth:** email-OTP (`src/auth/AuthProvider.tsx`, `SignInScreen.tsx`); `AuthGate` in
+- **Auth:** email + password (`src/auth/AuthProvider.tsx`, `SignInScreen.tsx`) — `signInWithPassword`
+  + `signUp` wired; Apple/Google/Forgot cosmetic. (Was email-OTP until 2026-06-15.) `AuthGate` in
   `navigation/index.tsx` swaps stubs → `createSupabaseServices(supabase, user.id)` on login.
   `supabaseClient` uses AsyncStorage for session persistence + a guarded URL.
 - **Audio:** `ExpoAudioService` (expo-av) — `play(url,{rate})` with `shouldCorrectPitch`, so the

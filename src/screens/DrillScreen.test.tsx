@@ -39,9 +39,11 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
   return { ...utils, props };
 }
 
-// Drive the card pick -> rec -> done. Pass {side} to choose 'a' (correct) or 'b' (wrong).
-function runLoop(u: ReturnType<typeof renderCard>, side: 'sit' | 'sīt') {
-  fireEvent.press(u.getByText(side)); // pick a|b
+// Drive the card pick -> rec -> done. Pass {miss:true} to tap the WRONG side first (which must
+// NOT advance), then the correct side. Only the correct side ('sit') advances to the say-it step.
+function runLoop(u: ReturnType<typeof renderCard>, opts: { miss?: boolean } = {}) {
+  if (opts.miss) fireEvent.press(u.getByText('sīt')); // wrong: stays on choose, no mic shown
+  fireEvent.press(u.getByText('sit')); // correct ('a'): choose -> say-it
   fireEvent.press(u.getByLabelText('Record')); // idle -> rec, fires onRecordStart
   fireEvent.press(u.getByLabelText('Stop recording')); // rec -> done, fires onRecordStop
   fireEvent.press(u.getByText('Continue')); // done -> onComplete
@@ -61,7 +63,7 @@ describe('DrillScreen', () => {
 
   it('reports correct:true when the right side is picked, then completes spoke', () => {
     const u = renderCard();
-    runLoop(u, 'sit'); // 'a' is the correct side
+    runLoop(u); // clean run: correct side only
     expect(u.props.onComplete).toHaveBeenCalledWith({
       itemId: 'sit-sip',
       cardKind: 'drill',
@@ -70,9 +72,19 @@ describe('DrillScreen', () => {
     });
   });
 
-  it('reports correct:false when the wrong side is picked', () => {
+  it('a wrong pick does NOT advance and shows a non-revealing retry note', () => {
     const u = renderCard();
-    runLoop(u, 'sīt'); // 'b' is the wrong side
+    fireEvent.press(u.getByText('sīt')); // wrong side
+    // Did not advance to the say-it step (no mic), and the correct side is not auto-revealed.
+    expect(u.queryByLabelText('Record')).toBeNull();
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+    // The correct side stays a normal, tappable option (not highlighted green).
+    expect(u.getByText('sit')).toBeTruthy();
+  });
+
+  it('reports correct:false when the wrong side is picked before the right one', () => {
+    const u = renderCard();
+    runLoop(u, { miss: true }); // wrong 'b' first (no advance), then correct 'a'
     expect(u.props.onComplete).toHaveBeenCalledWith(
       expect.objectContaining({ itemId: 'sit-sip', cardKind: 'drill', correct: false, spoke: true }),
     );
@@ -80,7 +92,7 @@ describe('DrillScreen', () => {
 
   it('signals onRecordStop without fabricating a recording (the recorder owns the take)', () => {
     const u = renderCard();
-    runLoop(u, 'sit');
+    runLoop(u);
     expect(u.props.onRecordStop).toHaveBeenCalledTimes(1);
     expect(u.props.onRecordStop).not.toHaveBeenCalledWith('stub://recording');
   });

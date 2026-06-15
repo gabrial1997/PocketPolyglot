@@ -6,9 +6,11 @@
 
 ## One-liner
 
-Audio-first, speaking-first iOS app that takes an English speaker to casual
-conversational Latvian as fast as possible. SRS trainer over the ~1,000 most common
-Latvian words + phrases + perception drills + pronunciation compare.
+A **multi-modal** (hear / choose / say — equal parts) iOS app that takes an English speaker to
+casual conversational Latvian as fast as possible, framed around coverage of the **first ~1,000
+most-common Latvian words** (≈80% of everyday speech). SRS trainer over those words + phrases +
+perception drills + pronunciation compare. (NOT positioned as "audio-first" — changed 2026-06-15
+per `../APP_HANDOFF.md`.)
 
 ## Architecture (three pieces, kept apart)
 
@@ -59,7 +61,27 @@ the canonical keys for analytics and deep links — **keep them stable**.
 
 ## Locked product constraints (these override convenience)
 
-- **Audio-first, speaking-first.** Every decision serves casual conversational Latvian fastest.
+> Several of these changed 2026-06-15 — see `../APP_HANDOFF.md` (the founder's workflow/UX update)
+> and `DECISIONS.md`. The APP_HANDOFF + repo-root prototype win over older snapshots.
+
+- **Multi-modal practice, NOT "audio-first".** Listening is **one of several** equal modalities
+  alongside **multiple choice** and **speaking** (hear / choose / say). Do not build the UX as
+  "sound leads, everything else is secondary." (Changed 2026-06-15; was "audio-first, speaking-first".)
+- **Wrong answers do NOT advance.** On an incorrect MC pick (recognition `choose`, drills, any MC
+  step): do **not** advance or unlock; show a red **"Try again"** that resets the selection; the
+  chosen option turns red; **do NOT reveal/highlight the correct answer**; copy is "Not quite —
+  give it another try." Correct pick → green + advance. Retrieval is earned. Reference impl:
+  prototype `demo-phone.jsx` `check` stage. (New 2026-06-15 — implement across the cards.)
+- **Progress = coverage, never points.** Frame progress as how much everyday speech the learner can
+  follow — coverage of the first ~1,000 words. No streaks/XP/leagues/confetti.
+- **Live audio visualizer.** A waveform shown during playback must **move with the actual audio
+  amplitude** (precomputed amplitude envelope synced to playback position — Web Audio's
+  AnalyserNode isn't available in RN), not a static/timer-fill pattern. See `../soundbar.md`
+  (the dedicated integration guide) when implementing. (New 2026-06-15.)
+- **Copy / brand:** no time claims ("ten minutes a day", "10 min") anywhere; lead with "the first
+  1,000 words," not audio; calm/restrained aesthetic but **never the literal word "quiet"** in
+  user-facing copy; Home greeting name is **"Gabrial"**; tone serious/respectful/literate,
+  encouraging on errors, never gamified.
 - **NOT gamified.** No streaks, no confetti, no XP. Calm, premium, restrained. (One earned
   unlock moment for phrases — the soft chime — is the *only* celebratory beat.) Do not add
   gamification even if it seems like an easy engagement win.

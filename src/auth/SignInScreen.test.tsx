@@ -1,6 +1,6 @@
-// SignInScreen behavior tests — exercises the email-OTP two-step flow over a mocked
-// supabase client. The client module is mocked so native AsyncStorage never loads and
-// we control the auth calls. Wrap in <ThemeProvider><AuthProvider> as the app does.
+// SignInScreen behavior tests — email + password sign-in, plus a create-account toggle,
+// over a mocked supabase client. Apple/Google/Forgot-password are cosmetic (no auth call).
+// The client module is mocked so native AsyncStorage never loads and we control auth calls.
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
@@ -15,8 +15,8 @@ jest.mock('../services/supabaseClient', () => ({
       onAuthStateChange: jest.fn(() => ({
         data: { subscription: { unsubscribe: jest.fn() } },
       })),
-      signInWithOtp: jest.fn(async () => ({ data: {}, error: null })),
-      verifyOtp: jest.fn(async () => ({ data: {}, error: null })),
+      signInWithPassword: jest.fn(async () => ({ data: { session: {} }, error: null })),
+      signUp: jest.fn(async () => ({ data: { session: {} }, error: null })),
       signOut: jest.fn(async () => ({ error: null })),
     },
   },
@@ -25,8 +25,8 @@ jest.mock('../services/supabaseClient', () => ({
 // Typed handle on the mocked auth methods so we can assert / reprogram them per test.
 const authMock = supabase.auth as unknown as {
   getSession: jest.Mock;
-  signInWithOtp: jest.Mock;
-  verifyOtp: jest.Mock;
+  signInWithPassword: jest.Mock;
+  signUp: jest.Mock;
 };
 
 function renderScreen() {
@@ -42,56 +42,83 @@ function renderScreen() {
 beforeEach(() => {
   jest.clearAllMocks();
   authMock.getSession.mockResolvedValue({ data: { session: null } });
-  authMock.signInWithOtp.mockResolvedValue({ data: {}, error: null });
-  authMock.verifyOtp.mockResolvedValue({ data: {}, error: null });
+  authMock.signInWithPassword.mockResolvedValue({ data: { session: {} }, error: null });
+  authMock.signUp.mockResolvedValue({ data: { session: {} }, error: null });
 });
 
 describe('SignInScreen', () => {
-  it('renders the email step first', async () => {
+  it('renders the sign-in form with email + password and a Continue button', async () => {
     const u = renderScreen();
-    expect(u.getByText('Sign in')).toBeTruthy();
-    expect(u.getByPlaceholderText('you@example.com')).toBeTruthy();
-    expect(u.getByText('Send code')).toBeTruthy();
-    // Let the async getSession() seed settle so its state update is flushed inside act().
+    expect(u.getByText('Sveiki.')).toBeTruthy();
+    expect(u.getByPlaceholderText('Email')).toBeTruthy();
+    expect(u.getByPlaceholderText('Password')).toBeTruthy();
+    expect(u.getByText('Continue')).toBeTruthy();
     await waitFor(() => expect(authMock.getSession).toHaveBeenCalled());
   });
 
-  it('sends the code and advances to the code step', async () => {
+  it('signs in with the entered email + password', async () => {
     const u = renderScreen();
-    fireEvent.changeText(u.getByPlaceholderText('you@example.com'), 'a@b.com');
-    fireEvent.press(u.getByText('Send code'));
-
-    expect(await u.findByText('Verify')).toBeTruthy();
-    expect(authMock.signInWithOtp).toHaveBeenCalledWith({ email: 'a@b.com' });
-    expect(u.getByPlaceholderText('123456')).toBeTruthy();
-  });
-
-  it('verifies the entered code with the email + type', async () => {
-    const u = renderScreen();
-    fireEvent.changeText(u.getByPlaceholderText('you@example.com'), 'a@b.com');
-    fireEvent.press(u.getByText('Send code'));
-
-    const codeInput = await u.findByPlaceholderText('123456');
-    fireEvent.changeText(codeInput, '654321');
-    fireEvent.press(u.getByText('Verify'));
+    fireEvent.changeText(u.getByPlaceholderText('Email'), 'a@b.com');
+    fireEvent.changeText(u.getByPlaceholderText('Password'), 'hunter2!');
+    fireEvent.press(u.getByText('Continue'));
 
     await waitFor(() =>
-      expect(authMock.verifyOtp).toHaveBeenCalledWith({
+      expect(authMock.signInWithPassword).toHaveBeenCalledWith({
         email: 'a@b.com',
-        token: '654321',
-        type: 'email',
+        password: 'hunter2!',
       }),
     );
   });
 
-  it('renders the error message when signInWithOtp fails', async () => {
-    authMock.signInWithOtp.mockResolvedValue({ data: {}, error: { message: 'boom' } });
+  it('switches to create-account mode and signs up', async () => {
     const u = renderScreen();
-    fireEvent.changeText(u.getByPlaceholderText('you@example.com'), 'a@b.com');
-    fireEvent.press(u.getByText('Send code'));
+    // Footer link switches modes.
+    fireEvent.press(u.getByText('Create account'));
 
-    expect(await u.findByText('boom')).toBeTruthy();
-    // Stays on the email step on failure.
-    expect(u.getByText('Send code')).toBeTruthy();
+    // Now the primary action creates the account.
+    fireEvent.changeText(u.getByPlaceholderText('Email'), 'new@b.com');
+    fireEvent.changeText(u.getByPlaceholderText('Password'), 'hunter2!');
+    fireEvent.press(u.getByText('Create account'));
+
+    await waitFor(() =>
+      expect(authMock.signUp).toHaveBeenCalledWith({
+        email: 'new@b.com',
+        password: 'hunter2!',
+      }),
+    );
+    expect(authMock.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it('renders the error message when sign-in fails', async () => {
+    authMock.signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Invalid login credentials' },
+    });
+    const u = renderScreen();
+    fireEvent.changeText(u.getByPlaceholderText('Email'), 'a@b.com');
+    fireEvent.changeText(u.getByPlaceholderText('Password'), 'wrong');
+    fireEvent.press(u.getByText('Continue'));
+
+    expect(await u.findByText('Invalid login credentials')).toBeTruthy();
+  });
+
+  it('shows a confirm-email notice when sign-up needs confirmation', async () => {
+    authMock.signUp.mockResolvedValue({ data: { session: null }, error: null });
+    const u = renderScreen();
+    fireEvent.press(u.getByText('Create account'));
+    fireEvent.changeText(u.getByPlaceholderText('Email'), 'new@b.com');
+    fireEvent.changeText(u.getByPlaceholderText('Password'), 'hunter2!');
+    fireEvent.press(u.getByText('Create account'));
+
+    expect(await u.findByText(/confirm/i)).toBeTruthy();
+  });
+
+  it('Apple and Google buttons are cosmetic — they trigger no auth call', async () => {
+    const u = renderScreen();
+    fireEvent.press(u.getByText('Continue with Apple'));
+    fireEvent.press(u.getByText('Continue with Google'));
+    expect(authMock.signInWithPassword).not.toHaveBeenCalled();
+    expect(authMock.signUp).not.toHaveBeenCalled();
+    await waitFor(() => expect(authMock.getSession).toHaveBeenCalled());
   });
 });

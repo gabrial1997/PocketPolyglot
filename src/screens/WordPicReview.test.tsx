@@ -91,6 +91,18 @@ describe('WordPicReview', () => {
     );
   });
 
+  it('a wrong pick does NOT advance and shows a non-revealing retry note', () => {
+    const u = renderCard();
+    fireEvent.press(u.getByText('maize')); // wrong
+    // Stays on choose: no "Now say it" prompt appeared, and the correct word is not revealed.
+    expect(u.queryByText('Now say it')).toBeNull();
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+    expect(u.getByLabelText('Try again')).toBeTruthy();
+    // The correct option ('māja') is still just a normal option, tappable to proceed.
+    fireEvent.press(u.getByText('māja'));
+    expect(u.getByText('Now say it')).toBeTruthy();
+  });
+
   it('signals onRecordStop without fabricating a recording (the recorder owns the take)', () => {
     const u = renderCard();
     runLoop(u);

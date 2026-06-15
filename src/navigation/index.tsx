@@ -2,8 +2,9 @@
 // simple two-route stack (home -> session). A real navigator (react-navigation/expo-router) can
 // replace this; the load-bearing piece is the CARD_REGISTRY keyed by stable CardKind strings.
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { CardPreviewGallery } from '../dev/CardPreviewGallery';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { AuthProvider, useAuth } from '../auth/AuthProvider';
@@ -159,7 +160,25 @@ function AuthGate(): React.JSX.Element {
   );
 }
 
+/** DEV-ONLY: web `?preview` renders the card gallery (no auth/content) for visual QA via the
+ *  chrome-devtools MCP. Never true on iOS/Android, so it's stripped from the shipping app path. */
+function isPreview(): boolean {
+  return (
+    __DEV__ &&
+    Platform.OS === 'web' &&
+    typeof window !== 'undefined' &&
+    /[?&]preview\b/.test(window.location?.search ?? '')
+  );
+}
+
 export function App(): React.JSX.Element {
+  if (isPreview()) {
+    return (
+      <ThemeProvider>
+        <CardPreviewGallery />
+      </ThemeProvider>
+    );
+  }
   return (
     <ThemeProvider>
       <AuthProvider>
