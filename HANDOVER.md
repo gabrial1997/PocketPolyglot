@@ -1,4 +1,4 @@
-# PocketPolyglot — Handover (2026-06-14)
+# PocketPolyglot — Handover (2026-06-15)
 
 Pick-up doc for a fresh session. Read `CLAUDE.md` + `DECISIONS.md` first, then this.
 
@@ -18,7 +18,8 @@ real lessons.**
 cd ~/workspace/pocketpolyglot/pocketpolyglot-app
 npx expo start --tunnel          # @expo/ngrok is installed locally (--no-save); .env is set
 ```
-Scan the QR with **Expo Go** (iOS: Camera app; if "no usable data", enlarge the terminal or use
+The project is now **SDK 54** (upgraded 2026-06-15), so the App Store **Expo Go opens it directly
+on an iPhone** — no SDK mismatch anymore. Scan the QR with **Expo Go** (iOS: Camera app; if "no usable data", enlarge the terminal or use
 Expo Go → "Enter URL manually" with the `exp://…exp.direct` URL). You'll get: **Sign-in (email
 OTP)** → enter email → 6-digit code from email → **Home** ("0 new / 0 to review") + Podcast/Progress
 tabs. Start session bounces (empty batch) — no content yet. Web preview is an option too
@@ -77,15 +78,19 @@ tabs. Start session bounces (empty batch) — no content yet. Web preview is an 
 
 # TODO — next session (ordered)
 
-### 0. (Only if you want to test on the iPhone) Upgrade Expo SDK 51 → 54
-App Store **Expo Go only runs the latest SDK (54)**; our project is 51, so it can't open on the
-phone. Upgrade is a real breaking jump: **RN 0.74→~0.81, React 18→19, New Architecture default,
-`expo-av` REMOVED in 54 → migrate `ExpoAudioService` to `expo-audio`** (pitch-corrected rate still
-supported), bump `jest-expo`/`react-native-svg`/AsyncStorage, then re-green all four CI checks.
-`npx expo install expo@^54 && npx expo install --fix` is the start; do it deliberately, not blind.
-(Web preview was attempted as a no-phone alternative but `@supabase/supabase-js` imports an optional
-`@opentelemetry/api` that Metro can't resolve for web — would need a resolver stub; deprioritized in
-favor of the SDK upgrade. Web deps were reverted, tree is clean.)
+### 0. ✅ DONE (2026-06-15) — Upgraded Expo SDK 51 → 54
+App Store Expo Go only runs the latest SDK, so the app now opens on the iPhone. The breaking jump
+was completed on branch `chore/expo-sdk-54`: **RN 0.74→0.81, React 18→19**, `expo-av` removed →
+**`ExpoAudioService` ported to `expo-audio`** (`createAudioPlayer`/`setAudioModeAsync`;
+pitch-corrected slow rate preserved via `shouldCorrectPitch` + `setPlaybackRate(rate,'high')`).
+Toolchain bumped: `jest-expo`→54, `@testing-library/react-native`→13 (v12 hung on React 19's async
+`act`), `react-test-renderer`/`@types/react`→19, `typescript`→5.9; added `babel-preset-expo` (direct)
++ `expo-asset` (expo-audio peer). New `expo-audio` jest mock in `jest.setup.components.js` (its native
+module touches `prototype` at import and crashed jest; `expo-av` used to be auto-mocked). All four CI
+checks green (116 tests); `expo-doctor` 18/18.
+(Web preview was attempted earlier as a no-phone alternative but `@supabase/supabase-js` imports an
+optional `@opentelemetry/api` that Metro can't resolve for web — would need a resolver stub;
+deprioritized. Web deps were reverted, tree is clean.)
 
 ### 1. Procure the top ~1000 words  ← START HERE (content track)
 Build `content-pipeline/frequency.mjs` (same shape as `tts.mjs`):
