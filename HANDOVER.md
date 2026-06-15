@@ -6,11 +6,17 @@ Pick-up doc for a fresh session. Read `CLAUDE.md` + `DECISIONS.md` first, then t
 The **entire frontend, the live Supabase backend, auth, real audio playback, and a TTS content
 pipeline are built and green** (CI + local). The app is a complete vertical slice that **runs and
 signs in on the live backend** — but it has **no curriculum content yet**, so a session is empty.
-Tomorrow's focus: **procure the top ~1000 words → generate TTS (male + female voices) → seed → play
-real lessons.**
+**👉 NEXT TASK (start a cleared context here): procure the top ~1000 words** — build
+`content-pipeline/frequency.mjs` with the `latvian-linguist` agent (full plan in TODO #1 below).
+Then TTS (male+female, envelopes now auto-generated) → seed → real lessons.
 
 - Repo: `pocketpolyglot-app/` (the app; this is the git root, pushed to `github.com/gabrial1997/PocketPolyglot`).
-- Latest commit: `e0e5c03`. 14 commits, every one CI-green. Suite: **116 tests** (2 jest projects).
+- Latest commit: **`ee30e34`** on branch **`chore/expo-sdk-54`** (pushed). Suite: **123 tests** green
+  (lint+typecheck+test). This session (2026-06-15) added: password login UI (ported the mockup),
+  proprietary LICENSE, web-preview + chrome-devtools-MCP dev setup (see the `run-and-view-app`
+  skill), wrong-answer locking in `useLoopStage` (shared across the MC cards), and the live soundbar
+  (`LiveWaveform` + envelope generation in `tts.mjs`). The `chore/expo-sdk-54` branch is not yet
+  merged to the default branch.
 - Live Supabase project ref: **`necfghfotwykjsykccsa`** (`https://necfghfotwykjsykccsa.supabase.co`).
 
 ## ⚠️ Direction changes — 2026-06-15 (`../APP_HANDOFF.md`, founder workflow/UX update)
