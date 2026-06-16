@@ -19,7 +19,11 @@ This principle keeps cognitive load low in the early phase and directs pronuncia
 | ļ ķ ģ ņ | palatalization | *ļoti* "very" / *lācis* "bear" (the L/Ļ contrast) | **[slice]** |
 | ie | diphthong | *lieta* "thing" / *lēta* "cheap" (the ie/ē contrast) | **[slice]** |
 | ā ē ī ū (vs. short) | vowel_length | *pile* "hair" (short i) / *pīle* "duck" (long ī) | *(next batch)* |
-| dz dž | affricate | *dzīvot* "to live" / *žēlot* "to pity" (dz vs. dž contrast) | *(next batch)* |
+| dz dž | affricate | — | *(next batch)* |
+
+---
+
+**Note on affricate row:** The `dz`/`dž` minimal pair is pending native (Elizabete) QA and will be added in the next batch.
 
 ---
 
