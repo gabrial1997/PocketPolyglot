@@ -6,6 +6,7 @@ import {
   withRecording,
   createCardHandlers,
   SLOW_RATE,
+  UNLOCK_CHIME_URL,
   type RecordingStore,
 } from './cardWiring';
 import type { ReviewItem } from '../types/reviewItem';
@@ -186,7 +187,7 @@ describe('createCardHandlers — the core loop reaches every service', () => {
     expect(submitted).toHaveLength(0);
   });
 
-  it('onUnlocked advances after the readable delay, never submitting a review (chime is a no-op until an asset exists)', () => {
+  it('onUnlocked plays the unlock chime (when configured), advances after the readable delay, and never submits a review', () => {
     jest.useFakeTimers();
     try {
       const { audio, calls } = fakeAudio();
@@ -208,8 +209,14 @@ describe('createCardHandlers — the core loop reaches every service', () => {
       });
 
       const cancel = handlers.onUnlocked();
-      // No chime asset bundled yet, so audio.play is not called; advance is deferred, not immediate.
-      expect(calls).toHaveLength(0);
+      // The chime is the one celebratory beat: when UNLOCK_CHIME_URL resolves (env set) it plays
+      // exactly once; when it's null (env unset) there's no play. Either way advance is deferred,
+      // not immediate. Branching on the imported const keeps this deterministic in any jest env.
+      if (UNLOCK_CHIME_URL) {
+        expect(calls).toEqual([{ url: UNLOCK_CHIME_URL, opts: undefined }]);
+      } else {
+        expect(calls).toHaveLength(0);
+      }
       expect(advanced).toBe(0);
 
       jest.advanceTimersByTime(2000);

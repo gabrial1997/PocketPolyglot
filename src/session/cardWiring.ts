@@ -17,12 +17,18 @@ export const SLOW_RATE = 0.7;
 export const UNLOCK_DELAY_MS = 1800;
 
 /**
- * The unlock chime is the one celebratory beat (DECISIONS.md). BACKEND_INTEGRATION §7 says a
- * bounced `assets/unlock-chime.wav` should ship and be played through AudioService — but no such
- * asset exists in the repo yet. Until it does, the chime is a no-op (the reveal + auto-advance
- * still work). Drop the asset in and point this at its URL to enable the sound; nothing else changes.
+ * The unlock chime is the one celebratory beat (DECISIONS.md). BACKEND_INTEGRATION §7: a bounced
+ * unlock-chime asset ships and is played through AudioService. The asset is now vendored at
+ * `content-pipeline/assets/unlock-chime.wav` and uploaded by the seeder to the public
+ * `content-audio` bucket at the stable key `sfx/unlock-chime.wav`. The URL below is derived from
+ * the public Supabase URL + that key (decoupled from the project ref), so it's `null` only when
+ * EXPO_PUBLIC_SUPABASE_URL is unset — in which case the chime is a no-op (reveal + auto-advance
+ * still work).
  */
-export const UNLOCK_CHIME_URL: string | null = null;
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+export const UNLOCK_CHIME_URL: string | null = SUPABASE_URL
+  ? `${SUPABASE_URL}/storage/v1/object/public/content-audio/sfx/unlock-chime.wav`
+  : null;
 
 /** Resolve a card's onPlay(which) request to a concrete audio source. null = nothing to play. */
 export function resolvePlay(item: ReviewItem, which: PlayWhich): { url: string; rate?: number } | null {
@@ -115,8 +121,9 @@ export function createCardHandlers(deps: {
       advance();
     },
     onUnlocked: () => {
-      // The card owns the chime via AudioService (never an audio context directly). No asset yet,
-      // so this is a no-op until UNLOCK_CHIME_URL is set (see its declaration).
+      // The card owns the chime via AudioService (never an audio context directly). Plays the
+      // vendored/uploaded chime when UNLOCK_CHIME_URL resolves; a no-op only if it's null
+      // (EXPO_PUBLIC_SUPABASE_URL unset — see its declaration).
       if (UNLOCK_CHIME_URL) void audio.play(UNLOCK_CHIME_URL);
       // Hold the reveal briefly so "New phrase unlocked" is read, then advance (no review posted).
       const timer = setTimeout(advance, UNLOCK_DELAY_MS);

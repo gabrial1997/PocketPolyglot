@@ -33,6 +33,10 @@ import OpenAI from 'openai';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(HERE, 'out');
 const MANIFEST = path.join(HERE, 'golden-slice.json');
+// The one celebratory SFX: vendored in-repo (reproducible) + uploaded to a STABLE storage key the
+// app derives from EXPO_PUBLIC_SUPABASE_URL (src/session/cardWiring.ts UNLOCK_CHIME_URL).
+const UNLOCK_CHIME_LOCAL = path.join(HERE, 'assets', 'unlock-chime.wav');
+const UNLOCK_CHIME_KEY = 'sfx/unlock-chime.wav';
 const BUCKET = process.env.CONTENT_BUCKET || 'content-audio';
 const TTS_MODEL = process.env.TTS_MODEL || 'gpt-4o-mini-tts';
 const OBJECT_PREFIX = 'golden';
@@ -155,6 +159,7 @@ async function seed(manifest, db, envelopes) {
   // leave a partial state until the next successful run completes.
   const counts = {
     audioUploaded: 0,
+    chimeUploaded: 0,
     lemmas: 0,
     phrases: 0,
     phrase_components: 0,
@@ -306,6 +311,23 @@ async function seed(manifest, db, envelopes) {
     console.log(`  ✓ pair    ${d.slug.padEnd(12)} -> ${d.a} / ${d.b}`);
   }
 
+  // -- UNLOCK CHIME (one celebratory SFX) -------------------------------------
+  // Upload the vendored WAV to the stable key the app points UNLOCK_CHIME_URL at. Same storage
+  // client pattern as uploadOne, but a fixed local file (assets/), not a generated MP3 in out/.
+  if (fs.existsSync(UNLOCK_CHIME_LOCAL)) {
+    const { error } = await db.storage
+      .from(BUCKET)
+      .upload(UNLOCK_CHIME_KEY, fs.readFileSync(UNLOCK_CHIME_LOCAL), {
+        contentType: 'audio/wav',
+        upsert: true,
+      });
+    if (error) throw error;
+    counts.chimeUploaded += 1;
+    console.log(`  ✓ chime   ${UNLOCK_CHIME_KEY}`);
+  } else {
+    console.log(`  ! chime   ${UNLOCK_CHIME_LOCAL} missing — skipped`);
+  }
+
   // -- ENGINEERED review_state FOR THE TEST USER ------------------------------
   // Wipe ALL of the test user's review_state first, then insert from seedState. The lemmas/phrases
   // are delete-then-inserted with FRESH uuids every run, so clearing only the current run's item_ids
@@ -448,6 +470,7 @@ async function main() {
   console.log('\n=== summary ===');
   console.log(`  audio renders generated : ${renders.length} (native+slow each)`);
   console.log(`  audio files uploaded     : ${counts.audioUploaded}`);
+  console.log(`  unlock chime uploaded    : ${counts.chimeUploaded}`);
   console.log(`  lemmas inserted          : ${counts.lemmas}`);
   console.log(`  phrases inserted         : ${counts.phrases}`);
   console.log(`  phrase_components        : ${counts.phrase_components}`);
