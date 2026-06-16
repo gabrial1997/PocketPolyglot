@@ -113,6 +113,7 @@ describe('createCardHandlers — the core loop reaches every service', () => {
       submit: (r) => {
         submitted.push(r);
       },
+      advance: () => undefined,
     });
     return { handlers, calls, events, store, submitted };
   }
@@ -162,6 +163,93 @@ describe('createCardHandlers — the core loop reaches every service', () => {
     ]);
   });
 
+  it('onAdvance calls the injected advance() without submitting a review', () => {
+    const { audio } = fakeAudio();
+    const { recorder } = fakeRecorder();
+    const store: RecordingStore = { current: null };
+    const submitted: CardResult[] = [];
+    let advanced = 0;
+    const handlers = createCardHandlers({
+      item: item(),
+      audio,
+      recorder,
+      store,
+      submit: (r) => {
+        submitted.push(r);
+      },
+      advance: () => {
+        advanced += 1;
+      },
+    });
+    handlers.onAdvance();
+    expect(advanced).toBe(1);
+    expect(submitted).toHaveLength(0);
+  });
+
+  it('onUnlocked advances after the readable delay, never submitting a review (chime is a no-op until an asset exists)', () => {
+    jest.useFakeTimers();
+    try {
+      const { audio, calls } = fakeAudio();
+      const { recorder } = fakeRecorder();
+      const store: RecordingStore = { current: null };
+      const submitted: CardResult[] = [];
+      let advanced = 0;
+      const handlers = createCardHandlers({
+        item: item(),
+        audio,
+        recorder,
+        store,
+        submit: (r) => {
+          submitted.push(r);
+        },
+        advance: () => {
+          advanced += 1;
+        },
+      });
+
+      const cancel = handlers.onUnlocked();
+      // No chime asset bundled yet, so audio.play is not called; advance is deferred, not immediate.
+      expect(calls).toHaveLength(0);
+      expect(advanced).toBe(0);
+
+      jest.advanceTimersByTime(2000);
+      expect(advanced).toBe(1);
+      expect(submitted).toHaveLength(0);
+
+      // The returned canceller clears the pending timer (used on unmount).
+      expect(typeof cancel).toBe('function');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('onUnlocked returns a canceller that prevents a late advance after unmount', () => {
+    jest.useFakeTimers();
+    try {
+      const { audio } = fakeAudio();
+      const { recorder } = fakeRecorder();
+      const store: RecordingStore = { current: null };
+      let advanced = 0;
+      const handlers = createCardHandlers({
+        item: item(),
+        audio,
+        recorder,
+        store,
+        submit: () => undefined,
+        advance: () => {
+          advanced += 1;
+        },
+      });
+
+      const cancel = handlers.onUnlocked();
+      cancel(); // unmounted before the delay elapsed
+      jest.advanceTimersByTime(5000);
+      expect(advanced).toBe(0);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('onComplete waits for an in-flight recorder.stop() so the take is never dropped', async () => {
     const { audio } = fakeAudio();
     let resolveStop!: (take: string) => void;
@@ -180,6 +268,7 @@ describe('createCardHandlers — the core loop reaches every service', () => {
       submit: (r) => {
         submitted.push(r);
       },
+      advance: () => undefined,
     });
 
     handlers.onRecordStop(); // stop is in flight, not resolved yet

@@ -11,12 +11,13 @@ import type { CardResult } from '../types/cardResult';
 export function useReviewCardHandlers(
   item: ReviewItem,
   submit: (result: CardResult) => void | Promise<void>,
+  advance: () => void,
 ): CardHandlers {
   const { audio, recorder } = useServices();
   // One take buffer per mounted card; survives re-renders without re-creating handlers.
   const store = useRef<RecordingStore>({ current: null }).current;
   return useMemo(
-    () => createCardHandlers({ item, audio, recorder, store, submit }),
-    [item, audio, recorder, store, submit],
+    () => createCardHandlers({ item, audio, recorder, store, submit, advance }),
+    [item, audio, recorder, store, submit, advance],
   );
 }

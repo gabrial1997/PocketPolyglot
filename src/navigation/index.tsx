@@ -86,15 +86,20 @@ export function CardHost({
   item,
   kind,
   submit,
+  advance,
   nextReviewLabel,
 }: {
   item: ReviewItem;
   kind: CardKind;
   submit: (result: CardResult) => void | Promise<void>;
+  /** Gate-card advance (phrase/locked, phrase/unlock) — steps the deck WITHOUT posting a review. */
+  advance: () => void;
   nextReviewLabel: string | null;
 }): React.JSX.Element {
   // The controller wires every callback to the injected services; the card stays pure (§1, §5).
-  const handlers = useReviewCardHandlers(item, submit);
+  // `handlers` includes onAdvance/onUnlocked (the gate-card path) — spread reaches phrase/locked
+  // (onAdvance) and phrase/unlock (onUnlocked); other cards simply ignore the extra callbacks.
+  const handlers = useReviewCardHandlers(item, submit, advance);
   const Card = CARD_REGISTRY[kind];
   return <Card item={item} {...handlers} nextReviewLabel={nextReviewLabel} />;
 }
@@ -134,6 +139,7 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
       item={session.current.item}
       kind={session.current.kind}
       submit={session.submit}
+      advance={session.advance}
       nextReviewLabel={session.lastReviewLabel}
     />
   );

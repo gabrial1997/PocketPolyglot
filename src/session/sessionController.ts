@@ -20,6 +20,11 @@ export interface SessionState {
   lastReviewLabel: string | null;
   /** Submit a card's result, post to SRS, advance to the next item. */
   submit: (result: CardResult) => Promise<void>;
+  /**
+   * Advance to the next item WITHOUT posting a review — the gate-card path (phrase/locked,
+   * phrase/unlock are gating UI, not reviews, so they must NOT call srs.submit).
+   */
+  advance: () => void;
   /** Reload a fresh batch. */
   reload: () => Promise<void>;
 }
@@ -75,6 +80,12 @@ export function useSession(): SessionState {
     [srs],
   );
 
+  // Gate advance: same index step as submit, but no SRS post and no lastReviewLabel update —
+  // locked/unlock produce no CardResult (BACKEND_INTEGRATION §4).
+  const advance = useCallback(() => {
+    setIndex((i) => i + 1);
+  }, []);
+
   const done = !loading && index >= batch.length;
 
   return {
@@ -85,6 +96,7 @@ export function useSession(): SessionState {
     total: batch.length,
     lastReviewLabel,
     submit,
+    advance,
     reload,
   };
 }

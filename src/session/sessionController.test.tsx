@@ -3,10 +3,11 @@
 // mostly unknown renders the 'phrase/locked' screen. (decideKind's pure logic is unit-tested in
 // decideKind.test.ts; this verifies the wiring through the controller.)
 import React from 'react';
-import { render, act } from '@testing-library/react-native';
+import { render, renderHook, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { SessionHost } from '../navigation';
+import { useSession } from './sessionController';
 import type { ServiceBundle } from '../services';
 import type { ReviewItem } from '../types/reviewItem';
 
@@ -72,4 +73,60 @@ it('renders phrase/locked when the phrase has 2+ unknown component lemmas', asyn
   // Only 'ludzu' is known -> 2 of 3 components unknown -> the i+1 gate locks the phrase.
   const u = renderHost([lockedPhrase], new Set(['ludzu']));
   await settle(() => expect(u.getByText('Unlocks when you know its words.')).toBeTruthy());
+});
+
+// --- advance(): the gate-card path (locked/unlock are NOT reviews) ---
+// A plain word that renders as a normal review card, so advance() simply steps the index.
+const wordA: ReviewItem = {
+  id: 'a',
+  type: 'word',
+  stage: 'review',
+  reps: 3,
+  target: 'māja',
+  gloss: 'house',
+  audio: { nativeUrl: 'a.mp3' },
+};
+const wordB: ReviewItem = { ...wordA, id: 'b', target: 'labrīt', gloss: 'good morning' };
+
+function renderSessionHook(batch: ReviewItem[], known: ReadonlySet<string>) {
+  const services = fakeServices(batch, known);
+  const submit = jest.spyOn(services.srs, 'submit');
+  const utils = renderHook(() => useSession(), {
+    wrapper: ({ children }) => (
+      <ThemeProvider>
+        <ServiceProvider services={services}>{children}</ServiceProvider>
+      </ThemeProvider>
+    ),
+  });
+  return { ...utils, submit };
+}
+
+async function settleHook(check: () => void, stepMs = 25, maxSteps = 200) {
+  for (let i = 0; i < maxSteps; i++) {
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, stepMs));
+    });
+    try {
+      check();
+      return;
+    } catch {
+      /* not ready yet */
+    }
+  }
+  check();
+}
+
+it('advance() steps to the next item WITHOUT posting a review to SRS', async () => {
+  const { result, submit } = renderSessionHook([wordA, wordB], new Set());
+
+  // First item loads.
+  await settleHook(() => expect(result.current.current?.item.id).toBe('a'));
+
+  // Gate advance: no SRS submit, just move on.
+  await act(async () => {
+    result.current.advance();
+  });
+
+  await settleHook(() => expect(result.current.current?.item.id).toBe('b'));
+  expect(submit).not.toHaveBeenCalled();
 });

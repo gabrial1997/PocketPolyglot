@@ -11,8 +11,10 @@ import type { PhraseGateProps } from './cardProps';
 export function PhraseUnlock({ item, onUnlocked }: PhraseGateProps): React.JSX.Element {
   const T = useTheme();
   useEffect(() => {
-    // controller plays the unlock chime via AudioService, then advances
-    onUnlocked?.();
+    // controller plays the unlock chime via AudioService, then auto-advances after a readable delay.
+    // onUnlocked returns a canceller — run it on unmount so a late advance never fires after the
+    // card is gone (no state-update-after-unmount warning).
+    return onUnlocked?.();
   }, [onUnlocked]);
   return (
     <CardShell eyebrow="Unlocked" target={item.target} gloss={item.gloss}>

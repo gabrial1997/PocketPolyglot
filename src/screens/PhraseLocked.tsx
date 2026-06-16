@@ -3,11 +3,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CardShell } from './CardShell';
+import { CtaButton } from '../components';
 import { useTheme } from '../theme/ThemeProvider';
 import { type } from '../theme/tokens';
 import type { PhraseGateProps } from './cardProps';
 
-export function PhraseLocked({ item }: PhraseGateProps): React.JSX.Element {
+export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.Element {
   const T = useTheme();
   return (
     <CardShell eyebrow="Locked phrase">
@@ -17,6 +18,9 @@ export function PhraseLocked({ item }: PhraseGateProps): React.JSX.Element {
           Unlocks when you know its words.
         </Text>
       </View>
+      {/* This is a gate, not a review: Continue advances past the glimpse without a CardResult.
+          (Same calm Continue affordance as phrase/hear.) Restrained outline, not the filled CTA. */}
+      <CtaButton title="Continue" variant="outline" onPress={() => onAdvance?.()} />
     </CardShell>
   );
 }
