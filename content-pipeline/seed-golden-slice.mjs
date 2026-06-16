@@ -277,6 +277,9 @@ async function seed(manifest, db, envelopes) {
   for (const [a, b] of drillPairKeys) {
     await db.from('minimal_pairs').delete().eq('a', a).eq('b', b);
   }
+  // Capture slug -> inserted id so we can engineer a review_state row per pair below (the app's
+  // getDueBatch reads review_state, so a pair needs a row to ever surface in the batch).
+  const pairSlugToId = {};
   for (const d of manifest.drills) {
     const stimulusUrl = await uploadOne(d.slug, 'native');
     // also upload the A/B word clips (used by the drill UI's per-side playback)
@@ -296,8 +299,9 @@ async function seed(manifest, db, envelopes) {
     // 0004 adds minimal_pairs.glide (jsonb). Diphthong drills carry { combo, from, to };
     // the palatalization drill has none (leave null).
     if (d.glide) row.glide = d.glide;
-    const { error } = await db.from('minimal_pairs').insert(row);
+    const { data, error } = await db.from('minimal_pairs').insert(row).select('id').single();
     if (error) throw error;
+    pairSlugToId[d.slug] = data.id;
     counts.minimal_pairs += 1;
     console.log(`  ✓ pair    ${d.slug.padEnd(12)} -> ${d.a} / ${d.b}`);
   }
@@ -319,8 +323,14 @@ async function seed(manifest, db, envelopes) {
     if (!p.seedState) continue;
     stateRows.push(makeStateRow(userId, 'phrase', phraseSlugToId[p.slug], p.seedState));
   }
-  // Drills (pairs) carry no seedState in the manifest; they surface as 'new' the first time
-  // the user sees them, which is the intended drill behavior. (No rows inserted.)
+  // Drills (pairs) carry no seedState in the manifest, but they still NEED a review_state row:
+  // getDueBatch builds the batch SOLELY from review_state (`due_at.lte.<now>,stage.eq.new`), so a
+  // pair with no row never surfaces. Seed each as stage:'new' (which makeStateRow leaves due) so the
+  // drill / diphthong cards are reachable in the live golden path. (The old comment's claim that
+  // pairs "surface as new the first time the user sees them" was wrong — there was no row to surface.)
+  for (const d of manifest.drills) {
+    stateRows.push(makeStateRow(userId, 'pair', pairSlugToId[d.slug], { stage: 'new', reps: 0 }));
+  }
 
   // knownForTestUser: ensure these lemmas are review-stage so the known_lemmas VIEW returns them.
   // (All four already have seedState.stage='review' in the manifest; this is a guard in case the
