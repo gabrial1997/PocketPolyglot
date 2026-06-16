@@ -1,6 +1,6 @@
 {
   "voice": "alloy",
-  "_note": "LOCK-MATH DISCREPANCY (flag for Task 14): The plan states 'Vienu kafiju, lūdzu.' should start LOCKED, but with knownForTestUser = [ludzu, viens, maja, labs, suns], that phrase's components [viens, kafija, ludzu] have unknown = {kafija} = exactly 1 unknown. Under the i+1 rule (locked = 2+ unknown), 1 unknown => AVAILABLE, not locked. knownForTestUser is kept EXACTLY as given per instructions. Task 14 must decide: (a) remove one of {viens, ludzu} from knownForTestUser to push the phrase to 2 unknown (locked), or (b) accept it as AVAILABLE. Do NOT silently change this here.",
+  "_note": "knownForTestUser is engineered so 'Vienu kafiju, lūdzu.' (components viens, kafija, ludzu) starts LOCKED: kafija + ludzu both unknown = 2 (i+1 rule: locked when >=2 unknown). Learning kafija in-session drops it to 1 unknown (ludzu) => AVAILABLE = the unlock. The known set equals the review-stage words (viens/maja/labs/suns); all stage:new words (kafija/ludzu/brivs) are unknown. NOTE: the live in-session 'phrase/unlock' reveal additionally requires a batch reload because the known-set is only refreshed on reload (the in-session known-set mutation + re-queue is out of this slice's scope, per Task 5) — Task 14 verifies locked-at-start directly and the unlock after reload.",
   "lemmas": [
     { "slug": "maja",  "lemma": "māja",  "gloss": "house",  "wordClass": "concrete", "pron": "MAH-ya", "media": "placeholder", "seedState": { "stage": "review", "reps": 1 } },
     { "slug": "kafija","lemma": "kafija","gloss": "coffee", "wordClass": "concrete", "pron": "KAH-fee-ya", "media": "placeholder", "seedState": { "stage": "new", "reps": 0 } },
@@ -26,5 +26,5 @@
     { "slug": "drill-loti", "target": "ļoti", "gloss": "very", "pron": "LYO-tee", "a": "lācis", "b": "ļoti", "correct": "b", "contrastType": "palatalization" },
     { "slug": "drill-lieta","target": "lieta","gloss": "thing","pron": "LYEH-ta","a": "lieta","b": "lēta","correct": "a","contrastType": "diphthong", "glide": { "combo": "ie", "from": "i", "to": "e" } }
   ],
-  "knownForTestUser": ["ludzu", "viens", "maja", "labs", "suns"]
+  "knownForTestUser": ["viens", "maja", "labs", "suns"]
 }
