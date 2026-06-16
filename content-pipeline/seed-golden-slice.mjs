@@ -425,6 +425,11 @@ async function main() {
 
   // ---- LIVE: upload + seed ----
   console.log('\n2/2  uploading audio + seeding content + engineering SRS state');
+  // Node <22 has no global WebSocket; supabase-js constructs a RealtimeClient eagerly and throws.
+  // We never use realtime here (storage + DB only), but polyfill so createClient doesn't bail.
+  if (typeof globalThis.WebSocket === 'undefined') {
+    globalThis.WebSocket = (await import('ws')).WebSocket;
+  }
   const { createClient } = await import('@supabase/supabase-js');
   const db = createClient(url, serviceKey, { auth: { persistSession: false } });
   const counts = await seed(manifest, db, envelopes);
