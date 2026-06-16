@@ -43,6 +43,9 @@ const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'test@pocketpolyglot.dev'
 // override — the real content pipeline (tts.mjs) keeps qa_status='draft' until Elizabete's
 // native QA signs each item off. The golden-slice content is LLM-drafted, not yet native-reviewed.
 const SEED_QA_STATUS = 'native_ok';
+// All golden-slice lemmas share one frequency band so get_distractors (same word_class +
+// freq_band ±1) can always find peers. Real content gets true bands from the ranking pipeline.
+const SEED_FREQ_BAND = 1;
 
 // Minimal .env loader (no dep): fills process.env from ../.env and ../../.env if unset.
 // (Copied from tts.mjs — same proven loader.)
@@ -220,6 +223,10 @@ async function seed(manifest, db, envelopes) {
       native_url: nativeUrl,
       slow_url: slowUrl,
       qa_status: SEED_QA_STATUS,
+      // get_distractors filters on `freq_band between target±1`; NULL would exclude everything
+      // (0 distractors). The golden slice isn't ranked, so put every lemma in one band → all
+      // same-word_class lemmas are eligible distractors for each other.
+      freq_band: SEED_FREQ_BAND,
     };
     // RMS amplitude envelope of the NATIVE clip (0005 column) — drives the in-app live soundbar.
     const lemmaEnv = envelopeFor(l.slug);
@@ -270,7 +277,6 @@ async function seed(manifest, db, envelopes) {
   for (const [a, b] of drillPairKeys) {
     await db.from('minimal_pairs').delete().eq('a', a).eq('b', b);
   }
-  const pairSlugToId = {};
   for (const d of manifest.drills) {
     const stimulusUrl = await uploadOne(d.slug, 'native');
     // also upload the A/B word clips (used by the drill UI's per-side playback)
@@ -290,24 +296,19 @@ async function seed(manifest, db, envelopes) {
     // 0004 adds minimal_pairs.glide (jsonb). Diphthong drills carry { combo, from, to };
     // the palatalization drill has none (leave null).
     if (d.glide) row.glide = d.glide;
-    const { data, error } = await db.from('minimal_pairs').insert(row).select('id').single();
+    const { error } = await db.from('minimal_pairs').insert(row);
     if (error) throw error;
-    pairSlugToId[d.slug] = data.id;
     counts.minimal_pairs += 1;
-    console.log(`  ✓ pair    ${d.slug.padEnd(12)} -> ${data.id}`);
+    console.log(`  ✓ pair    ${d.slug.padEnd(12)} -> ${d.a} / ${d.b}`);
   }
 
   // -- ENGINEERED review_state FOR THE TEST USER ------------------------------
-  // Clear this user's golden review_state first (idempotent), then insert from seedState.
-  // We only touch rows whose item_id is one of our freshly-inserted ids.
-  const allItemIds = [
-    ...Object.values(lemmaSlugToId),
-    ...Object.values(phraseSlugToId),
-    ...Object.values(pairSlugToId),
-  ];
-  if (allItemIds.length) {
-    await db.from('review_state').delete().eq('user_id', userId).in('item_id', allItemIds);
-  }
+  // Wipe ALL of the test user's review_state first, then insert from seedState. The lemmas/phrases
+  // are delete-then-inserted with FRESH uuids every run, so clearing only the current run's item_ids
+  // would orphan the PRIOR run's rows (they'd linger in the known_lemmas view and inflate coverage).
+  // This user is the dedicated golden-slice account, so a full reset to the engineered baseline is
+  // correct and makes the seeder fully idempotent.
+  await db.from('review_state').delete().eq('user_id', userId);
 
   const stateRows = [];
   for (const l of manifest.lemmas) {
