@@ -2,7 +2,7 @@
 // (data-in/events-out), so we render it with a fixture ReviewItem and jest.fn callbacks and
 // assert the events it emits — no services, per BACKEND_INTEGRATION §1/§4.
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { PhraseMeaning } from './PhraseMeaning';
 import type { ReviewItem } from '../types/reviewItem';
@@ -52,25 +52,69 @@ describe('PhraseMeaning', () => {
     expect(u.props.onPlay).toHaveBeenCalledWith('native');
   });
 
-  it('reports correct:true when the right meaning is chosen', () => {
-    const u = renderCard();
-    fireEvent.press(u.getByText('Good morning!'));
-    expect(u.props.onAnswer).toHaveBeenCalledWith('gm', true);
-    expect(u.props.onComplete).toHaveBeenCalledWith({
-      itemId: 'labrit',
-      cardKind: 'phrase/meaning',
-      correct: true,
-    });
+  it('completes once as correct (first try) when the right meaning is chosen', () => {
+    jest.useFakeTimers();
+    try {
+      const u = renderCard();
+      fireEvent.press(u.getByText('Good morning!'));
+      expect(u.props.onAnswer).toHaveBeenCalledWith('gm', true);
+      // The correct pick turns green and advances only after a short readable beat.
+      expect(u.props.onComplete).not.toHaveBeenCalled();
+      act(() => {
+        jest.runAllTimers();
+      });
+      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+      expect(u.props.onComplete).toHaveBeenCalledWith({
+        itemId: 'labrit',
+        cardKind: 'phrase/meaning',
+        correct: true,
+      });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
-  it('reports correct:false when a wrong meaning is chosen', () => {
+  it('a wrong pick does NOT advance, shows a non-revealing retry note, reddens only the chosen option', () => {
+    const u = renderCard();
+    fireEvent.press(u.getByText('Good night!')); // wrong meaning
+    // Did not advance / complete, and the correct option is not auto-revealed (still tappable).
+    expect(u.props.onComplete).not.toHaveBeenCalled();
+    expect(u.props.onAnswer).toHaveBeenCalledWith('gn', false);
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+    expect(u.getByText('Good morning!')).toBeTruthy();
+  });
+
+  it('Try again clears the reddened selection', () => {
     const u = renderCard();
     fireEvent.press(u.getByText('Good night!'));
-    expect(u.props.onAnswer).toHaveBeenCalledWith('gn', false);
-    expect(u.props.onComplete).toHaveBeenCalledWith({
-      itemId: 'labrit',
-      cardKind: 'phrase/meaning',
-      correct: false,
-    });
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+    fireEvent.press(u.getByLabelText('Try again'));
+    expect(u.queryByText('Not quite — give it another try.')).toBeNull();
+  });
+
+  it('wrong-then-correct records an honest lapse (correct:false) and completes exactly once', () => {
+    jest.useFakeTimers();
+    try {
+      const u = renderCard();
+      fireEvent.press(u.getByText('Good night!')); // miss first
+      fireEvent.press(u.getByLabelText('Try again'));
+      fireEvent.press(u.getByText('Good morning!')); // then correct
+      act(() => {
+        jest.runAllTimers();
+      });
+      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+      expect(u.props.onComplete).toHaveBeenCalledWith({
+        itemId: 'labrit',
+        cardKind: 'phrase/meaning',
+        correct: false,
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('renders nothing interactive when there are no choices (idiom-only, unseeded)', () => {
+    const u = renderCard({ choices: [] });
+    expect(u.queryByText('Good morning!')).toBeNull();
   });
 });
