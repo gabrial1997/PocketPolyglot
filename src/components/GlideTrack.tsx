@@ -73,7 +73,7 @@ export function GlideTrack({
         toValue: 1,
         duration: 1150,
         easing: Easing.bezier(0.5, 0, 0.5, 1),
-        useNativeDriver: true,
+        useNativeDriver: false, // SVG attrs animate on the JS thread — native driver unsupported
       }),
     );
     loop.start();
