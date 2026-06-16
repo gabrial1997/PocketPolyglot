@@ -5,7 +5,7 @@
 // be kept in sync with 0001_init.sql when columns change. Only the columns the services
 // actually touch are typed below (plus enough context to be self-documenting).
 
-import type { ReviewExample, ReviewMnemonic } from '../../types/reviewItem';
+import type { ReviewExample, ReviewGlide, ReviewMnemonic } from '../../types/reviewItem';
 
 /** review_state.item_type / review_log.item_type. NB: DB 'lemma' <-> contract type 'word'. */
 export type DbItemType = 'lemma' | 'phrase' | 'pair' | 'wordform';
@@ -57,6 +57,8 @@ export interface MinimalPairRow {
   correct: 'a' | 'b';
   audio_url: string;
   contrast_type: string;
+  // Diphthong drills carry the gliding combination (e.g. ie = i→e); plain pairs leave it null.
+  glide: ReviewGlide | null;
   qa_status: 'draft' | 'native_ok' | 'locked';
   created_at: string;
 }

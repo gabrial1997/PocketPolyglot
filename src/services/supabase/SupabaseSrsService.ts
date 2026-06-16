@@ -73,7 +73,29 @@ export class SupabaseSrsService implements SrsService {
         .in('id', byType.lemma);
       if (e) throw e;
       for (const row of (data ?? []) as LemmaRow[]) {
-        items.push(lemmaRowToReviewItem(row, stateByKey.get(`lemma:${row.id}`)));
+        const item = lemmaRowToReviewItem(row, stateByKey.get(`lemma:${row.id}`));
+        // Word cards need controlled distractors (same word_class + nearby freq_band). The
+        // get_distractors RPC returns full lemma rows; we mark the target correct and the
+        // distractors incorrect. The card shuffles choice order itself. Resilient to a null
+        // result (e.g. RPC error or no candidates) — the item stays valid with target-only
+        // choices, and the cards tolerate missing choices (`item.choices ?? []`).
+        try {
+          const { data: distractors } = await this.client.rpc('get_distractors', {
+            target: row.id,
+            n: 3,
+          });
+          item.choices = [
+            { value: item.target, gloss: item.gloss, correct: true },
+            ...((distractors ?? []) as LemmaRow[]).map((d) => ({
+              value: d.lemma,
+              gloss: d.gloss_en,
+              correct: false,
+            })),
+          ];
+        } catch {
+          // Leave choices undefined; the recognition/production cards degrade gracefully.
+        }
+        items.push(item);
       }
     }
 
@@ -84,7 +106,17 @@ export class SupabaseSrsService implements SrsService {
         .in('id', byType.phrase);
       if (e) throw e;
       for (const row of (data ?? []) as PhraseRow[]) {
-        items.push(phraseRowToReviewItem(row, stateByKey.get(`phrase:${row.id}`)));
+        const item = phraseRowToReviewItem(row, stateByKey.get(`phrase:${row.id}`));
+        // Phrase cards need the component lemma ids for the i+1 unlock gate. Resilient to a
+        // null result — the item stays valid (componentLemmaIds simply left undefined).
+        const { data: components } = await this.client
+          .from('phrase_components')
+          .select('lemma_id')
+          .eq('phrase_id', row.id);
+        if (components) {
+          item.componentLemmaIds = (components as { lemma_id: string }[]).map((c) => c.lemma_id);
+        }
+        items.push(item);
       }
     }
 

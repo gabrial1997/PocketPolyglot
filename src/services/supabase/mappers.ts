@@ -81,7 +81,7 @@ export function pairRowToReviewItem(
   reviewState?: Pick<ReviewStateRow, 'stage' | 'reps'>,
 ): ReviewItem {
   const { stage, reps } = stageAndReps(reviewState);
-  return {
+  const item: ReviewItem = {
     id: row.id,
     type: 'pair',
     stage,
@@ -98,6 +98,9 @@ export function pairRowToReviewItem(
       audioUrl: row.audio_url,
     },
   };
+  // Diphthong drills carry a `glide` (e.g. ie = i→e); plain minimal pairs do not.
+  if (row.glide) item.glide = row.glide;
+  return item;
 }
 
 // ---------------------------------------------------------------------------

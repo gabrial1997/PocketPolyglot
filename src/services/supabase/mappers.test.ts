@@ -62,6 +62,7 @@ function pair(overrides: Partial<MinimalPairRow> = {}): MinimalPairRow {
     correct: 'a',
     audio_url: 'https://cdn/pair.mp3',
     contrast_type: 'vowel_length',
+    glide: null,
     qa_status: 'locked',
     created_at: '2026-01-01T00:00:00Z',
     ...overrides,
@@ -187,6 +188,20 @@ describe('pairRowToReviewItem', () => {
     const item = pairRowToReviewItem(pair(), reviewState({ item_type: 'pair', stage: 'review', reps: 4 }));
     expect(item.stage).toBe('review');
     expect(item.reps).toBe(4);
+  });
+
+  it('carries the glide for diphthong rows', () => {
+    const row: any = {
+      id: 'mp1', a: 'lieta', b: 'lēta', correct: 'a', audio_url: 'x',
+      target: 'lieta', gloss_en: 'thing', pron: 'LYEH-ta',
+      glide: { combo: 'ie', from: 'i', to: 'e' },
+    };
+    const item = pairRowToReviewItem(row, { stage: 'learning', reps: 0 } as any);
+    expect(item.glide).toEqual({ combo: 'ie', from: 'i', to: 'e' });
+  });
+
+  it('leaves glide undefined for a plain minimal pair', () => {
+    expect(pairRowToReviewItem(pair()).glide).toBeUndefined();
   });
 });
 
