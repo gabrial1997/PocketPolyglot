@@ -36,9 +36,14 @@ export function PhraseMeaning({
   }, []);
 
   const pick = (value: string, correct: boolean): void => {
+    // A correct pick is committed exactly once: once correctValue is set a completion is already
+    // in flight, so further taps (e.g. a rapid double-tap during the green beat) are no-ops.
+    if (correctValue !== null) return;
     onAnswer(value, correct);
     if (correct) {
+      setWrongValue(null); // a direct wrong→correct tap: drop the red + retry note (missed stays sticky)
       setCorrectValue(value); // green, then advance after the beat
+      if (timer.current) clearTimeout(timer.current); // never stack timers
       timer.current = setTimeout(() => {
         onComplete({ itemId: item.id, cardKind: 'phrase/meaning', correct: !missed });
       }, ADVANCE_DELAY_MS);
@@ -56,6 +61,7 @@ export function PhraseMeaning({
           key={c.value}
           label={c.gloss ?? c.value}
           state={c.value === correctValue ? 'correct' : c.value === wrongValue ? 'wrong' : 'idle'}
+          disabled={correctValue !== null} // lock all options during the green beat — no re-tap
           onPress={() => pick(c.value, c.correct)}
         />
       ))}

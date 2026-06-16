@@ -113,6 +113,45 @@ describe('PhraseMeaning', () => {
     }
   });
 
+  it('double-tapping the correct option completes EXACTLY once (no double-complete race)', () => {
+    jest.useFakeTimers();
+    try {
+      const u = renderCard();
+      // Two rapid taps on the correct option BEFORE the advance timer fires.
+      fireEvent.press(u.getByText('Good morning!'));
+      fireEvent.press(u.getByText('Good morning!'));
+      act(() => {
+        jest.runAllTimers();
+      });
+      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('a direct wrong→correct tap (no Try again) clears the red wrong state + retry note and completes once as a lapse', () => {
+    jest.useFakeTimers();
+    try {
+      const u = renderCard();
+      fireEvent.press(u.getByText('Good night!')); // miss first — red + retry note showing
+      expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+      fireEvent.press(u.getByText('Good morning!')); // correct directly, skipping Try again
+      // The red wrong state + retry note are cleared during the green beat.
+      expect(u.queryByText('Not quite — give it another try.')).toBeNull();
+      act(() => {
+        jest.runAllTimers();
+      });
+      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+      expect(u.props.onComplete).toHaveBeenCalledWith({
+        itemId: 'labrit',
+        cardKind: 'phrase/meaning',
+        correct: false,
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('renders nothing interactive when there are no choices (idiom-only, unseeded)', () => {
     const u = renderCard({ choices: [] });
     expect(u.queryByText('Good morning!')).toBeNull();

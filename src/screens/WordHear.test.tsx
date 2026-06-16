@@ -115,4 +115,44 @@ describe('WordHear', () => {
       jest.useRealTimers();
     }
   });
+
+  it('double-tapping the correct option completes EXACTLY once (no double-complete race)', () => {
+    jest.useFakeTimers();
+    try {
+      const u = renderCard();
+      // Two rapid taps on the correct option BEFORE the advance timer fires.
+      fireEvent.press(u.getByText('house'));
+      fireEvent.press(u.getByText('house'));
+      act(() => {
+        jest.runAllTimers();
+      });
+      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('a direct wrong→correct tap (no Try again) clears the red wrong state + retry note and completes once as a lapse', () => {
+    jest.useFakeTimers();
+    try {
+      const u = renderCard();
+      fireEvent.press(u.getByText('bread')); // miss first — red + retry note showing
+      expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+      fireEvent.press(u.getByText('house')); // correct directly, skipping Try again
+      // The red wrong state + retry note are cleared during the green beat.
+      expect(u.queryByText('Not quite — give it another try.')).toBeNull();
+      act(() => {
+        jest.runAllTimers();
+      });
+      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+      expect(u.props.onComplete).toHaveBeenCalledWith({
+        itemId: 'maja',
+        cardKind: 'word/hear',
+        correct: false,
+        spoke: false,
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });
