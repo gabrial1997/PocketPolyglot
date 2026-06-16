@@ -38,6 +38,12 @@ const TTS_MODEL = process.env.TTS_MODEL || 'gpt-4o-mini-tts';
 const OBJECT_PREFIX = 'golden';
 const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'test@pocketpolyglot.dev';
 
+// The golden slice must be VISIBLE to user_coverage + get_distractors, which both exclude
+// qa_status='draft'. So we seed it as 'native_ok' for the demo. NOTE: this is a slice/demo
+// override — the real content pipeline (tts.mjs) keeps qa_status='draft' until Elizabete's
+// native QA signs each item off. The golden-slice content is LLM-drafted, not yet native-reviewed.
+const SEED_QA_STATUS = 'native_ok';
+
 // Minimal .env loader (no dep): fills process.env from ../.env and ../../.env if unset.
 // (Copied from tts.mjs — same proven loader.)
 function loadEnv() {
@@ -142,6 +148,8 @@ async function generateAudio(renders, voice) {
 // ---------------------------------------------------------------------------
 
 async function seed(manifest, db, envelopes) {
+  // NOT transactional: safe to re-run (delete-then-insert is idempotent), but a mid-run abort can
+  // leave a partial state until the next successful run completes.
   const counts = {
     audioUploaded: 0,
     lemmas: 0,
@@ -193,6 +201,8 @@ async function seed(manifest, db, envelopes) {
   // (lemma_id references lemmas on delete restrict). Clear phrase_components + phrases first.
   await db.from('phrase_components').delete().in(
     'phrase_id',
+    // Sentinel UUID guard: if there are no existing phrases, fall back to a non-empty array so the
+    // .in() clause is never empty (an empty .in() would otherwise match/delete nothing or error).
     (await db.from('phrases').select('id').in('target', manifest.phrases.map((p) => p.target))).data?.map(
       (r) => r.id,
     ) ?? ['00000000-0000-0000-0000-000000000000'],
@@ -209,7 +219,7 @@ async function seed(manifest, db, envelopes) {
       word_class: l.wordClass,
       native_url: nativeUrl,
       slow_url: slowUrl,
-      qa_status: 'draft',
+      qa_status: SEED_QA_STATUS,
     };
     // RMS amplitude envelope of the NATIVE clip (0005 column) — drives the in-app live soundbar.
     const lemmaEnv = envelopeFor(l.slug);
@@ -232,7 +242,7 @@ async function seed(manifest, db, envelopes) {
   const phraseSlugToId = {};
   for (const p of manifest.phrases) {
     const audioUrl = await uploadOne(p.slug, 'native');
-    const phraseRow = { target: p.target, gloss_en: p.gloss, audio_url: audioUrl, qa_status: 'draft' };
+    const phraseRow = { target: p.target, gloss_en: p.gloss, audio_url: audioUrl, qa_status: SEED_QA_STATUS };
     const phraseEnv = envelopeFor(p.slug);
     if (phraseEnv) phraseRow.envelope = phraseEnv;
     const { data, error } = await db.from('phrases').insert(phraseRow).select('id').single();
@@ -243,6 +253,8 @@ async function seed(manifest, db, envelopes) {
     const components = p.components.map((compSlug, idx) => {
       const lemmaId = lemmaSlugToId[compSlug];
       if (!lemmaId) throw new Error(`phrase ${p.slug}: component slug "${compSlug}" not a known lemma`);
+      // is_new is unused for now: the app computes the i+1 lock state from componentLemmaIds vs the
+      // known-set, not from this column. Populated false intentionally.
       return { phrase_id: data.id, lemma_id: lemmaId, position: idx, is_new: false };
     });
     const { error: compErr } = await db.from('phrase_components').insert(components);
@@ -270,7 +282,7 @@ async function seed(manifest, db, envelopes) {
       correct: d.correct,
       audio_url: stimulusUrl ?? '',
       contrast_type: d.contrastType || 'unspecified',
-      qa_status: 'draft',
+      qa_status: SEED_QA_STATUS,
     };
     // 0005: envelope of the stimulus (drill target) clip — the audio the perception task plays.
     const drillEnv = envelopeFor(d.slug);
