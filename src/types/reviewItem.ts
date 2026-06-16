@@ -28,6 +28,13 @@ export interface ReviewPair {
   audioUrl: string;
 }
 
+/** Diphthong-drill only: the gliding combination to "feel" (e.g. ie = i→e). */
+export interface ReviewGlide {
+  combo: string; // e.g. "ie"
+  from: string; // e.g. "i"
+  to: string; // e.g. "e"
+}
+
 export interface ReviewItem {
   id: string; // stable item id
   type: 'word' | 'phrase' | 'pair'; // 'pair' = minimal-pair drill
@@ -52,4 +59,7 @@ export interface ReviewItem {
 
   // minimal-pair drill
   pair?: ReviewPair;
+
+  // diphthong drill — drives the "meet the glide" step + GlideTrack
+  glide?: ReviewGlide;
 }
