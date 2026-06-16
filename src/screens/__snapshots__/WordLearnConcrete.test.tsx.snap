@@ -103,6 +103,26 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
           }
         }
       >
+        <Image
+          accessibilityRole="image"
+          resizeMode="cover"
+          source={
+            {
+              "uri": "house.png",
+            }
+          }
+          style={
+            {
+              "alignItems": "center",
+              "alignSelf": "center",
+              "borderRadius": 24,
+              "height": 132,
+              "justifyContent": "center",
+              "overflow": "hidden",
+              "width": 132,
+            }
+          }
+        />
         <View
           accessibilityLabel="Play"
           accessibilityRole="button"

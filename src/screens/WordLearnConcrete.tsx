@@ -4,7 +4,7 @@
 import React from 'react';
 import { PlayOrb, CtaButton } from '../components';
 import { CardShell } from './CardShell';
-import { useTheme } from '../theme/ThemeProvider';
+import { CardImage } from './CardImage';
 import type { BaseCardProps } from './cardProps';
 
 export function WordLearnConcrete({
@@ -12,11 +12,9 @@ export function WordLearnConcrete({
   onPlay,
   onComplete,
 }: BaseCardProps): React.JSX.Element {
-  const T = useTheme();
-  // image = T.dark ? item.media?.imageUrlDark : item.media?.imageUrl  (wire when assets land)
-  void T;
   return (
     <CardShell eyebrow="New word" target={item.target} gloss={item.gloss} pron={item.pron}>
+      <CardImage media={item.media} word={item.target} />
       <PlayOrb onPress={() => onPlay('native')} />
       <CtaButton
         title="First review tomorrow"

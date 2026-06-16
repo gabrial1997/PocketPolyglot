@@ -5,6 +5,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { PlayOrb, MicOrb, ChoiceButton, CtaButton, Waveform, SpeedChip, TryAgainNote } from '../components';
 import { CardShell } from './CardShell';
+import { CardImage } from './CardImage';
 import { useLoopStage } from './useLoopStage';
 import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 
@@ -24,7 +25,7 @@ export function WordPicReview(props: Props): React.JSX.Element {
 
   return (
     <CardShell eyebrow="Picture review" target={m.stage === 'choose' ? undefined : item.target}>
-      {/* image = T.dark ? item.media?.imageUrlDark : item.media?.imageUrl (wire when assets land) */}
+      <CardImage media={item.media} word={item.target} />
       <PlayOrb onPress={() => onPlay('native')} />
       <SpeedChip value={props.speed} onChange={props.onSpeedChange} />
 
@@ -62,7 +63,9 @@ export function WordPicReview(props: Props): React.JSX.Element {
 
       {m.stage === 'result' ? (
         <View style={{ rowGap: 12 }}>
-          <Waveform seed={`${item.id}-native`} played={1} />
+          {/* Native model bars come from the seeded RMS envelope when present (soundbar.md,
+              Option A); the user's own take has no envelope, so it stays seed-shaped. */}
+          <Waveform seed={`${item.id}-native`} played={1} envelope={item.audio.envelope} />
           <Waveform seed={`${item.id}-you`} played={1} />
           {/* A/B self-compare (a locked product pillar): replay the native model and your take. */}
           <CtaButton title="Play original" variant="outline" onPress={() => onPlayCompare?.('native')} />

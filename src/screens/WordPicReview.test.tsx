@@ -2,6 +2,7 @@
 // (data-in/events-out), so we render it with a fixture ReviewItem and jest.fn callbacks and
 // assert the events it emits — no services, per BACKEND_INTEGRATION §1/§4.
 import React from 'react';
+import { Image } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { WordPicReview } from './WordPicReview';
@@ -64,6 +65,25 @@ describe('WordPicReview', () => {
     const u = renderCard();
     fireEvent.press(u.getByLabelText('Play'));
     expect(u.props.onPlay).toHaveBeenCalledWith('native');
+  });
+
+  it('renders an <Image> from media.imageUrl when a real url is seeded', () => {
+    const u = renderCard({ media: { imageUrl: 'house.png' } });
+    const imgs = u.UNSAFE_queryAllByType(Image);
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0].props.source).toEqual({ uri: 'house.png' });
+    expect(u.queryByLabelText('Picture placeholder')).toBeNull();
+  });
+
+  it('renders the themed placeholder (first letter) for the sentinel/missing url', () => {
+    const sentinel = renderCard({ media: { imageUrl: 'placeholder' } });
+    expect(sentinel.UNSAFE_queryAllByType(Image)).toHaveLength(0);
+    expect(sentinel.getByLabelText('Picture placeholder')).toBeTruthy();
+    expect(sentinel.getByText('M')).toBeTruthy(); // first letter of "māja"
+
+    const missing = renderCard({ media: undefined });
+    expect(missing.UNSAFE_queryAllByType(Image)).toHaveLength(0);
+    expect(missing.getByLabelText('Picture placeholder')).toBeTruthy();
   });
 
   it('reports each answer via onAnswer with its correctness', () => {

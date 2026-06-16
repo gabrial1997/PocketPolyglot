@@ -37,21 +37,39 @@ function ppBars(seed: number, n: number): number[] {
   return out;
 }
 
+/** Resample a 0..1 amplitude envelope to exactly `n` bars (nearest-frame), floored at 0.08. */
+function envBars(env: number[], n: number): number[] {
+  if (env.length === 0) return new Array(n).fill(0.08);
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const src = n === 1 ? 0 : Math.round((i / (n - 1)) * (env.length - 1));
+    out.push(Math.max(0.08, Math.min(1, env[src] ?? 0.08)));
+  }
+  return out;
+}
+
 export function Waveform({
   seed = 'x',
   played = 0,
   height = 60,
   count = 46,
   gap = 3,
+  envelope,
 }: {
   seed?: string;
   played?: number; // 0..1 progress
   height?: number;
   count?: number;
   gap?: number;
+  // Real RMS amplitude envelope (0..1). When present, bar heights come from the seeded clip's
+  // actual amplitude instead of the deterministic-from-seed shape. Backwards-compatible/optional.
+  envelope?: number[];
 }): React.JSX.Element {
   const T = useTheme();
-  const data = useMemo(() => ppBars(ppSeed(seed), count), [seed, count]);
+  const data = useMemo(
+    () => (envelope && envelope.length ? envBars(envelope, count) : ppBars(ppSeed(seed), count)),
+    [seed, count, envelope],
+  );
   const playIdx = played * count;
   return (
     <View style={[styles.row, { height, columnGap: gap }]}>

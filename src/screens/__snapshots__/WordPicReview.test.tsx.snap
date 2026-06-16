@@ -59,6 +59,26 @@ exports[`WordPicReview renders the choose stage from item data (snapshot) 1`] = 
           }
         }
       >
+        <Image
+          accessibilityRole="image"
+          resizeMode="cover"
+          source={
+            {
+              "uri": "house.png",
+            }
+          }
+          style={
+            {
+              "alignItems": "center",
+              "alignSelf": "center",
+              "borderRadius": 24,
+              "height": 132,
+              "justifyContent": "center",
+              "overflow": "hidden",
+              "width": 132,
+            }
+          }
+        />
         <View
           accessibilityLabel="Play"
           accessibilityRole="button"
