@@ -33,11 +33,11 @@ describe('HomeHost', () => {
     expect(await u.findByText('12 to review')).toBeTruthy();
   });
 
-  it('invokes onStart when the Start session CTA is pressed', async () => {
+  it('invokes onStart when the session CTA is pressed', async () => {
     const u = renderHost();
     // Wait for the async fetch to settle so the act() warning never fires.
     await waitFor(() => expect(u.getByText('7 new')).toBeTruthy());
-    fireEvent.press(u.getByText('Start session'));
+    fireEvent.press(u.getByText('Begin listening'));
     expect(u.onStart).toHaveBeenCalledTimes(1);
   });
 });

@@ -1065,21 +1065,31 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
             ]
           }
         >
-          <Text
+          <View
             style={
-              [
-                {
-                  "fontSize": 16,
-                  "fontWeight": "600",
-                },
-                {
-                  "color": "#FFFFFF",
-                },
-              ]
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "justifyContent": "center",
+              }
             }
           >
-            Continue
-          </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 16,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#FFFFFF",
+                  },
+                ]
+              }
+            >
+              Continue
+            </Text>
+          </View>
         </View>
       </View>
     </View>

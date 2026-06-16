@@ -4,6 +4,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
+import type { User } from '@supabase/supabase-js';
 import { CardPreviewGallery } from '../dev/CardPreviewGallery';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
@@ -15,20 +17,39 @@ import { useSession } from '../session/sessionController';
 import { useReviewCardHandlers } from '../session/useReviewCardHandlers';
 import { CARD_REGISTRY } from './registry';
 import { Screen } from '../components';
+import { CalendarIcon, SoundIcon, BarsIcon, type IconProps } from '../components/icons';
 import { HomeHost, PodcastHost, ProgressHost } from '../screens';
 import { type } from '../theme/tokens';
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardKind } from '../types/cardKind';
 import type { CardResult } from '../types/cardResult';
 
+// Import only the one weight we use. The package's barrel (`@expo-google-fonts/spectral`) requires
+// every weight, and some of those .ttf assets aren't present in this install — which breaks the
+// bundler. Registering the family name 'Spectral_500Medium' matches `fonts.headline` in tokens.ts.
+// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+const SpectralMedium = require('@expo-google-fonts/spectral/500Medium/Spectral_500Medium.ttf') as number;
+
 type Route = 'home' | 'pod' | 'prog' | 'session';
 
-/** The Tier-B tabs (session is a focused flow, not a tab). */
-const TABS: { route: Route; label: string }[] = [
-  { route: 'home', label: 'Home' },
-  { route: 'pod', label: 'Podcast' },
-  { route: 'prog', label: 'Progress' },
+/** The Tier-B tabs (session is a focused flow, not a tab). Labels/icons match the mockup. */
+const TABS: { route: Route; label: string; Icon: React.ComponentType<IconProps> }[] = [
+  { route: 'home', label: 'Today', Icon: CalendarIcon },
+  { route: 'pod', label: 'Listen', Icon: SoundIcon },
+  { route: 'prog', label: 'Progress', Icon: BarsIcon },
 ];
+
+/** Derive a first-name greeting from the signed-in user — never hard-coded. Falls back to the
+ *  email's local part, title-cased, then to undefined (greeting renders without a name). */
+function displayName(user: User | null): string | undefined {
+  if (!user) return undefined;
+  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const fromMeta = meta.name ?? meta.full_name ?? meta.display_name;
+  if (typeof fromMeta === 'string' && fromMeta.trim()) return fromMeta.trim().split(' ')[0];
+  const local = (user.email ?? '').split('@')[0]?.split('+')[0]?.replace(/[._-]+/g, ' ').trim() ?? '';
+  if (!local) return undefined;
+  return local.charAt(0).toUpperCase() + local.slice(1);
+}
 
 /** Minimal placeholder tab bar — a real navigator (expo-router/react-navigation) replaces this. */
 function TabBar({ route, onNavigate }: { route: Route; onNavigate: (r: Route) => void }): React.JSX.Element {
@@ -37,6 +58,7 @@ function TabBar({ route, onNavigate }: { route: Route; onNavigate: (r: Route) =>
     <View style={[styles.tabBar, { borderTopColor: T.hair, backgroundColor: T.bg }]}>
       {TABS.map((tab) => {
         const active = tab.route === route;
+        const color = active ? T.primary : T.faint;
         return (
           <Pressable
             key={tab.route}
@@ -45,7 +67,8 @@ function TabBar({ route, onNavigate }: { route: Route; onNavigate: (r: Route) =>
             onPress={() => onNavigate(tab.route)}
             style={styles.tab}
           >
-            <Text style={{ color: active ? T.primary : T.faint, fontSize: type.label, fontWeight: active ? '700' : '500' }}>
+            <tab.Icon size={22} color={color} />
+            <Text style={{ color, fontSize: type.caption, fontWeight: active ? '700' : '500', marginTop: 3 }}>
               {tab.label}
             </Text>
           </Pressable>
@@ -119,6 +142,8 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
 /** Routes the three Tier-B hosts + the focused session flow. */
 function Root(): React.JSX.Element {
   const [route, setRoute] = useState<Route>('home');
+  const { user } = useAuth();
+  const name = displayName(user);
 
   if (route === 'session') {
     // Session is a focused flow with no tab bar; exit returns to home.
@@ -128,7 +153,13 @@ function Root(): React.JSX.Element {
   return (
     <View style={styles.root}>
       <View style={styles.screen}>
-        {route === 'home' ? <HomeHost onStart={() => setRoute('session')} /> : null}
+        {route === 'home' ? (
+          <HomeHost
+            name={name}
+            onStart={() => setRoute('session')}
+            onOpenPodcast={() => setRoute('pod')}
+          />
+        ) : null}
         {route === 'pod' ? <PodcastHost /> : null}
         {route === 'prog' ? <ProgressHost /> : null}
       </View>
@@ -172,6 +203,11 @@ function isPreview(): boolean {
 }
 
 export function App(): React.JSX.Element {
+  // Load the Spectral serif used for headlines/greetings before first paint (it was never loaded
+  // before, so headlines silently fell back to the system sans). Brief blank while it resolves.
+  const [fontsLoaded] = useFonts({ Spectral_500Medium: SpectralMedium });
+  if (!fontsLoaded) return <View style={styles.boot} />;
+
   if (isPreview()) {
     return (
       <ThemeProvider>
@@ -192,6 +228,7 @@ export function App(): React.JSX.Element {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   screen: { flex: 1 },
+  boot: { flex: 1, backgroundColor: '#0E1318' },
   placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tabBar: {
     flexDirection: 'row',

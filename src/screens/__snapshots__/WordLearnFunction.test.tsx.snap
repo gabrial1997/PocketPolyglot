@@ -383,21 +383,31 @@ exports[`WordLearnFunction renders the example sentences from item data (snapsho
             ]
           }
         >
-          <Text
+          <View
             style={
-              [
-                {
-                  "fontSize": 16,
-                  "fontWeight": "600",
-                },
-                {
-                  "color": "#FFFFFF",
-                },
-              ]
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "justifyContent": "center",
+              }
             }
           >
-            First review tomorrow
-          </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 16,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#FFFFFF",
+                  },
+                ]
+              }
+            >
+              First review tomorrow
+            </Text>
+          </View>
         </View>
       </View>
     </View>

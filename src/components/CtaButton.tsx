@@ -1,7 +1,7 @@
 // CtaButton — primary full-width call to action (README "Primary CTA": h56, radius18).
 // Filled with the accent primary; the start-session button on Home and "Continue" on cards.
 import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, View, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import { radii, sizing, type } from '../theme/tokens';
 
@@ -10,11 +10,14 @@ export function CtaButton({
   onPress,
   variant = 'filled',
   disabled = false,
+  icon,
 }: {
   title: string;
   onPress?: () => void;
   variant?: 'filled' | 'outline';
   disabled?: boolean;
+  /** Optional leading glyph (e.g. a play icon), rendered before the title. */
+  icon?: React.ReactNode;
 }): React.JSX.Element {
   const T = useTheme();
   const filled = variant === 'filled';
@@ -33,7 +36,10 @@ export function CtaButton({
         },
       ]}
     >
-      <Text style={[styles.text, { color: filled ? T.onPrimary : T.primary }]}>{title}</Text>
+      <View style={styles.row}>
+        {icon ? <View style={styles.icon}>{icon}</View> : null}
+        <Text style={[styles.text, { color: filled ? T.onPrimary : T.primary }]}>{title}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -46,5 +52,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  icon: { marginRight: 8 },
   text: { fontSize: type.body, fontWeight: '600' },
 });

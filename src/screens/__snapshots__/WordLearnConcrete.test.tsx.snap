@@ -260,21 +260,31 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
             ]
           }
         >
-          <Text
+          <View
             style={
-              [
-                {
-                  "fontSize": 16,
-                  "fontWeight": "600",
-                },
-                {
-                  "color": "#FFFFFF",
-                },
-              ]
+              {
+                "alignItems": "center",
+                "flexDirection": "row",
+                "justifyContent": "center",
+              }
             }
           >
-            First review tomorrow
-          </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 16,
+                    "fontWeight": "600",
+                  },
+                  {
+                    "color": "#FFFFFF",
+                  },
+                ]
+              }
+            >
+              First review tomorrow
+            </Text>
+          </View>
         </View>
       </View>
     </View>
