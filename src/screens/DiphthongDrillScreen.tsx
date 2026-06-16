@@ -13,7 +13,6 @@ import { Screen, PlayOrb, MicOrb, Waveform, SpeedChip, ChoiceButton, CtaButton, 
 import { GlideTrack } from '../components/GlideTrack';
 import { useTheme } from '../theme/ThemeProvider';
 import { type, fonts } from '../theme/tokens';
-import type { CardResult } from '../types/cardResult';
 import type { RecordingCardProps } from './cardProps';
 
 type Phase = 'meet' | 'contrast' | 'say';
@@ -88,9 +87,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
                 onPress={() =>
                   onComplete({
                     itemId: item.id,
-                    // 'diphthong' is registered as a CardKind in a later task (Task 2); cast keeps
-                    // this card self-contained until then.
-                    cardKind: 'diphthong' as CardResult['cardKind'],
+                    cardKind: 'diphthong',
                     correct: !missed,
                     spoke: true,
                   })

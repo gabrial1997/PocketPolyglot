@@ -16,6 +16,7 @@ import {
   PhraseMeaning,
   PhraseSayIt,
   DrillScreen,
+  DiphthongDrillScreen,
   PronounceScreen,
   HomeScreen,
   PodcastScreen,
@@ -40,6 +41,7 @@ export const CARD_REGISTRY: Record<CardKind, AnyCard> = {
   'phrase/meaning': PhraseMeaning,
   'phrase/sayit': PhraseSayIt,
   drill: DrillScreen,
+  diphthong: DiphthongDrillScreen,
   pron: PronounceScreen,
 };
 

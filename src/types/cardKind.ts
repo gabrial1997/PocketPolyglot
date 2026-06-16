@@ -19,6 +19,7 @@ export type ReviewCardKind =
   | 'phrase/meaning'
   | 'phrase/sayit'
   | 'drill'
+  | 'diphthong'
   | 'pron';
 
 /** Phrase gating screens — controller-driven, not from renderFor() (WIRING_MAP §1). */
