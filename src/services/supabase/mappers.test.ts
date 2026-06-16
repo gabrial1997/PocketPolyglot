@@ -183,6 +183,11 @@ describe('phraseRowToReviewItem', () => {
     expect(item.stage).toBe('learning');
     expect(item.reps).toBe(2);
   });
+
+  it('maps is_idiom onto isIdiom', () => {
+    expect(phraseRowToReviewItem(phrase({ is_idiom: true })).isIdiom).toBe(true);
+    expect(phraseRowToReviewItem(phrase({ is_idiom: false })).isIdiom).toBe(false);
+  });
 });
 
 // --- pairRowToReviewItem ----------------------------------------------------

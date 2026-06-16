@@ -72,6 +72,7 @@ export function phraseRowToReviewItem(
     reps,
     target: row.target,
     gloss: row.gloss_en,
+    isIdiom: row.is_idiom,
     audio: {
       nativeUrl: row.audio_url ?? '',
       ...(row.envelope ? { envelope: row.envelope } : {}),

@@ -63,6 +63,9 @@ export interface ReviewItem {
   // diphthong drill — drives the "meet the glide" step + GlideTrack
   glide?: ReviewGlide;
 
+  // phrases only: literal meaning != actual meaning -> gets a comprehension (meaning) check.
+  isIdiom?: boolean;
+
   // phrase items only — the lemma ids that make up the phrase (for the i+1 lock gate).
   componentLemmaIds?: string[];
 }

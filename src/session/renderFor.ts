@@ -29,8 +29,8 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
   // Phrase reviews. (locked/unlock handled by the controller, not here.)
   if (item.type === 'phrase') {
     if (item.stage === 'new') return 'phrase/hear'; // first exposure
-    // idioms (literal != actual) get a meaning check; otherwise mature say-it.
-    return item.reps < 2 ? 'phrase/meaning' : 'phrase/sayit';
+    // idiom (literal != actual) → meaning check; non-idiom → say-it.
+    return item.isIdiom ? 'phrase/meaning' : 'phrase/sayit';
   }
 
   // Minimal-pair perception drill — a gliding combination (ie) gets the diphthong card.

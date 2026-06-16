@@ -53,10 +53,15 @@ describe('renderFor', () => {
     it('new phrase -> phrase/hear', () => {
       expect(renderFor(item({ type: 'phrase', stage: 'new' }))).toBe('phrase/hear');
     });
-    it('early phrase review -> phrase/meaning', () => {
-      expect(renderFor(item({ type: 'phrase', stage: 'review', reps: 1 }))).toBe('phrase/meaning');
+    it('non-new non-idiom phrase -> phrase/sayit', () => {
+      expect(renderFor(item({ type: 'phrase', stage: 'review', reps: 1 }))).toBe('phrase/sayit');
     });
-    it('mature phrase -> phrase/sayit', () => {
+    it('non-new idiom phrase -> phrase/meaning (comprehension check)', () => {
+      expect(
+        renderFor(item({ type: 'phrase', stage: 'review', reps: 1, isIdiom: true })),
+      ).toBe('phrase/meaning');
+    });
+    it('mature non-idiom phrase -> phrase/sayit', () => {
       expect(renderFor(item({ type: 'phrase', stage: 'mature', reps: 4 }))).toBe('phrase/sayit');
     });
   });
