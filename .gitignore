@@ -25,3 +25,6 @@ content-pipeline/voice-test/
 npm-debug.*
 yarn-error.*
 .DS_Store
+
+# Ephemeral live-session scratch (tunnel URL + PIDs — never commit)
+LIVE_SESSION.md
