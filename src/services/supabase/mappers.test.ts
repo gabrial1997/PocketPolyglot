@@ -191,12 +191,8 @@ describe('pairRowToReviewItem', () => {
   });
 
   it('carries the glide for diphthong rows', () => {
-    const row: any = {
-      id: 'mp1', a: 'lieta', b: 'lēta', correct: 'a', audio_url: 'x',
-      target: 'lieta', gloss_en: 'thing', pron: 'LYEH-ta',
-      glide: { combo: 'ie', from: 'i', to: 'e' },
-    };
-    const item = pairRowToReviewItem(row, { stage: 'learning', reps: 0 } as any);
+    const row = pair({ glide: { combo: 'ie', from: 'i', to: 'e' } });
+    const item = pairRowToReviewItem(row, reviewState({ item_type: 'pair', stage: 'learning', reps: 0 }));
     expect(item.glide).toEqual({ combo: 'ie', from: 'i', to: 'e' });
   });
 
