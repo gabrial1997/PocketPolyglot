@@ -29,11 +29,9 @@ export function MicOrb({
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: rec
-            ? T.dark
-              ? 'rgba(224,116,138,0.14)'
-              : 'rgba(158,43,58,0.07)'
-            : 'transparent',
+          // Derive the record tint from the record token (subtler in light) — never hardcode rgba
+          // that drifts from T.record's actual hue.
+          backgroundColor: rec ? hexA(REC, T.dark ? 0.14 : 0.07) : 'transparent',
           borderWidth: 1.5,
           borderColor: rec ? hexA(REC, 0.55) : T.hair,
         },

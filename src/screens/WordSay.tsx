@@ -1,6 +1,6 @@
 // word/say — production review, inverse (BACKEND_INTEGRATION §4). The GLOSS is the cue; choices
 // are WORDS. Stages choose -> speak -> rec -> result. Out: { correct, spoke:true, recording }.
-import React from 'react';
+import React, { useRef } from 'react';
 import { View } from 'react-native';
 import { PlayOrb, MicOrb, ChoiceButton, CtaButton, Waveform, SpeedChip, TryAgainNote } from '../components';
 import { CardShell } from './CardShell';
@@ -15,8 +15,12 @@ export function WordSay(props: Props): React.JSX.Element {
   // remember the miss). The recorder owns the take, not us.
   const m = useLoopStage();
   const choices = item.choices ?? [];
-  // Starting to speak always begins recording, whether the user taps the prompt or the mic orb.
+  // The 'speak' stage shows BOTH a CTA and a mic orb that start recording; guard so a rapid
+  // double-tap (either button) fires onRecordStart() exactly once per take.
+  const recStarted = useRef(false);
   const startRec = () => {
+    if (recStarted.current) return;
+    recStarted.current = true;
     onRecordStart();
     m.beginRec();
   };
@@ -34,6 +38,8 @@ export function WordSay(props: Props): React.JSX.Element {
               label={c.value}
               // Only the chosen wrong option reddens; the correct one is NEVER highlighted.
               state={c.value === m.wrongValue ? 'wrong' : 'idle'}
+              // Lock the reddened option so re-tapping it can't re-fire the answer; Try again re-enables it.
+              disabled={c.value === m.wrongValue}
               onPress={() => {
                 onAnswer(c.value, c.correct);
                 m.pick(c.value, c.correct);
@@ -59,7 +65,7 @@ export function WordSay(props: Props): React.JSX.Element {
 
       {m.stage === 'result' ? (
         <View style={{ rowGap: 12 }}>
-          <Waveform seed={`${item.id}-native`} played={1} />
+          <Waveform seed={`${item.id}-native`} played={1} envelope={item.audio.envelope} />
           <Waveform seed={`${item.id}-you`} played={1} />
           {/* A/B self-compare (a locked product pillar): replay the native model and your take. */}
           <CtaButton title="Play original" variant="outline" onPress={() => onPlayCompare?.('native')} />

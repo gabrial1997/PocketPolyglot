@@ -111,9 +111,11 @@ export function createCardHandlers(deps: {
       if (typeof url === 'string' && url) void audio.play(url);
     },
     onComplete: (result) => {
-      // If a recorder.stop() is still in flight, wait for the take so it is never dropped.
+      // If a recorder.stop() is still in flight, wait for the take so it is never dropped. A
+      // failed stop() (mic error / interrupted recording) must NOT deadlock the deck or leak an
+      // unhandled rejection — still submit (without a recording) so the session advances.
       const finish = () => submit(withRecording(result, store.current));
-      if (store.pending) void store.pending.then(finish);
+      if (store.pending) void store.pending.then(finish, finish);
       else void finish();
     },
     // Gate advance: locked/unlock are NOT reviews — step the deck without touching SRS.

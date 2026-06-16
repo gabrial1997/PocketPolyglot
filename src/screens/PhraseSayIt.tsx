@@ -30,7 +30,7 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
       ) : null}
       {stage === 'compare' ? (
         <View style={{ rowGap: 12 }}>
-          <Waveform seed={`${item.id}-native`} played={1} />
+          <Waveform seed={`${item.id}-native`} played={1} envelope={item.audio.envelope} />
           <Waveform seed={`${item.id}-you`} played={1} />
           <CtaButton title="Good" onPress={() => rate('good')} />
           <CtaButton title="Again" variant="outline" onPress={() => rate('again')} />

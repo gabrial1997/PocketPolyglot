@@ -73,7 +73,8 @@ export function HomeScreen({
         <View style={styles.wave}>
           <Waveform seed="today-session" played={0} height={42} count={48} />
         </View>
-        <CtaButton title="Begin listening" onPress={onStart} icon={<PlayIcon size={13} color={T.onPrimary} />} />
+        {/* Multi-modal session (hear/choose/say) — not audio-first; keep the label modality-neutral. */}
+        <CtaButton title="Begin session" onPress={onStart} icon={<PlayIcon size={13} color={T.onPrimary} />} />
       </View>
 
       <View style={styles.spacer} />

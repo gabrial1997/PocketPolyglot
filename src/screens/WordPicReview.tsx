@@ -1,7 +1,7 @@
 // word/pic-review — THE core loop, picture-prompted (BACKEND_INTEGRATION §4, README 02.2).
 // Stages: choose -> speak -> rec -> result. Picture+audio in -> pick word -> say it -> compare.
 // Out: { correct, spoke:true, recording }. Owns only stage/picked (useLoopStage).
-import React from 'react';
+import React, { useRef } from 'react';
 import { View } from 'react-native';
 import { PlayOrb, MicOrb, ChoiceButton, CtaButton, Waveform, SpeedChip, TryAgainNote } from '../components';
 import { CardShell } from './CardShell';
@@ -17,8 +17,12 @@ export function WordPicReview(props: Props): React.JSX.Element {
   // remember the miss). The recorder owns the take, not us.
   const m = useLoopStage();
   const choices = item.choices ?? [];
-  // Starting to speak always begins recording, whether the user taps the prompt or the mic orb.
+  // The 'speak' stage shows BOTH a CTA and a mic orb that start recording; guard so a rapid
+  // double-tap (either button) fires onRecordStart() exactly once per take.
+  const recStarted = useRef(false);
   const startRec = () => {
+    if (recStarted.current) return;
+    recStarted.current = true;
     onRecordStart();
     m.beginRec();
   };
@@ -38,6 +42,8 @@ export function WordPicReview(props: Props): React.JSX.Element {
               gloss={c.gloss}
               // Only the chosen wrong option reddens; the correct one is NEVER highlighted.
               state={c.value === m.wrongValue ? 'wrong' : 'idle'}
+              // Lock the reddened option so re-tapping it can't re-fire the answer; Try again re-enables it.
+              disabled={c.value === m.wrongValue}
               onPress={() => {
                 onAnswer(c.value, c.correct);
                 m.pick(c.value, c.correct);

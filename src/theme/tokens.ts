@@ -35,13 +35,11 @@ export interface Theme {
   dark: boolean;
   bg: string;
   surface: string;
-  surface2: string;
   sunken: string;
   ink: string;
   sub: string;
   faint: string;
   hair: string;
-  line: string;
   primary: string;
   primarySoft: string;
   primaryFaint: string;
@@ -71,13 +69,11 @@ export function ppTheme(dark: boolean, accent: AccentName = DEFAULT_ACCENT): The
       dark: true,
       bg: '#0E1318',
       surface: '#171E27',
-      surface2: '#1F2934',
       sunken: '#0A0E12',
       ink: '#EAF1F8',
       sub: 'rgba(234,241,248,0.60)',
       faint: 'rgba(234,241,248,0.34)',
       hair: 'rgba(255,255,255,0.09)',
-      line: 'rgba(255,255,255,0.07)',
       primary,
       primarySoft: hexA(primary, 0.18),
       primaryFaint: hexA(primary, 0.1),
@@ -110,13 +106,11 @@ export function ppTheme(dark: boolean, accent: AccentName = DEFAULT_ACCENT): The
     dark: false,
     bg: '#F4F2ED',
     surface: '#FFFFFF',
-    surface2: '#FBFAF6',
     sunken: '#ECEAE3',
     ink: '#1A2733',
     sub: 'rgba(26,39,51,0.58)',
     faint: 'rgba(26,39,51,0.34)',
     hair: 'rgba(26,39,51,0.09)',
-    line: 'rgba(26,39,51,0.07)',
     primary,
     primarySoft: hexA(primary, 0.1),
     primaryFaint: hexA(primary, 0.055),
@@ -169,9 +163,8 @@ export const sizing = {
 
 /** Font families. Headline = Spectral 500 (serif); UI = system sans (PP_UI). */
 export const fonts = {
-  // Loaded via expo-font (WIRING_MAP §5). Falls back to platform serif until loaded.
+  // Loaded via expo-font (WIRING_MAP §5).
   headline: 'Spectral_500Medium',
-  headlineFallback: 'serif',
   ui: 'System', // RN maps to San Francisco on iOS / Roboto on Android
 } as const;
 

@@ -2,7 +2,7 @@
 // These keys ARE the analytics events and deep-link routes (WIRING_MAP §1/§6). Keep them stable.
 // The SessionController calls renderFor(item) -> CardKind, then mounts CARD_REGISTRY[kind].
 import type React from 'react';
-import type { CardKind, StandaloneScreen } from '../types/cardKind';
+import type { CardKind } from '../types/cardKind';
 import {
   WordLearnConcrete,
   WordLearnAbstract,
@@ -18,9 +18,6 @@ import {
   DrillScreen,
   DiphthongDrillScreen,
   PronounceScreen,
-  HomeScreen,
-  PodcastScreen,
-  ProgressScreen,
 } from '../screens';
 
 // Card components have varying prop shapes; the controller supplies the right callbacks per kind.
@@ -43,10 +40,4 @@ export const CARD_REGISTRY: Record<CardKind, AnyCard> = {
   drill: DrillScreen,
   diphthong: DiphthongDrillScreen,
   pron: PronounceScreen,
-};
-
-export const STANDALONE_REGISTRY: Record<StandaloneScreen, AnyCard> = {
-  home: HomeScreen,
-  pod: PodcastScreen,
-  prog: ProgressScreen,
 };

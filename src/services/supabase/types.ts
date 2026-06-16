@@ -83,23 +83,6 @@ export interface ReviewStateRow {
   last_review: string | null;
 }
 
-/** Upsert payload for public.review_state (same columns as the row). */
-export type ReviewStateUpsert = ReviewStateRow;
-
-/** Insert payload for public.review_log (append-only history, one row per CardResult). */
-export interface ReviewLogInsert {
-  user_id: string;
-  item_type: DbItemType;
-  item_id: string;
-  card_kind: string;
-  correct: boolean | null;
-  spoke: boolean | null;
-  self_rating: 'good' | 'again' | null;
-  latency_ms: number | null;
-  recording_id?: string | null;
-  interval_label: string | null;
-}
-
 /** public.podcast_episodes — Tier-B listening. */
 export interface PodcastEpisodeRow {
   id: string;

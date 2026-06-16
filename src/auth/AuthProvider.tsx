@@ -30,12 +30,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   useEffect(() => {
     let active = true;
 
-    // Seed from any persisted session; stop the loading gate once resolved.
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      setLoading(false);
-    });
+    // Seed from any persisted session; stop the loading gate once resolved. Always clear the
+    // loading gate — even on a rejected getSession (transient network / storage error at cold
+    // start) — so AuthGate falls through to sign-in instead of hanging on "Loading…" forever.
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        setSession(data.session);
+      })
+      .catch(() => {
+        // Leave session null; the onAuthStateChange subscription will correct it if a session exists.
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
     // Keep in sync with sign-in / sign-out / token refresh events.
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {

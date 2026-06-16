@@ -79,12 +79,12 @@ export function LiveWaveform({
           set(i, prev + (target - prev) * (target > prev ? 0.6 : 0.16));
         }
       } else {
-        // No envelope available: soft synthetic motion (better than a dead flat fill).
-        const t = Date.now() / 1000;
+        // No envelope available: the soundbar must move with REAL amplitude only (locked product
+        // constraint) — never a timer-driven fake. With no data, ease honestly to the resting line
+        // rather than fabricating motion that reads as speech.
         for (let i = 0; i < count; i++) {
-          const target = 0.18 + 0.42 * (0.5 + 0.5 * Math.sin(t * 6 + i * 0.5));
           const prev = smooth.current[i] ?? REST;
-          set(i, prev + (target - prev) * 0.3);
+          set(i, prev + (REST - prev) * 0.16);
         }
       }
       raf.current = requestAnimationFrame(loop);

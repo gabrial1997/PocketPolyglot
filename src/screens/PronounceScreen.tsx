@@ -26,7 +26,7 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
       ) : null}
       {stage === 'compare' ? (
         <View style={{ rowGap: 12 }}>
-          <Waveform seed={`${item.id}-native`} played={1} />
+          <Waveform seed={`${item.id}-native`} played={1} envelope={item.audio.envelope} />
           <Waveform seed={`${item.id}-you`} played={1} />
           {/* A/B self-compare (a locked product pillar): replay the native model and your take. */}
           <CtaButton title="Play original" variant="outline" onPress={() => onPlayCompare?.('native')} />

@@ -11,8 +11,6 @@ const MODE_KEY = 'pp.themeMode';
 
 interface ThemeContextValue {
   theme: Theme;
-  accent: AccentName;
-  setAccent: (a: AccentName) => void;
   mode: ThemeMode;
   setMode: (m: ThemeMode) => void;
   dark: boolean;
@@ -22,7 +20,8 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const scheme = useColorScheme();
-  const [accent, setAccent] = useState<AccentName>(DEFAULT_ACCENT);
+  // Accent is locked to 'nordic' (DECISIONS.md); kept as a value feeding ppTheme, not user-settable.
+  const accent: AccentName = DEFAULT_ACCENT;
   const [mode, setModeState] = useState<ThemeMode>('system');
 
   // Hydrate the persisted mode once. Guarded so a missing/!ready storage never throws.
@@ -54,7 +53,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }): Reac
   const dark = mode === 'system' ? scheme === 'dark' : mode === 'dark';
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme: ppTheme(dark, accent), accent, setAccent, mode, setMode, dark }),
+    () => ({ theme: ppTheme(dark, accent), mode, setMode, dark }),
     [dark, accent, mode],
   );
 
@@ -66,13 +65,6 @@ export function useTheme(): Theme {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used within a ThemeProvider');
   return ctx.theme;
-}
-
-/** Hook to read/set the accent preset. */
-export function useAccent(): Pick<ThemeContextValue, 'accent' | 'setAccent'> {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useAccent must be used within a ThemeProvider');
-  return { accent: ctx.accent, setAccent: ctx.setAccent };
 }
 
 /** Hook to read/set the light/dark mode (and the resolved `dark` flag). */

@@ -44,6 +44,10 @@ export interface ChoiceCardProps extends BaseCardProps {
 export interface PhraseGateProps extends BaseCardProps {
   /** phrase/locked's Continue: advance past the locked glimpse without posting a review. */
   onAdvance?: () => void;
-  /** phrase/unlock fires this on reveal; the controller plays the chime then auto-advances. */
-  onUnlocked?: () => void;
+  /**
+   * phrase/unlock fires this on reveal; the controller plays the chime then auto-advances.
+   * Returns a canceller the card runs on unmount (as a useEffect cleanup) so a late auto-advance
+   * never fires after the card is gone. May return void when there is nothing to cancel.
+   */
+  onUnlocked?: () => (() => void) | void;
 }

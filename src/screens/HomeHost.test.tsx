@@ -37,7 +37,7 @@ describe('HomeHost', () => {
     const u = renderHost();
     // Wait for the async fetch to settle so the act() warning never fires.
     await waitFor(() => expect(u.getByText('7 new')).toBeTruthy());
-    fireEvent.press(u.getByText('Begin listening'));
+    fireEvent.press(u.getByText('Begin session'));
     expect(u.onStart).toHaveBeenCalledTimes(1);
   });
 });

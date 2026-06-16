@@ -220,7 +220,14 @@ export function schedule(
         due: prev.due ?? base.due,
         reps: prev.reps,
         lapses: prev.lapses ?? 0,
-        state: stageToFsrsState(prev.stage),
+        // A row carrying real stability has been reviewed before, so it must never feed
+        // back into FSRS as State.New (which discards that memory). isFresh already routes
+        // a true new card to `base`; reaching here with stage 'new' AND stability present
+        // is a mid-flight row, so reconstruct it as Review to preserve the schedule.
+        state:
+          prev.stability != null && stageToFsrsState(prev.stage) === State.New
+            ? State.Review
+            : stageToFsrsState(prev.stage),
         last_review: prev.last_review ?? undefined,
       };
 
