@@ -1,0 +1,683 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DiphthongDrillScreen renders the meet-the-glide stage (snapshot) 1`] = `
+<RCTSafeAreaView
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#F4F2ED",
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "flex": 1,
+        },
+        {
+          "paddingHorizontal": 24,
+        },
+      ]
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "justifyContent": "center",
+          "rowGap": 12,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 11.5,
+              "fontWeight": "700",
+              "letterSpacing": 1.3,
+            },
+            {
+              "color": "rgba(26,39,51,0.34)",
+            },
+          ]
+        }
+      >
+        HARD COMBINATION
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 76,
+              "fontWeight": "500",
+              "letterSpacing": -1,
+            },
+            {
+              "color": "#1A2733",
+              "fontFamily": "Spectral_500Medium",
+            },
+          ]
+        }
+      >
+        ie
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 16,
+              "lineHeight": 22,
+              "maxWidth": 280,
+              "textAlign": "center",
+            },
+            {
+              "color": "rgba(26,39,51,0.58)",
+            },
+          ]
+        }
+      >
+        Not “ee” and not a flat “e” — it glides from 
+        i
+         to 
+        e
+         in one move.
+      </Text>
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "marginVertical": 8,
+          }
+        }
+      >
+        <View
+          style={
+            [
+              {
+                "position": "relative",
+              },
+              {
+                "height": 84,
+                "width": 250,
+              },
+            ]
+          }
+        >
+          <RNSVGSvgView
+            align="xMidYMid"
+            bbHeight={84}
+            bbWidth={250}
+            focusable={false}
+            height={84}
+            meetOrSlice={0}
+            minX={0}
+            minY={0}
+            style={
+              [
+                {
+                  "backgroundColor": "transparent",
+                  "borderWidth": 0,
+                },
+                {
+                  "flex": 0,
+                  "height": 84,
+                  "width": 250,
+                },
+              ]
+            }
+            vbHeight={84}
+            vbWidth={250}
+            width={250}
+          >
+            <RNSVGGroup
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+            >
+              <RNSVGPath
+                d="M 30 56 Q 125 8 220 56"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeDasharray",
+                    "strokeLinecap",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 1378639500,
+                    "type": 0,
+                  }
+                }
+                strokeDasharray={
+                  [
+                    "1.5",
+                    "6",
+                  ]
+                }
+                strokeLinecap={1}
+                strokeWidth={2}
+              />
+              <RNSVGCircle
+                cx={30}
+                cy={56}
+                fill={
+                  {
+                    "payload": 4294967295,
+                    "type": 0,
+                  }
+                }
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                  ]
+                }
+                r={17}
+                stroke={
+                  {
+                    "payload": 2150391436,
+                    "type": 0,
+                  }
+                }
+                strokeWidth={1.5}
+              />
+              <RNSVGCircle
+                cx={220}
+                cy={56}
+                fill={
+                  {
+                    "payload": 4294967295,
+                    "type": 0,
+                  }
+                }
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                  ]
+                }
+                r={17}
+                stroke={
+                  {
+                    "payload": 387589939,
+                    "type": 0,
+                  }
+                }
+                strokeWidth={1.5}
+              />
+              <RNSVGCircle
+                cx={30}
+                cy={56}
+                fill={
+                  {
+                    "payload": 4281097868,
+                    "type": 0,
+                  }
+                }
+                opacity={0}
+                propList={
+                  [
+                    "fill",
+                  ]
+                }
+                r={6.5}
+              />
+            </RNSVGGroup>
+          </RNSVGSvgView>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 22,
+                  "fontWeight": "500",
+                  "position": "absolute",
+                  "textAlign": "center",
+                },
+                {
+                  "color": "#2C5E8C",
+                  "fontFamily": "Spectral_500Medium",
+                  "height": 34,
+                  "left": 13,
+                  "lineHeight": 34,
+                  "top": 39,
+                  "width": 34,
+                },
+              ]
+            }
+          >
+            i
+          </Text>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 22,
+                  "fontWeight": "500",
+                  "position": "absolute",
+                  "textAlign": "center",
+                },
+                {
+                  "color": "#1A2733",
+                  "fontFamily": "Spectral_500Medium",
+                  "height": 34,
+                  "left": 203,
+                  "lineHeight": 34,
+                  "top": 39,
+                  "width": 34,
+                },
+              ]
+            }
+          >
+            e
+          </Text>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 11.5,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.6,
+                  "position": "absolute",
+                  "textAlign": "center",
+                },
+                {
+                  "color": "rgba(26,39,51,0.34)",
+                  "fontFamily": "System",
+                  "top": 78,
+                  "width": 250,
+                },
+              ]
+            }
+          >
+            one gliding sound
+          </Text>
+        </View>
+      </View>
+      <View
+        accessibilityLabel="Play"
+        accessibilityRole="button"
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "justifyContent": "center",
+            },
+            {
+              "backgroundColor": "#2C5E8C",
+              "borderColor": "#2C5E8C",
+              "borderRadius": 38,
+              "borderWidth": 0,
+              "elevation": 6,
+              "height": 76,
+              "shadowColor": "#2C5E8C",
+              "shadowOffset": {
+                "height": 8,
+                "width": 0,
+              },
+              "shadowOpacity": 0.28,
+              "shadowRadius": 22,
+              "width": 76,
+            },
+          ]
+        }
+      >
+        <RNSVGSvgView
+          align="xMidYMid"
+          bbHeight={27.36}
+          bbWidth={27.36}
+          focusable={false}
+          height={27.36}
+          meetOrSlice={0}
+          minX={0}
+          minY={0}
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "flex": 0,
+                "height": 27,
+                "width": 27,
+              },
+            ]
+          }
+          vbHeight={24}
+          vbWidth={24}
+          width={27.36}
+        >
+          <RNSVGGroup
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+          >
+            <RNSVGPath
+              d="M6 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 6 4.5z"
+              fill={
+                {
+                  "payload": 4294967295,
+                  "type": 0,
+                }
+              }
+              propList={
+                [
+                  "fill",
+                ]
+              }
+            />
+          </RNSVGGroup>
+        </RNSVGSvgView>
+      </View>
+      <View
+        accessibilityLabel="Speech speed 1×, tap to change"
+        accessibilityRole="button"
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "borderRadius": 99,
+              "borderWidth": 1.5,
+              "columnGap": 7,
+              "flexDirection": "row",
+              "paddingHorizontal": 14,
+              "paddingVertical": 8,
+            },
+            {
+              "backgroundColor": "transparent",
+              "borderColor": "rgba(26,39,51,0.09)",
+            },
+          ]
+        }
+      >
+        <RNSVGSvgView
+          align="xMidYMid"
+          bbHeight={15}
+          bbWidth={15}
+          focusable={false}
+          height={15}
+          meetOrSlice={0}
+          minX={0}
+          minY={0}
+          style={
+            [
+              {
+                "backgroundColor": "transparent",
+                "borderWidth": 0,
+              },
+              {
+                "flex": 0,
+                "height": 15,
+                "width": 15,
+              },
+            ]
+          }
+          vbHeight={24}
+          vbWidth={24}
+          width={15}
+        >
+          <RNSVGGroup
+            fill={
+              {
+                "payload": 4278190080,
+                "type": 0,
+              }
+            }
+          >
+            <RNSVGPath
+              d="M4 16.5a8.5 8.5 0 0 1 16 0"
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 1461331763,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeWidth={1.8}
+            />
+            <RNSVGPath
+              d="M12 16.5L8 13.5"
+              fill={null}
+              propList={
+                [
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "strokeLinecap",
+                ]
+              }
+              stroke={
+                {
+                  "payload": 1461331763,
+                  "type": 0,
+                }
+              }
+              strokeLinecap={1}
+              strokeWidth={1.8}
+            />
+            <RNSVGCircle
+              cx="12"
+              cy="16.5"
+              fill={
+                {
+                  "payload": 1461331763,
+                  "type": 0,
+                }
+              }
+              propList={
+                [
+                  "fill",
+                ]
+              }
+              r="1.2"
+            />
+          </RNSVGGroup>
+        </RNSVGSvgView>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 13,
+                "fontVariant": [
+                  "tabular-nums",
+                ],
+                "fontWeight": "600",
+              },
+              {
+                "color": "rgba(26,39,51,0.34)",
+              },
+            ]
+          }
+        >
+          1×
+        </Text>
+      </View>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 13,
+              "fontWeight": "500",
+            },
+            {
+              "color": "rgba(26,39,51,0.34)",
+            },
+          ]
+        }
+      >
+        Tap to hear the glide
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "paddingBottom": 30,
+        }
+      }
+    >
+      <View
+        accessibilityRole="button"
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": false,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "borderRadius": 18,
+              "height": 56,
+              "justifyContent": "center",
+              "width": "100%",
+            },
+            {
+              "backgroundColor": "#2C5E8C",
+              "borderColor": "#2C5E8C",
+              "borderWidth": 0,
+              "opacity": 1,
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
+            }
+          }
+        >
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 16,
+                  "fontWeight": "600",
+                },
+                {
+                  "color": "#FFFFFF",
+                },
+              ]
+            }
+          >
+            Hear it in a word
+          </Text>
+        </View>
+      </View>
+    </View>
+  </View>
+</RCTSafeAreaView>
+`;

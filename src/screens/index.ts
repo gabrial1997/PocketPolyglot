@@ -11,6 +11,7 @@ export { PhraseHear } from './PhraseHear';
 export { PhraseMeaning } from './PhraseMeaning';
 export { PhraseSayIt } from './PhraseSayIt';
 export { DrillScreen } from './DrillScreen';
+export { DiphthongDrillScreen } from './DiphthongDrillScreen';
 export { PronounceScreen } from './PronounceScreen';
 export { HomeScreen } from './HomeScreen';
 export { PodcastScreen } from './PodcastScreen';
