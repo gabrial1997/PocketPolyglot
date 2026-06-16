@@ -116,7 +116,12 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
         <Text style={[styles.eyebrow, { color: T.faint }]}>SOUND CHECK · THE GLIDE VS FLAT Ē</Text>
         <Text style={[styles.prompt, { color: T.ink, fontFamily: fonts.headline }]}>Which did you hear?</Text>
         <View style={styles.waveWrap}>
-          <Waveform seed={pair ? `${pair.a}-${pair.b}` : 'ie-pair'} height={52} count={34} />
+          <Waveform
+            seed={pair ? `${pair.a}-${pair.b}` : 'ie-pair'}
+            envelope={item.audio.envelope}
+            height={52}
+            count={34}
+          />
         </View>
         <PlayOrb onPress={() => onPlay('native')} />
         <SpeedChip value={speed} onChange={onSpeedChange} />

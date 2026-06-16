@@ -28,6 +28,7 @@ function lemma(overrides: Partial<LemmaRow> = {}): LemmaRow {
     cefr: 'A1',
     native_url: 'https://cdn/native.mp3',
     slow_url: 'https://cdn/slow.mp3',
+    envelope: null,
     media: { imageUrl: 'https://cdn/house.png', imageUrlDark: 'https://cdn/house-dark.png' },
     mnemonic: { soundsLike: 'maya', note: 'a house called maya' },
     examples: [{ pre: 'Es ', w: 'māja', post: ' liela', en: 'My house is big', audioUrl: 'https://cdn/ex.mp3' }],
@@ -46,6 +47,7 @@ function phrase(overrides: Partial<PhraseRow> = {}): PhraseRow {
     target: 'Es dzeru kafiju',
     gloss_en: 'I drink coffee',
     audio_url: 'https://cdn/phrase.mp3',
+    envelope: null,
     is_idiom: false,
     seed: null,
     qa_status: 'locked',
@@ -61,6 +63,7 @@ function pair(overrides: Partial<MinimalPairRow> = {}): MinimalPairRow {
     b: 'kapa',
     correct: 'a',
     audio_url: 'https://cdn/pair.mp3',
+    envelope: null,
     contrast_type: 'vowel_length',
     glide: null,
     qa_status: 'locked',
@@ -125,6 +128,15 @@ describe('lemmaRowToReviewItem', () => {
     expect(item.choices).toBeUndefined();
   });
 
+  it('maps the RMS envelope onto audio.envelope when present', () => {
+    const item = lemmaRowToReviewItem(lemma({ envelope: [0.1, 0.5, 0.9] }));
+    expect(item.audio.envelope).toEqual([0.1, 0.5, 0.9]);
+  });
+
+  it('leaves audio.envelope undefined when the row has none', () => {
+    expect(lemmaRowToReviewItem(lemma({ envelope: null })).audio.envelope).toBeUndefined();
+  });
+
   it('omits slowUrl / pron / optional payloads when null', () => {
     const item = lemmaRowToReviewItem(
       lemma({ slow_url: null, pron: null, media: null, mnemonic: null, examples: null, native_url: null }),
@@ -154,6 +166,13 @@ describe('phraseRowToReviewItem', () => {
 
   it('falls back to empty nativeUrl when audio_url is null', () => {
     expect(phraseRowToReviewItem(phrase({ audio_url: null })).audio.nativeUrl).toBe('');
+  });
+
+  it('maps the RMS envelope onto audio.envelope when present, undefined when absent', () => {
+    expect(phraseRowToReviewItem(phrase({ envelope: [0.1, 0.5, 0.9] })).audio.envelope).toEqual([
+      0.1, 0.5, 0.9,
+    ]);
+    expect(phraseRowToReviewItem(phrase({ envelope: null })).audio.envelope).toBeUndefined();
   });
 
   it('honors review state stage/reps', () => {
@@ -198,6 +217,13 @@ describe('pairRowToReviewItem', () => {
 
   it('leaves glide undefined for a plain minimal pair', () => {
     expect(pairRowToReviewItem(pair()).glide).toBeUndefined();
+  });
+
+  it('maps the RMS envelope onto audio.envelope when present, undefined when absent', () => {
+    expect(pairRowToReviewItem(pair({ envelope: [0.1, 0.5, 0.9] })).audio.envelope).toEqual([
+      0.1, 0.5, 0.9,
+    ]);
+    expect(pairRowToReviewItem(pair({ envelope: null })).audio.envelope).toBeUndefined();
   });
 });
 

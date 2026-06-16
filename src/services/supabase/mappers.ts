@@ -48,6 +48,7 @@ export function lemmaRowToReviewItem(
     audio: {
       nativeUrl: row.native_url ?? '',
       ...(row.slow_url ? { slowUrl: row.slow_url } : {}),
+      ...(row.envelope ? { envelope: row.envelope } : {}),
     },
   };
   if (row.pron) item.pron = row.pron;
@@ -71,7 +72,10 @@ export function phraseRowToReviewItem(
     reps,
     target: row.target,
     gloss: row.gloss_en,
-    audio: { nativeUrl: row.audio_url ?? '' },
+    audio: {
+      nativeUrl: row.audio_url ?? '',
+      ...(row.envelope ? { envelope: row.envelope } : {}),
+    },
   };
 }
 
@@ -90,7 +94,10 @@ export function pairRowToReviewItem(
     // leave the gloss empty (the drill UI reads from `pair`, not target/gloss).
     target: row.a,
     gloss: '',
-    audio: { nativeUrl: row.audio_url },
+    audio: {
+      nativeUrl: row.audio_url,
+      ...(row.envelope ? { envelope: row.envelope } : {}),
+    },
     pair: {
       a: row.a,
       b: row.b,

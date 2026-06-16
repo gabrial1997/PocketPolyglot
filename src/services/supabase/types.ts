@@ -27,6 +27,8 @@ export interface LemmaRow {
   cefr: string | null;
   native_url: string | null;
   slow_url: string | null;
+  // Precomputed RMS amplitude envelope (0..1 per ~30ms frame) for the live soundbar; 0005.
+  envelope: number[] | null;
   media: { imageUrl?: string; imageUrlDark?: string } | null;
   mnemonic: ReviewMnemonic | null;
   examples: ReviewExample[] | null;
@@ -43,6 +45,8 @@ export interface PhraseRow {
   target: string;
   gloss_en: string;
   audio_url: string | null;
+  // Precomputed RMS amplitude envelope (0..1 per ~30ms frame) for the live soundbar; 0005.
+  envelope: number[] | null;
   is_idiom: boolean;
   seed: string | null;
   qa_status: 'draft' | 'native_ok' | 'locked';
@@ -56,6 +60,8 @@ export interface MinimalPairRow {
   b: string;
   correct: 'a' | 'b';
   audio_url: string;
+  // Precomputed RMS amplitude envelope (0..1 per ~30ms frame) for the live soundbar; 0005.
+  envelope: number[] | null;
   contrast_type: string;
   // Diphthong drills carry the gliding combination (e.g. ie = i→e); plain pairs leave it null.
   glide: ReviewGlide | null;

@@ -141,7 +141,7 @@ async function generateAudio(renders, voice) {
 // DB seed (needs the service-role client)
 // ---------------------------------------------------------------------------
 
-async function seed(manifest, db) {
+async function seed(manifest, db, envelopes) {
   const counts = {
     audioUploaded: 0,
     lemmas: 0,
@@ -166,6 +166,16 @@ async function seed(manifest, db) {
     if (error) throw error;
     counts.audioUploaded += 1;
     return db.storage.from(BUCKET).getPublicUrl(objectKey).data.publicUrl;
+  }
+
+  // The native-speed RMS envelope per slug — the one the card plays at normal speed. Prefer the
+  // freshly-computed map; fall back to the ./out/<slug>.envelope.json on disk (a warmed run).
+  function envelopeFor(slug) {
+    const fromRun = envelopes?.[slug]?.envelope;
+    if (fromRun) return fromRun;
+    const p = path.join(OUT_DIR, `${slug}.envelope.json`);
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
+    return null;
   }
 
   // Resolve the test user's id by email via the service-role auth admin API.
@@ -201,6 +211,9 @@ async function seed(manifest, db) {
       slow_url: slowUrl,
       qa_status: 'draft',
     };
+    // RMS amplitude envelope of the NATIVE clip (0005 column) — drives the in-app live soundbar.
+    const lemmaEnv = envelopeFor(l.slug);
+    if (lemmaEnv) row.envelope = lemmaEnv;
     if (l.pron) row.pron = l.pron;
     // media in the manifest is the string "placeholder" (no real image yet). The column +
     // contract expect { imageUrl, imageUrlDark }; only insert media when it's a real object.
@@ -219,11 +232,10 @@ async function seed(manifest, db) {
   const phraseSlugToId = {};
   for (const p of manifest.phrases) {
     const audioUrl = await uploadOne(p.slug, 'native');
-    const { data, error } = await db
-      .from('phrases')
-      .insert({ target: p.target, gloss_en: p.gloss, audio_url: audioUrl, qa_status: 'draft' })
-      .select('id')
-      .single();
+    const phraseRow = { target: p.target, gloss_en: p.gloss, audio_url: audioUrl, qa_status: 'draft' };
+    const phraseEnv = envelopeFor(p.slug);
+    if (phraseEnv) phraseRow.envelope = phraseEnv;
+    const { data, error } = await db.from('phrases').insert(phraseRow).select('id').single();
     if (error) throw error;
     phraseSlugToId[p.slug] = data.id;
     counts.phrases += 1;
@@ -260,6 +272,9 @@ async function seed(manifest, db) {
       contrast_type: d.contrastType || 'unspecified',
       qa_status: 'draft',
     };
+    // 0005: envelope of the stimulus (drill target) clip — the audio the perception task plays.
+    const drillEnv = envelopeFor(d.slug);
+    if (drillEnv) row.envelope = drillEnv;
     // 0004 adds minimal_pairs.glide (jsonb). Diphthong drills carry { combo, from, to };
     // the palatalization drill has none (leave null).
     if (d.glide) row.glide = d.glide;
@@ -378,7 +393,7 @@ async function main() {
 
   // ---- OFFLINE: TTS + envelope (always) ----
   console.log('1/2  generating audio + envelopes -> ./out');
-  await generateAudio(renders, voice);
+  const envelopes = await generateAudio(renders, voice);
   console.log(`\nGenerated ${renders.length} native+slow clips (+ envelopes) -> ${OUT_DIR}`);
 
   // ---- Credential guard: skip the live portion gracefully if no service key ----
@@ -400,7 +415,7 @@ async function main() {
   console.log('\n2/2  uploading audio + seeding content + engineering SRS state');
   const { createClient } = await import('@supabase/supabase-js');
   const db = createClient(url, serviceKey, { auth: { persistSession: false } });
-  const counts = await seed(manifest, db);
+  const counts = await seed(manifest, db, envelopes);
 
   console.log('\n=== summary ===');
   console.log(`  audio renders generated : ${renders.length} (native+slow each)`);
