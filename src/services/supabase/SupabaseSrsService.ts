@@ -22,11 +22,26 @@ import {
   type PriorSchedule,
 } from './mappers';
 
-/** Derive the review_state.item_type from a CardKind string (e.g. 'word/say' -> 'lemma'). */
-function cardKindToDbType(cardKind: string): DbItemType {
+/**
+ * Derive the review_state.item_type from a CardKind string (e.g. 'word/say' -> 'lemma').
+ *
+ * Exported (pure, no I/O) so the full CardKind -> DbItemType mapping can be unit-tested
+ * without a network round-trip. NB: the 'diphthong' drill kind MUST map to 'pair' — it is
+ * backed by a minimal_pairs row, same as 'drill'/'pron'. Forgetting it here routes the
+ * diphthong drill's review_state to the 'lemma' fallback (wrong item_type), corrupting
+ * scheduling. See cardKindToDbType.test.ts, which iterates the card registry to force every
+ * registered CardKind to be covered.
+ */
+export function cardKindToDbType(cardKind: string): DbItemType {
   if (cardKind.startsWith('word')) return 'lemma';
   if (cardKind.startsWith('phrase')) return 'phrase';
-  if (cardKind.startsWith('drill') || cardKind.startsWith('pron')) return 'pair';
+  if (
+    cardKind.startsWith('drill') ||
+    cardKind.startsWith('diphthong') ||
+    cardKind.startsWith('pron')
+  ) {
+    return 'pair';
+  }
   // Fallback: treat unknown kinds as lemma so the row still schedules.
   return 'lemma';
 }
