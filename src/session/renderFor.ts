@@ -33,8 +33,8 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
     return item.reps < 2 ? 'phrase/meaning' : 'phrase/sayit';
   }
 
-  // Minimal-pair perception drill.
-  if (item.type === 'pair') return 'drill';
+  // Minimal-pair perception drill — a gliding combination (ie) gets the diphthong card.
+  if (item.type === 'pair') return item.glide ? 'diphthong' : 'drill';
 
   // Fallback: pronunciation comparison.
   return 'pron';

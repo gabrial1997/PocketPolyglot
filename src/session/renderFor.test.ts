@@ -71,3 +71,21 @@ describe('renderFor', () => {
     });
   });
 });
+
+function pairItem(extra: Partial<ReviewItem>): ReviewItem {
+  return {
+    id: 'p1', type: 'pair', stage: 'learning', reps: 0,
+    target: 'lieta', gloss: 'thing',
+    audio: { nativeUrl: 'x' },
+    pair: { a: 'lieta', b: 'lēta', correct: 'a', audioUrl: 'x' },
+    ...extra,
+  };
+}
+
+test('renderFor routes a pair WITH a glide to diphthong', () => {
+  expect(renderFor(pairItem({ glide: { combo: 'ie', from: 'i', to: 'e' } }))).toBe('diphthong');
+});
+
+test('renderFor routes a pair WITHOUT a glide to drill', () => {
+  expect(renderFor(pairItem({}))).toBe('drill');
+});
