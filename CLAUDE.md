@@ -104,3 +104,6 @@ the canonical keys for analytics and deep links — **keep them stable**.
 - `docs/database-schema-seed.md` — Supabase schema seed (suggestions to adapt, not a contract).
 - `CONTRIBUTING.md` — conventions, the data-in/events-out boundary, commit/PR norms.
 - `KICKOFF_PROMPT.md` — the build order. STEP 0 is "green the CI pipeline."
+- `docs/PHONE_PREVIEW.md` — preview on a real iPhone via Expo Go: `npm run phone`. On WSL2,
+  `expo start --tunnel` (bundled @expo/ngrok) is broken and LAN is unroutable — the script
+  uses a Cloudflare quick tunnel instead. Scan the printed QR with the iOS Camera app.

@@ -6,6 +6,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
+    "phone": "bash scripts/phone-preview.sh",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "lint": "eslint .",
