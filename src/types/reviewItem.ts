@@ -62,4 +62,7 @@ export interface ReviewItem {
 
   // diphthong drill — drives the "meet the glide" step + GlideTrack
   glide?: ReviewGlide;
+
+  // phrase items only — the lemma ids that make up the phrase (for the i+1 lock gate).
+  componentLemmaIds?: string[];
 }

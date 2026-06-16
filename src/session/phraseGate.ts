@@ -6,7 +6,7 @@ export interface LockState {
   unknownCount: number;
 }
 
-export function lockState(componentLemmaIds: string[], known: Set<string>): LockState {
+export function lockState(componentLemmaIds: string[], known: ReadonlySet<string>): LockState {
   const unknownCount = componentLemmaIds.filter((id) => !known.has(id)).length;
   return { locked: unknownCount > 1, unknownCount };
 }

@@ -1,9 +1,9 @@
 // SessionController — the one stateful piece (BACKEND_INTEGRATION §2).
 // Flow: getDueBatch -> renderFor(item) -> mount card with item + callbacks -> on complete,
 // submit(result) to SRS and advance. The card stays pure; this hook owns batch + services.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useServices } from '../services/ServiceProvider';
-import { renderFor } from './renderFor';
+import { decideKind } from './decideKind';
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardResult } from '../types/cardResult';
 import type { CardKind } from '../types/cardKind';
@@ -34,6 +34,9 @@ export function useSession(): SessionState {
   const [index, setIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [lastReviewLabel, setLastReviewLabel] = useState<string | null>(null);
+  // Phrase ids seen LOCKED this session. A later available render of the same phrase becomes the
+  // one-time 'phrase/unlock' reveal. A ref (not state) — recording it must not trigger a re-render.
+  const seenLocked = useRef<Set<string>>(new Set());
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -52,10 +55,16 @@ export function useSession(): SessionState {
 
   const kind: CardKind | null = useMemo(() => {
     if (!item) return null;
-    // Phrase gating: if any required component lemma is unknown, show the locked screen.
-    // (Full gating logic comes from phrase_components vs known_lemmas — schema §2/§3.)
-    return renderFor(item);
-  }, [item]);
+    // Phrase gating (i+1): decideKind consults the known-word set + seenLocked to pick
+    // locked/unlock; everything else falls through to renderFor. Pure — no ref mutation here.
+    return decideKind(item, known.all(), seenLocked.current).kind;
+  }, [item, known]);
+
+  // Record locked phrases AFTER render (the useMemo must stay pure). A later available render of
+  // the same phrase id then resolves to 'phrase/unlock' via seenLocked.
+  useEffect(() => {
+    if (item && kind === 'phrase/locked') seenLocked.current.add(item.id);
+  }, [item, kind]);
 
   const submit = useCallback(
     async (result: CardResult) => {
