@@ -1,0 +1,30 @@
+{
+  "voice": "alloy",
+  "_note": "LOCK-MATH DISCREPANCY (flag for Task 14): The plan states 'Vienu kafiju, lūdzu.' should start LOCKED, but with knownForTestUser = [ludzu, viens, maja, labs, suns], that phrase's components [viens, kafija, ludzu] have unknown = {kafija} = exactly 1 unknown. Under the i+1 rule (locked = 2+ unknown), 1 unknown => AVAILABLE, not locked. knownForTestUser is kept EXACTLY as given per instructions. Task 14 must decide: (a) remove one of {viens, ludzu} from knownForTestUser to push the phrase to 2 unknown (locked), or (b) accept it as AVAILABLE. Do NOT silently change this here.",
+  "lemmas": [
+    { "slug": "maja",  "lemma": "māja",  "gloss": "house",  "wordClass": "concrete", "pron": "MAH-ya", "media": "placeholder", "seedState": { "stage": "review", "reps": 1 } },
+    { "slug": "kafija","lemma": "kafija","gloss": "coffee", "wordClass": "concrete", "pron": "KAH-fee-ya", "media": "placeholder", "seedState": { "stage": "new", "reps": 0 } },
+    { "slug": "suns",  "lemma": "suns",  "gloss": "dog",    "wordClass": "concrete", "pron": "soons" },
+    { "slug": "udens", "lemma": "ūdens", "gloss": "water",  "wordClass": "concrete", "pron": "OO-dens" },
+    { "slug": "galds", "lemma": "galds", "gloss": "table",  "wordClass": "concrete", "pron": "galds" },
+    { "slug": "gramata","lemma": "grāmata","gloss": "book", "wordClass": "concrete", "pron": "GRAH-ma-ta" },
+    { "slug": "brivs", "lemma": "brīvs", "gloss": "free",   "wordClass": "abstract", "pron": "BREEVS", "mnemonic": { "soundsLike": "breeze", "note": "a free breeze" }, "seedState": { "stage": "new", "reps": 0 } },
+    { "slug": "labs",  "lemma": "labs",  "gloss": "good",   "wordClass": "abstract", "pron": "labs", "seedState": { "stage": "review", "reps": 1 } },
+    { "slug": "liels", "lemma": "liels", "gloss": "big",    "wordClass": "abstract", "pron": "LYELS" },
+    { "slug": "mazs",  "lemma": "mazs",  "gloss": "small",  "wordClass": "abstract", "pron": "mazs" },
+    { "slug": "ludzu", "lemma": "lūdzu", "gloss": "please", "wordClass": "function", "pron": "LOO-dzu", "examples": [ { "pre": "", "w": "Lūdzu", "post": ", nāc.", "en": "Please, come." } ], "seedState": { "stage": "new", "reps": 0 } },
+    { "slug": "viens", "lemma": "viens", "gloss": "one",    "wordClass": "function", "pron": "VEE-ens", "seedState": { "stage": "review", "reps": 3 } },
+    { "slug": "un",    "lemma": "un",    "gloss": "and",    "wordClass": "function", "pron": "oon" },
+    { "slug": "ne",    "lemma": "nē",    "gloss": "no",     "wordClass": "function", "pron": "neh" }
+  ],
+  "phrases": [
+    { "slug": "ph-ludzu",  "target": "Lūdzu.",                "gloss": "Please.",            "components": ["ludzu"],               "seedState": { "stage": "new", "reps": 0 } },
+    { "slug": "ph-labs-suns","target": "Labs suns.",          "gloss": "Good dog.",          "components": ["labs","suns"],         "seedState": { "stage": "learning", "reps": 1 } },
+    { "slug": "ph-kafija", "target": "Vienu kafiju, lūdzu.",  "gloss": "One coffee, please.","components": ["viens","kafija","ludzu"], "seedState": { "stage": "review", "reps": 2 } }
+  ],
+  "drills": [
+    { "slug": "drill-loti", "target": "ļoti", "gloss": "very", "pron": "LYO-tee", "a": "lācis", "b": "ļoti", "correct": "b", "contrastType": "palatalization" },
+    { "slug": "drill-lieta","target": "lieta","gloss": "thing","pron": "LYEH-ta","a": "lieta","b": "lēta","correct": "a","contrastType": "diphthong", "glide": { "combo": "ie", "from": "i", "to": "e" } }
+  ],
+  "knownForTestUser": ["ludzu", "viens", "maja", "labs", "suns"]
+}
