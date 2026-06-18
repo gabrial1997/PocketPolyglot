@@ -47,7 +47,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
           <View style={styles.glideWrap}>
             <GlideTrack from={glide?.from} to={glide?.to} color={T.primary} />
           </View>
-          <PlayOrb size={66} onPress={() => onPlay('native')} />
+          <PlayOrb size={66} onPress={() => onPlay('glide')} />
           <SpeedChip value={speed} onChange={onSpeedChange} />
           <Text style={[styles.hint, { color: T.faint }]}>Tap to hear the glide</Text>
         </View>

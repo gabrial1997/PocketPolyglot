@@ -52,8 +52,17 @@ describe('DiphthongDrillScreen', () => {
     expect(toJSON()).toMatchSnapshot();
   });
 
-  it('plays the glide audio when the play orb is tapped on the meet stage', () => {
+  it('plays the isolated glide (not the whole word) when the orb is tapped on the meet stage', () => {
     const u = renderCard();
+    fireEvent.press(u.getByLabelText('Play'));
+    expect(u.props.onPlay).toHaveBeenCalledWith('glide');
+  });
+
+  it('plays the whole word (native) on the say-it stage, not the glide', () => {
+    const u = renderCard();
+    toContrast(u);
+    fireEvent.press(u.getByText('lieta')); // correct side -> advance
+    fireEvent.press(u.getByText('Say it back'));
     fireEvent.press(u.getByLabelText('Play'));
     expect(u.props.onPlay).toHaveBeenCalledWith('native');
   });
