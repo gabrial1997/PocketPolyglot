@@ -86,14 +86,17 @@ export function pairRowToReviewItem(
   reviewState?: Pick<ReviewStateRow, 'stage' | 'reps'>,
 ): ReviewItem {
   const { stage, reps } = stageAndReps(reviewState);
+  // The stimulus clip says the CORRECT-side word (you hear one word and identify it). The
+  // say-it step shows item.target and plays the stimulus, so target MUST be the correct-side
+  // word — never arbitrarily side `a` — or the learner sees one word and hears another (the
+  // see == hear rule). gloss stays empty (the drill UI reads from `pair`, not target/gloss).
+  const stimulusWord = row.correct === 'a' ? row.a : row.b;
   const item: ReviewItem = {
     id: row.id,
     type: 'pair',
     stage,
     reps,
-    // A minimal pair has no single "target word"; we surface side `a` as the target and
-    // leave the gloss empty (the drill UI reads from `pair`, not target/gloss).
-    target: row.a,
+    target: stimulusWord,
     gloss: '',
     audio: {
       nativeUrl: row.audio_url,
@@ -104,10 +107,19 @@ export function pairRowToReviewItem(
       b: row.b,
       correct: row.correct,
       audioUrl: row.audio_url,
+      ...(row.a_audio_url ? { aAudioUrl: row.a_audio_url } : {}),
+      ...(row.b_audio_url ? { bAudioUrl: row.b_audio_url } : {}),
     },
   };
-  // Diphthong drills carry a `glide` (e.g. ie = i→e); plain minimal pairs do not.
-  if (row.glide) item.glide = row.glide;
+  // Diphthong drills carry a `glide` (e.g. ie = i→e) + an isolated-glide clip; plain pairs do not.
+  if (row.glide) {
+    item.glide = {
+      combo: row.glide.combo,
+      from: row.glide.from,
+      to: row.glide.to,
+      ...(row.glide_audio_url ? { audioUrl: row.glide_audio_url } : {}),
+    };
+  }
   return item;
 }
 

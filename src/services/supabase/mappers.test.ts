@@ -63,6 +63,9 @@ function pair(overrides: Partial<MinimalPairRow> = {}): MinimalPairRow {
     b: 'kapa',
     correct: 'a',
     audio_url: 'https://cdn/pair.mp3',
+    a_audio_url: 'https://cdn/pair-a.mp3',
+    b_audio_url: 'https://cdn/pair-b.mp3',
+    glide_audio_url: null,
     envelope: null,
     contrast_type: 'vowel_length',
     glide: null,
@@ -205,7 +208,32 @@ describe('pairRowToReviewItem', () => {
       b: 'kapa',
       correct: 'a',
       audioUrl: 'https://cdn/pair.mp3',
+      aAudioUrl: 'https://cdn/pair-a.mp3',
+      bAudioUrl: 'https://cdn/pair-b.mp3',
     });
+  });
+
+  it('target is the stimulus word (side b) when correct is b — see == hear', () => {
+    const item = pairRowToReviewItem(pair({ a: 'lācis', b: 'ļoti', correct: 'b' }));
+    expect(item.target).toBe('ļoti');
+  });
+
+  it('target is side a when correct is a', () => {
+    const item = pairRowToReviewItem(pair({ a: 'lieta', b: 'lēta', correct: 'a' }));
+    expect(item.target).toBe('lieta');
+  });
+
+  it('carries per-option audio urls into item.pair', () => {
+    const item = pairRowToReviewItem(pair());
+    expect(item.pair?.aAudioUrl).toBe('https://cdn/pair-a.mp3');
+    expect(item.pair?.bAudioUrl).toBe('https://cdn/pair-b.mp3');
+  });
+
+  it('carries glide.audioUrl from glide_audio_url for diphthong rows', () => {
+    const item = pairRowToReviewItem(
+      pair({ glide: { combo: 'ie', from: 'i', to: 'e' }, glide_audio_url: 'https://cdn/glide-ie.mp3' }),
+    );
+    expect(item.glide).toEqual({ combo: 'ie', from: 'i', to: 'e', audioUrl: 'https://cdn/glide-ie.mp3' });
   });
 
   it('honors review state stage/reps', () => {
