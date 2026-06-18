@@ -5,7 +5,7 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: 'PocketPolyglot',
   slug: 'pocketpolyglot',
-  version: '0.1.1',
+  version: '0.1.2',
   orientation: 'portrait',
   scheme: 'pocketpolyglot',
   userInterfaceStyle: 'automatic', // light + dark both supported (kit.jsx ppTheme)
