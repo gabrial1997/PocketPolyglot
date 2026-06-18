@@ -88,6 +88,17 @@ describe('resolvePlay', () => {
   it('number with no such example -> null', () => {
     expect(resolvePlay(item(), 2)).toBeNull();
   });
+  it('glide -> the isolated-glide clip when present', () => {
+    const it2 = item({ glide: { combo: 'ie', from: 'i', to: 'e', audioUrl: 'glide-ie.mp3' } });
+    expect(resolvePlay(it2, 'glide')).toEqual({ url: 'glide-ie.mp3' });
+  });
+  it('glide falls back to the native url when the glide has no clip', () => {
+    const it2 = item({ glide: { combo: 'ie', from: 'i', to: 'e' } });
+    expect(resolvePlay(it2, 'glide')).toEqual({ url: 'native.mp3' });
+  });
+  it('glide -> null when there is neither a glide clip nor a native url', () => {
+    expect(resolvePlay(item({ glide: { combo: 'ie', from: 'i', to: 'e' }, audio: { nativeUrl: '' } }), 'glide')).toBeNull();
+  });
 });
 
 describe('withRecording', () => {

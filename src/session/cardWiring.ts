@@ -37,6 +37,12 @@ export function resolvePlay(item: ReviewItem, which: PlayWhich): { url: string; 
     const url = item.audio.slowUrl ?? item.audio.nativeUrl;
     return url ? { url, rate: SLOW_RATE } : null;
   }
+  if (which === 'glide') {
+    // The diphthong "meet the glide" step wants the isolated-glide clip; before that clip is
+    // seeded it falls back to the stimulus (native) clip so the orb is never silent.
+    const url = item.glide?.audioUrl ?? item.audio.nativeUrl;
+    return url ? { url } : null;
+  }
   // number = example index (function learn card).
   const url = item.examples?.[which]?.audioUrl;
   return url ? { url } : null;

@@ -5,8 +5,11 @@ import type { ReviewItem } from '../types/reviewItem';
 import type { CardResult } from '../types/cardResult';
 import type { Speed } from '../components';
 
-/** Which audio variant to play. (number = example index for the function learn card.) */
-export type PlayWhich = 'native' | 'slow' | number;
+/**
+ * Which audio variant to play. (number = example index for the function learn card.)
+ * 'glide' = the isolated-glide clip played by the diphthong drill's "meet the glide" step.
+ */
+export type PlayWhich = 'native' | 'slow' | 'glide' | number;
 
 /** Base props common to every Tier-A card. */
 export interface BaseCardProps {
