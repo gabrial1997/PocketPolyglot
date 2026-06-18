@@ -133,16 +133,17 @@ describe('WordPicReview', () => {
   it('lets the user replay both the original and their own take (A/B self-compare)', () => {
     const u = renderCard();
     runLoop(u);
-    fireEvent.press(u.getByText('Play original'));
+    fireEvent.press(u.getByText('Native'));
     expect(u.props.onPlayCompare).toHaveBeenCalledWith('native');
-    fireEvent.press(u.getByText('Play yours'));
+    fireEvent.press(u.getByText('You'));
     expect(u.props.onPlayCompare).toHaveBeenCalledWith('you');
   });
 
-  it('begins recording from the speak prompt, not only the mic orb', () => {
+  it('begins recording from the mic orb on the speak stage', () => {
     const u = renderCard();
     fireEvent.press(u.getByText('māja')); // choose -> speak
-    fireEvent.press(u.getByText('Now say it'));
+    expect(u.getByText('Now say it')).toBeTruthy(); // prompt caption shown (not a tap target)
+    fireEvent.press(u.getByLabelText('Record')); // the mic orb is the record control
     expect(u.props.onRecordStart).toHaveBeenCalled();
   });
 });

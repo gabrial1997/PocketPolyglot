@@ -1,88 +1,104 @@
-// word/say — production review, inverse (BACKEND_INTEGRATION §4). The GLOSS is the cue; choices
-// are WORDS. Stages choose -> speak -> rec -> result. Out: { correct, spoke:true, recording }.
-import React, { useRef } from 'react';
-import { View } from 'react-native';
-import { PlayOrb, MicOrb, ChoiceButton, CtaButton, Waveform, SpeedChip, TryAgainNote } from '../components';
-import { CardShell } from './CardShell';
+// word/say — production review, inverse (BACKEND_INTEGRATION §4). The GLOSS is the cue; choices are
+// WORDS. Stages choose -> speak -> rec -> result. Out: { correct, spoke:true, recording }.
+// LOCKED wrong-answer rule lives in useLoopStage (no advance / redden chosen / never reveal / remember).
+// Visual: matches mockup word/say (gloss cue + word list -> say it -> native/you compare).
+import React, { useRef, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { Screen, PlayOrb, MicOrb, ChoiceButton, CtaButton, SpeedChip, TryAgainNote } from '../components';
+import { useTheme } from '../theme/ThemeProvider';
+import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, CompareRow, PlayBackToBack, ResultNote } from '../components/cardChrome';
 import { useLoopStage } from './useLoopStage';
 import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 
 type Props = RecordingCardProps & ChoiceCardProps;
 
 export function WordSay(props: Props): React.JSX.Element {
-  const { item, onPlay, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete } = props;
-  // useLoopStage owns the choose-stage wrong-answer rule (no advance / redden chosen / never reveal /
-  // remember the miss). The recorder owns the take, not us.
+  const { item, onPlay, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed, onSpeedChange } = props;
+  const T = useTheme();
   const m = useLoopStage();
   const choices = item.choices ?? [];
-  // The 'speak' stage shows BOTH a CTA and a mic orb that start recording; guard so a rapid
-  // double-tap (either button) fires onRecordStart() exactly once per take.
+  const [playing, setPlaying] = useState(false);
+  const [playWho, setPlayWho] = useState<'native' | 'you' | null>(null);
   const recStarted = useRef(false);
-  const startRec = () => {
+  const startRec = (): void => {
     if (recStarted.current) return;
     recStarted.current = true;
     onRecordStart();
     m.beginRec();
   };
+  const compare = (who: 'native' | 'you'): void => { setPlayWho(who); onPlayCompare?.(who); };
 
   return (
-    <CardShell eyebrow="Say it" gloss={item.gloss}>
-      <PlayOrb onPress={() => onPlay('native')} />
-      <SpeedChip value={props.speed} onChange={props.onSpeedChange} />
-
+    <Screen>
       {m.stage === 'choose' ? (
         <>
-          {choices.map((c) => (
-            <ChoiceButton
-              key={c.value}
-              label={c.value}
-              // Only the chosen wrong option reddens; the correct one is NEVER highlighted.
-              state={c.value === m.wrongValue ? 'wrong' : 'idle'}
-              // Lock the reddened option so re-tapping it can't re-fire the answer; Try again re-enables it.
-              disabled={c.value === m.wrongValue}
-              onPress={() => {
-                onAnswer(c.value, c.correct);
-                m.pick(c.value, c.correct);
-              }}
-            />
-          ))}
-          {m.wrongValue ? <TryAgainNote onRetry={m.retry} /> : null}
+          <CardBody>
+            <Eyebrow>Review · say it</Eyebrow>
+            <Text style={[styles.cue, { color: T.ink }]}>{item.gloss}</Text>
+            <PromptText>Which word says it?</PromptText>
+            <View style={styles.choices}>
+              {choices.map((c) => (
+                <ChoiceButton
+                  key={c.value}
+                  label={c.value}
+                  state={c.value === m.wrongValue ? 'wrong' : 'idle'}
+                  disabled={c.value === m.wrongValue}
+                  onPress={() => { onAnswer(c.value, c.correct); m.pick(c.value, c.correct); }}
+                />
+              ))}
+            </View>
+            {m.wrongValue ? <TryAgainNote onRetry={m.retry} /> : null}
+          </CardBody>
+          <CardFooter>
+            <FootNote>Recalling the word from its meaning is the strongest review.</FootNote>
+          </CardFooter>
         </>
       ) : null}
 
-      {m.stage === 'speak' ? <CtaButton title="Now say it" onPress={startRec} /> : null}
-
-      {m.stage === 'rec' ? (
-        <MicOrb
-          rec
-          onPress={() => {
-            onRecordStop(); // signal stop; the injected RecorderService produces the take
-            m.finishRec();
-          }}
-        />
+      {m.stage === 'speak' || m.stage === 'rec' ? (
+        <>
+          <CardBody>
+            <Text style={[styles.cueSmall, { color: T.sub }]}>{item.gloss}</Text>
+            <WordHero size={52}>{item.target}</WordHero>
+            {item.pron ? <GlossLine gloss={item.pron} size={13.5} /> : null}
+            <PlayOrb size={58} filled={false} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+            <SpeedChip value={speed} onChange={onSpeedChange} />
+            <View style={styles.mic}>
+              <MicOrb rec={m.stage === 'rec'} onPress={() => { if (m.stage === 'rec') { onRecordStop(); m.finishRec(); } else { startRec(); } }} />
+              <Caption>{m.stage === 'rec' ? 'Listening… tap to stop' : 'Now say it'}</Caption>
+            </View>
+          </CardBody>
+          <CardFooter>
+            <FootNote>Speaking it closes the loop.</FootNote>
+          </CardFooter>
+        </>
       ) : null}
-      {m.stage === 'speak' ? <MicOrb onPress={startRec} /> : null}
 
       {m.stage === 'result' ? (
-        <View style={{ rowGap: 12 }}>
-          <Waveform seed={`${item.id}-native`} played={1} envelope={item.audio.envelope} />
-          <Waveform seed={`${item.id}-you`} played={1} />
-          {/* A/B self-compare (a locked product pillar): replay the native model and your take. */}
-          <CtaButton title="Play original" variant="outline" onPress={() => onPlayCompare?.('native')} />
-          <CtaButton title="Play yours" variant="outline" onPress={() => onPlayCompare?.('you')} />
-          <CtaButton
-            title="Continue"
-            onPress={() =>
-              onComplete({
-                itemId: item.id,
-                cardKind: 'word/say',
-                correct: !m.missed,
-                spoke: true,
-              })
-            }
-          />
-        </View>
+        <>
+          <CardBody>
+            <WordHero size={52}>{item.target}</WordHero>
+            <GlossLine gloss={item.gloss} pron={item.pron} />
+            <View style={styles.compare}>
+              <CompareRow label="Native" icon="speaker" seed={`${item.id}-native`} envelope={item.audio.envelope} active={playWho === 'native'} onPress={() => compare('native')} />
+              <CompareRow label="You" icon="mic" seed={`${item.id}-you`} active={playWho === 'you'} onPress={() => compare('you')} />
+            </View>
+            <PlayBackToBack onPress={() => { setPlayWho('native'); onPlayCompare?.('native'); }} />
+            <ResultNote>Sounded right — next review in 6 days.</ResultNote>
+          </CardBody>
+          <CardFooter>
+            <CtaButton title="Continue" onPress={() => onComplete({ itemId: item.id, cardKind: 'word/say', correct: !m.missed, spoke: true })} />
+          </CardFooter>
+        </>
       ) : null}
-    </CardShell>
+    </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  cue: { fontSize: 27, fontWeight: '500', letterSpacing: -0.3, textAlign: 'center' },
+  cueSmall: { fontSize: 15, textAlign: 'center' },
+  choices: { width: '100%', rowGap: 10, marginTop: 8 },
+  mic: { alignItems: 'center', rowGap: 12, marginTop: 8 },
+  compare: { width: '100%', rowGap: 10, marginTop: 8 },
+});

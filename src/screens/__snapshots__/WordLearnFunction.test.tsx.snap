@@ -28,44 +28,88 @@ exports[`WordLearnFunction renders the example sentences from item data (snapsho
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "flex": 1,
-          "justifyContent": "center",
-          "rowGap": 12,
-        }
+        [
+          {
+            "alignItems": "center",
+            "flex": 1,
+            "justifyContent": "center",
+            "paddingBottom": 8,
+            "rowGap": 14,
+          },
+          undefined,
+        ]
       }
     >
-      <Text
+      <View
         style={
-          [
-            {
-              "fontSize": 11.5,
-              "fontWeight": "700",
-              "letterSpacing": 1.3,
-              "textAlign": "center",
-            },
-            {
-              "color": "rgba(26,39,51,0.34)",
-            },
-          ]
+          {
+            "alignItems": "center",
+            "columnGap": 10,
+            "flexDirection": "row",
+          }
         }
       >
-        NEW WORD
-      </Text>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 12,
+                "fontWeight": "600",
+                "letterSpacing": 1.3,
+                "textAlign": "center",
+              },
+              {
+                "color": "rgba(26,39,51,0.34)",
+              },
+            ]
+          }
+        >
+          NEW WORD
+        </Text>
+        <View
+          style={
+            [
+              {
+                "borderRadius": 99,
+                "borderWidth": 1,
+                "paddingHorizontal": 12,
+                "paddingVertical": 5,
+              },
+              {
+                "backgroundColor": "transparent",
+                "borderColor": "rgba(26,39,51,0.09)",
+              },
+            ]
+          }
+        >
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 11,
+                  "fontWeight": "700",
+                  "letterSpacing": 1.2,
+                },
+                {
+                  "color": "rgba(26,39,51,0.58)",
+                },
+              ]
+            }
+          >
+            FUNCTION WORD
+          </Text>
+        </View>
+      </View>
       <Text
         style={
-          [
-            {
-              "fontSize": 52,
-              "letterSpacing": -0.8,
-              "textAlign": "center",
-            },
-            {
-              "color": "#1A2733",
-              "fontFamily": "Spectral_500Medium",
-            },
-          ]
+          {
+            "color": "#1A2733",
+            "fontFamily": "Spectral_500Medium",
+            "fontSize": 52,
+            "letterSpacing": -0.8,
+            "lineHeight": 52,
+            "textAlign": "center",
+          }
         }
       >
         uz
@@ -74,7 +118,944 @@ exports[`WordLearnFunction renders the example sentences from item data (snapsho
         style={
           [
             {
-              "fontSize": 14,
+              "textAlign": "center",
+            },
+            {
+              "color": "rgba(26,39,51,0.58)",
+              "fontSize": 17,
+            },
+          ]
+        }
+      >
+        on / to
+        <Text
+          style={
+            {
+              "color": "rgba(26,39,51,0.34)",
+            }
+          }
+        >
+           · 
+          OOZ
+        </Text>
+      </Text>
+      <View
+        style={
+          {
+            "marginTop": 6,
+            "rowGap": 16,
+            "width": "100%",
+          }
+        }
+      >
+        <View
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "columnGap": 13,
+              "flexDirection": "row",
+              "width": "100%",
+            }
+          }
+        >
+          <View
+            accessibilityLabel="Play"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                },
+                {
+                  "backgroundColor": "transparent",
+                  "borderColor": "#2C5E8C",
+                  "borderRadius": 19.5,
+                  "borderWidth": 1.5,
+                  "elevation": 0,
+                  "height": 39,
+                  "shadowColor": "#2C5E8C",
+                  "shadowOffset": {
+                    "height": 8,
+                    "width": 0,
+                  },
+                  "shadowOpacity": 0,
+                  "shadowRadius": 22,
+                  "width": 39,
+                },
+              ]
+            }
+          >
+            <RNSVGSvgView
+              align="xMidYMid"
+              bbHeight={14.04}
+              bbWidth={14.04}
+              focusable={false}
+              height={14.04}
+              meetOrSlice={0}
+              minX={0}
+              minY={0}
+              style={
+                [
+                  {
+                    "backgroundColor": "transparent",
+                    "borderWidth": 0,
+                  },
+                  {
+                    "flex": 0,
+                    "height": 14,
+                    "width": 14,
+                  },
+                ]
+              }
+              vbHeight={24}
+              vbWidth={24}
+              width={14.04}
+            >
+              <RNSVGGroup
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+              >
+                <RNSVGPath
+                  d="M6 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 6 4.5z"
+                  fill={
+                    {
+                      "payload": 4281097868,
+                      "type": 0,
+                    }
+                  }
+                  propList={
+                    [
+                      "fill",
+                    ]
+                  }
+                />
+              </RNSVGGroup>
+            </RNSVGSvgView>
+          </View>
+          <View
+            style={
+              {
+                "flex": 1,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 19,
+                    "fontWeight": "500",
+                  },
+                  {
+                    "color": "#1A2733",
+                    "fontFamily": "Spectral_500Medium",
+                  },
+                ]
+              }
+            >
+              Grāmata ir
+              <Text
+                style={
+                  {
+                    "color": "#2C5E8C",
+                  }
+                }
+              >
+                uz
+              </Text>
+              galda.
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "marginTop": 2,
+                  },
+                  {
+                    "color": "rgba(26,39,51,0.58)",
+                  },
+                ]
+              }
+            >
+              The book is on the table.
+            </Text>
+          </View>
+        </View>
+        <View
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "columnGap": 13,
+              "flexDirection": "row",
+              "width": "100%",
+            }
+          }
+        >
+          <View
+            accessibilityLabel="Play"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                },
+                {
+                  "backgroundColor": "transparent",
+                  "borderColor": "#2C5E8C",
+                  "borderRadius": 19.5,
+                  "borderWidth": 1.5,
+                  "elevation": 0,
+                  "height": 39,
+                  "shadowColor": "#2C5E8C",
+                  "shadowOffset": {
+                    "height": 8,
+                    "width": 0,
+                  },
+                  "shadowOpacity": 0,
+                  "shadowRadius": 22,
+                  "width": 39,
+                },
+              ]
+            }
+          >
+            <RNSVGSvgView
+              align="xMidYMid"
+              bbHeight={14.04}
+              bbWidth={14.04}
+              focusable={false}
+              height={14.04}
+              meetOrSlice={0}
+              minX={0}
+              minY={0}
+              style={
+                [
+                  {
+                    "backgroundColor": "transparent",
+                    "borderWidth": 0,
+                  },
+                  {
+                    "flex": 0,
+                    "height": 14,
+                    "width": 14,
+                  },
+                ]
+              }
+              vbHeight={24}
+              vbWidth={24}
+              width={14.04}
+            >
+              <RNSVGGroup
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+              >
+                <RNSVGPath
+                  d="M6 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 6 4.5z"
+                  fill={
+                    {
+                      "payload": 4281097868,
+                      "type": 0,
+                    }
+                  }
+                  propList={
+                    [
+                      "fill",
+                    ]
+                  }
+                />
+              </RNSVGGroup>
+            </RNSVGSvgView>
+          </View>
+          <View
+            style={
+              {
+                "flex": 1,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 19,
+                    "fontWeight": "500",
+                  },
+                  {
+                    "color": "#1A2733",
+                    "fontFamily": "Spectral_500Medium",
+                  },
+                ]
+              }
+            >
+              Es eju
+              <Text
+                style={
+                  {
+                    "color": "#2C5E8C",
+                  }
+                }
+              >
+                uz
+              </Text>
+              mājām.
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "marginTop": 2,
+                  },
+                  {
+                    "color": "rgba(26,39,51,0.58)",
+                  },
+                ]
+              }
+            >
+              I am going home.
+            </Text>
+          </View>
+        </View>
+        <View
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            {
+              "alignItems": "center",
+              "columnGap": 13,
+              "flexDirection": "row",
+              "width": "100%",
+            }
+          }
+        >
+          <View
+            accessibilityLabel="Play"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                },
+                {
+                  "backgroundColor": "transparent",
+                  "borderColor": "#2C5E8C",
+                  "borderRadius": 19.5,
+                  "borderWidth": 1.5,
+                  "elevation": 0,
+                  "height": 39,
+                  "shadowColor": "#2C5E8C",
+                  "shadowOffset": {
+                    "height": 8,
+                    "width": 0,
+                  },
+                  "shadowOpacity": 0,
+                  "shadowRadius": 22,
+                  "width": 39,
+                },
+              ]
+            }
+          >
+            <RNSVGSvgView
+              align="xMidYMid"
+              bbHeight={14.04}
+              bbWidth={14.04}
+              focusable={false}
+              height={14.04}
+              meetOrSlice={0}
+              minX={0}
+              minY={0}
+              style={
+                [
+                  {
+                    "backgroundColor": "transparent",
+                    "borderWidth": 0,
+                  },
+                  {
+                    "flex": 0,
+                    "height": 14,
+                    "width": 14,
+                  },
+                ]
+              }
+              vbHeight={24}
+              vbWidth={24}
+              width={14.04}
+            >
+              <RNSVGGroup
+                fill={
+                  {
+                    "payload": 4278190080,
+                    "type": 0,
+                  }
+                }
+              >
+                <RNSVGPath
+                  d="M6 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 6 4.5z"
+                  fill={
+                    {
+                      "payload": 4281097868,
+                      "type": 0,
+                    }
+                  }
+                  propList={
+                    [
+                      "fill",
+                    ]
+                  }
+                />
+              </RNSVGGroup>
+            </RNSVGSvgView>
+          </View>
+          <View
+            style={
+              {
+                "flex": 1,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 19,
+                    "fontWeight": "500",
+                  },
+                  {
+                    "color": "#1A2733",
+                    "fontFamily": "Spectral_500Medium",
+                  },
+                ]
+              }
+            >
+              Skaties
+              <Text
+                style={
+                  {
+                    "color": "#2C5E8C",
+                  }
+                }
+              >
+                uz
+              </Text>
+              mani.
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "marginTop": 2,
+                  },
+                  {
+                    "color": "rgba(26,39,51,0.58)",
+                  },
+                ]
+              }
+            >
+              Look at me.
+            </Text>
+          </View>
+        </View>
+      </View>
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "marginTop": 6,
+            "rowGap": 12,
+          }
+        }
+      >
+        <View
+          accessibilityLabel="Play"
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            [
+              {
+                "alignItems": "center",
+                "justifyContent": "center",
+              },
+              {
+                "backgroundColor": "#2C5E8C",
+                "borderColor": "#2C5E8C",
+                "borderRadius": 33.5,
+                "borderWidth": 0,
+                "elevation": 6,
+                "height": 67,
+                "shadowColor": "#2C5E8C",
+                "shadowOffset": {
+                  "height": 8,
+                  "width": 0,
+                },
+                "shadowOpacity": 0.28,
+                "shadowRadius": 22,
+                "width": 67,
+              },
+            ]
+          }
+        >
+          <RNSVGSvgView
+            align="xMidYMid"
+            bbHeight={24.119999999999997}
+            bbWidth={24.119999999999997}
+            focusable={false}
+            height={24.119999999999997}
+            meetOrSlice={0}
+            minX={0}
+            minY={0}
+            style={
+              [
+                {
+                  "backgroundColor": "transparent",
+                  "borderWidth": 0,
+                },
+                {
+                  "flex": 0,
+                  "height": 24,
+                  "width": 24,
+                },
+              ]
+            }
+            vbHeight={24}
+            vbWidth={24}
+            width={24.119999999999997}
+          >
+            <RNSVGGroup
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+            >
+              <RNSVGPath
+                d="M6 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 6 4.5z"
+                fill={
+                  {
+                    "payload": 4294967295,
+                    "type": 0,
+                  }
+                }
+                propList={
+                  [
+                    "fill",
+                  ]
+                }
+              />
+            </RNSVGGroup>
+          </RNSVGSvgView>
+        </View>
+        <View
+          accessibilityLabel="Speech speed 1×, tap to change"
+          accessibilityRole="button"
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessibilityValue={
+            {
+              "max": undefined,
+              "min": undefined,
+              "now": undefined,
+              "text": undefined,
+            }
+          }
+          accessible={true}
+          collapsable={false}
+          focusable={true}
+          onBlur={[Function]}
+          onClick={[Function]}
+          onFocus={[Function]}
+          onResponderGrant={[Function]}
+          onResponderMove={[Function]}
+          onResponderRelease={[Function]}
+          onResponderTerminate={[Function]}
+          onResponderTerminationRequest={[Function]}
+          onStartShouldSetResponder={[Function]}
+          style={
+            [
+              {
+                "alignItems": "center",
+                "borderRadius": 99,
+                "borderWidth": 1.5,
+                "columnGap": 7,
+                "flexDirection": "row",
+                "paddingHorizontal": 14,
+                "paddingVertical": 8,
+              },
+              {
+                "backgroundColor": "transparent",
+                "borderColor": "rgba(26,39,51,0.09)",
+              },
+            ]
+          }
+        >
+          <RNSVGSvgView
+            align="xMidYMid"
+            bbHeight={15}
+            bbWidth={15}
+            focusable={false}
+            height={15}
+            meetOrSlice={0}
+            minX={0}
+            minY={0}
+            style={
+              [
+                {
+                  "backgroundColor": "transparent",
+                  "borderWidth": 0,
+                },
+                {
+                  "flex": 0,
+                  "height": 15,
+                  "width": 15,
+                },
+              ]
+            }
+            vbHeight={24}
+            vbWidth={24}
+            width={15}
+          >
+            <RNSVGGroup
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+            >
+              <RNSVGPath
+                d="M4 16.5a8.5 8.5 0 0 1 16 0"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 1461331763,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeWidth={1.8}
+              />
+              <RNSVGPath
+                d="M12 16.5L8 13.5"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 1461331763,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeWidth={1.8}
+              />
+              <RNSVGCircle
+                cx="12"
+                cy="16.5"
+                fill={
+                  {
+                    "payload": 1461331763,
+                    "type": 0,
+                  }
+                }
+                propList={
+                  [
+                    "fill",
+                  ]
+                }
+                r="1.2"
+              />
+            </RNSVGGroup>
+          </RNSVGSvgView>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 13,
+                  "fontVariant": [
+                    "tabular-nums",
+                  ],
+                  "fontWeight": "600",
+                },
+                {
+                  "color": "rgba(26,39,51,0.34)",
+                },
+              ]
+            }
+          >
+            1×
+          </Text>
+        </View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 13,
+                "fontWeight": "500",
+                "textAlign": "center",
+              },
+              {
+                "color": "rgba(26,39,51,0.34)",
+              },
+            ]
+          }
+        >
+          Tap to hear
+        </Text>
+      </View>
+    </View>
+    <View
+      style={
+        [
+          {
+            "paddingBottom": 30,
+            "rowGap": 11,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 13.5,
+              "fontWeight": "500",
               "textAlign": "center",
             },
             {
@@ -83,338 +1064,81 @@ exports[`WordLearnFunction renders the example sentences from item data (snapsho
           ]
         }
       >
-        OOZ
+        First review tomorrow.
       </Text>
-      <Text
+      <View
+        accessibilityRole="button"
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": false,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
         style={
           [
             {
-              "fontSize": 16,
-              "textAlign": "center",
+              "alignItems": "center",
+              "borderRadius": 18,
+              "height": 56,
+              "justifyContent": "center",
+              "width": "100%",
             },
             {
-              "color": "rgba(26,39,51,0.58)",
+              "backgroundColor": "#2C5E8C",
+              "borderColor": "#2C5E8C",
+              "borderWidth": 0,
+              "opacity": 1,
             },
           ]
         }
       >
-        on / to
-      </Text>
-      <View
-        style={
-          {
-            "alignItems": "center",
-            "alignSelf": "stretch",
-            "marginTop": 24,
-            "rowGap": 16,
-          }
-        }
-      >
         <View
-          accessibilityState={
-            {
-              "busy": undefined,
-              "checked": undefined,
-              "disabled": undefined,
-              "expanded": undefined,
-              "selected": undefined,
-            }
-          }
-          accessibilityValue={
-            {
-              "max": undefined,
-              "min": undefined,
-              "now": undefined,
-              "text": undefined,
-            }
-          }
-          accessible={true}
-          collapsable={false}
-          focusable={true}
-          onBlur={[Function]}
-          onClick={[Function]}
-          onFocus={[Function]}
-          onResponderGrant={[Function]}
-          onResponderMove={[Function]}
-          onResponderRelease={[Function]}
-          onResponderTerminate={[Function]}
-          onResponderTerminationRequest={[Function]}
-          onStartShouldSetResponder={[Function]}
           style={
-            [
-              {
-                "borderRadius": 16,
-                "borderWidth": 1.5,
-                "padding": 14,
-                "rowGap": 4,
-              },
-              {
-                "borderColor": "rgba(26,39,51,0.09)",
-              },
-            ]
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
+            }
           }
         >
           <Text
             style={
-              {
-                "color": "#1A2733",
-                "fontSize": 16,
-              }
-            }
-          >
-            Grāmata ir
-            <Text
-              style={
+              [
                 {
-                  "color": "#2C5E8C",
-                }
-              }
-            >
-               
-              uz
-               
-            </Text>
-            galda.
-          </Text>
-          <Text
-            style={
-              {
-                "color": "rgba(26,39,51,0.34)",
-                "fontSize": 13,
-              }
-            }
-          >
-            The book is on the table.
-          </Text>
-        </View>
-        <View
-          accessibilityState={
-            {
-              "busy": undefined,
-              "checked": undefined,
-              "disabled": undefined,
-              "expanded": undefined,
-              "selected": undefined,
-            }
-          }
-          accessibilityValue={
-            {
-              "max": undefined,
-              "min": undefined,
-              "now": undefined,
-              "text": undefined,
-            }
-          }
-          accessible={true}
-          collapsable={false}
-          focusable={true}
-          onBlur={[Function]}
-          onClick={[Function]}
-          onFocus={[Function]}
-          onResponderGrant={[Function]}
-          onResponderMove={[Function]}
-          onResponderRelease={[Function]}
-          onResponderTerminate={[Function]}
-          onResponderTerminationRequest={[Function]}
-          onStartShouldSetResponder={[Function]}
-          style={
-            [
-              {
-                "borderRadius": 16,
-                "borderWidth": 1.5,
-                "padding": 14,
-                "rowGap": 4,
-              },
-              {
-                "borderColor": "rgba(26,39,51,0.09)",
-              },
-            ]
-          }
-        >
-          <Text
-            style={
-              {
-                "color": "#1A2733",
-                "fontSize": 16,
-              }
-            }
-          >
-            Es eju
-            <Text
-              style={
+                  "fontSize": 17,
+                  "fontWeight": "600",
+                },
                 {
-                  "color": "#2C5E8C",
-                }
-              }
-            >
-               
-              uz
-               
-            </Text>
-            mājām.
-          </Text>
-          <Text
-            style={
-              {
-                "color": "rgba(26,39,51,0.34)",
-                "fontSize": 13,
-              }
+                  "color": "#FFFFFF",
+                },
+              ]
             }
           >
-            I am going home.
+            Continue
           </Text>
-        </View>
-        <View
-          accessibilityState={
-            {
-              "busy": undefined,
-              "checked": undefined,
-              "disabled": undefined,
-              "expanded": undefined,
-              "selected": undefined,
-            }
-          }
-          accessibilityValue={
-            {
-              "max": undefined,
-              "min": undefined,
-              "now": undefined,
-              "text": undefined,
-            }
-          }
-          accessible={true}
-          collapsable={false}
-          focusable={true}
-          onBlur={[Function]}
-          onClick={[Function]}
-          onFocus={[Function]}
-          onResponderGrant={[Function]}
-          onResponderMove={[Function]}
-          onResponderRelease={[Function]}
-          onResponderTerminate={[Function]}
-          onResponderTerminationRequest={[Function]}
-          onStartShouldSetResponder={[Function]}
-          style={
-            [
-              {
-                "borderRadius": 16,
-                "borderWidth": 1.5,
-                "padding": 14,
-                "rowGap": 4,
-              },
-              {
-                "borderColor": "rgba(26,39,51,0.09)",
-              },
-            ]
-          }
-        >
-          <Text
-            style={
-              {
-                "color": "#1A2733",
-                "fontSize": 16,
-              }
-            }
-          >
-            Skaties
-            <Text
-              style={
-                {
-                  "color": "#2C5E8C",
-                }
-              }
-            >
-               
-              uz
-               
-            </Text>
-            mani.
-          </Text>
-          <Text
-            style={
-              {
-                "color": "rgba(26,39,51,0.34)",
-                "fontSize": 13,
-              }
-            }
-          >
-            Look at me.
-          </Text>
-        </View>
-        <View
-          accessibilityRole="button"
-          accessibilityState={
-            {
-              "busy": undefined,
-              "checked": undefined,
-              "disabled": false,
-              "expanded": undefined,
-              "selected": undefined,
-            }
-          }
-          accessibilityValue={
-            {
-              "max": undefined,
-              "min": undefined,
-              "now": undefined,
-              "text": undefined,
-            }
-          }
-          accessible={true}
-          collapsable={false}
-          focusable={true}
-          onBlur={[Function]}
-          onClick={[Function]}
-          onFocus={[Function]}
-          onResponderGrant={[Function]}
-          onResponderMove={[Function]}
-          onResponderRelease={[Function]}
-          onResponderTerminate={[Function]}
-          onResponderTerminationRequest={[Function]}
-          onStartShouldSetResponder={[Function]}
-          style={
-            [
-              {
-                "alignItems": "center",
-                "borderRadius": 18,
-                "height": 56,
-                "justifyContent": "center",
-                "width": "100%",
-              },
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderColor": "#2C5E8C",
-                "borderWidth": 0,
-                "opacity": 1,
-              },
-            ]
-          }
-        >
-          <View
-            style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "justifyContent": "center",
-              }
-            }
-          >
-            <Text
-              style={
-                [
-                  {
-                    "fontSize": 16,
-                    "fontWeight": "600",
-                  },
-                  {
-                    "color": "#FFFFFF",
-                  },
-                ]
-              }
-            >
-              First review tomorrow
-            </Text>
-          </View>
         </View>
       </View>
     </View>

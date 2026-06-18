@@ -228,12 +228,23 @@ exports[`PhraseMeaning renders the choices from item data (snapshot) 1`] = `
                 "flexDirection": "row",
                 "justifyContent": "space-between",
                 "minHeight": 52,
-                "paddingHorizontal": 16,
+                "paddingHorizontal": 18,
+                "width": "100%",
               },
               {
-                "backgroundColor": "transparent",
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "rgba(26,39,51,0.09)",
                 "opacity": 1,
+              },
+              {
+                "elevation": 1,
+                "shadowColor": "#1A2733",
+                "shadowOffset": {
+                  "height": 1,
+                  "width": 0,
+                },
+                "shadowOpacity": 0.06,
+                "shadowRadius": 2,
               },
             ]
           }
@@ -253,7 +264,7 @@ exports[`PhraseMeaning renders the choices from item data (snapshot) 1`] = `
                 [
                   {
                     "fontSize": 16,
-                    "fontWeight": "500",
+                    "fontWeight": "600",
                   },
                   {
                     "color": "#1A2733",
@@ -305,12 +316,23 @@ exports[`PhraseMeaning renders the choices from item data (snapshot) 1`] = `
                 "flexDirection": "row",
                 "justifyContent": "space-between",
                 "minHeight": 52,
-                "paddingHorizontal": 16,
+                "paddingHorizontal": 18,
+                "width": "100%",
               },
               {
-                "backgroundColor": "transparent",
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "rgba(26,39,51,0.09)",
                 "opacity": 1,
+              },
+              {
+                "elevation": 1,
+                "shadowColor": "#1A2733",
+                "shadowOffset": {
+                  "height": 1,
+                  "width": 0,
+                },
+                "shadowOpacity": 0.06,
+                "shadowRadius": 2,
               },
             ]
           }
@@ -330,7 +352,7 @@ exports[`PhraseMeaning renders the choices from item data (snapshot) 1`] = `
                 [
                   {
                     "fontSize": 16,
-                    "fontWeight": "500",
+                    "fontWeight": "600",
                   },
                   {
                     "color": "#1A2733",

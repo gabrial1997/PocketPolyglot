@@ -1084,7 +1084,7 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
               style={
                 [
                   {
-                    "fontSize": 16,
+                    "fontSize": 17,
                     "fontWeight": "600",
                   },
                   {

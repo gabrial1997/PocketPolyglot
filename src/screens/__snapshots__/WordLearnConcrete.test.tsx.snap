@@ -28,44 +28,112 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "flex": 1,
-          "justifyContent": "center",
-          "rowGap": 12,
-        }
+        [
+          {
+            "alignItems": "center",
+            "flex": 1,
+            "justifyContent": "center",
+            "paddingBottom": 8,
+            "rowGap": 14,
+          },
+          undefined,
+        ]
       }
     >
-      <Text
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "columnGap": 10,
+            "flexDirection": "row",
+          }
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "fontSize": 12,
+                "fontWeight": "600",
+                "letterSpacing": 1.3,
+                "textAlign": "center",
+              },
+              {
+                "color": "rgba(26,39,51,0.34)",
+              },
+            ]
+          }
+        >
+          NEW WORD
+        </Text>
+        <View
+          style={
+            [
+              {
+                "borderRadius": 99,
+                "borderWidth": 1,
+                "paddingHorizontal": 12,
+                "paddingVertical": 5,
+              },
+              {
+                "backgroundColor": "rgba(44,94,140,0.1)",
+                "borderColor": "rgba(44,94,140,0.3)",
+              },
+            ]
+          }
+        >
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 11,
+                  "fontWeight": "700",
+                  "letterSpacing": 1.2,
+                },
+                {
+                  "color": "#2C5E8C",
+                },
+              ]
+            }
+          >
+            PICTURABLE NOUN
+          </Text>
+        </View>
+      </View>
+      <Image
+        accessibilityRole="image"
+        resizeMode="cover"
+        source={
+          {
+            "uri": "house.png",
+          }
+        }
         style={
           [
             {
-              "fontSize": 11.5,
-              "fontWeight": "700",
-              "letterSpacing": 1.3,
-              "textAlign": "center",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "overflow": "hidden",
             },
             {
-              "color": "rgba(26,39,51,0.34)",
+              "alignSelf": "stretch",
+              "borderRadius": 24,
+              "height": 180,
+              "width": "100%",
             },
           ]
         }
-      >
-        NEW WORD
-      </Text>
+      />
       <Text
         style={
-          [
-            {
-              "fontSize": 52,
-              "letterSpacing": -0.8,
-              "textAlign": "center",
-            },
-            {
-              "color": "#1A2733",
-              "fontFamily": "Spectral_500Medium",
-            },
-          ]
+          {
+            "color": "#1A2733",
+            "fontFamily": "Spectral_500Medium",
+            "fontSize": 52,
+            "letterSpacing": -0.8,
+            "lineHeight": 52,
+            "textAlign": "center",
+          }
         }
       >
         māja
@@ -74,62 +142,420 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
         style={
           [
             {
-              "fontSize": 14,
-              "textAlign": "center",
-            },
-            {
-              "color": "rgba(26,39,51,0.34)",
-            },
-          ]
-        }
-      >
-        MAH-ya
-      </Text>
-      <Text
-        style={
-          [
-            {
-              "fontSize": 16,
               "textAlign": "center",
             },
             {
               "color": "rgba(26,39,51,0.58)",
+              "fontSize": 17,
             },
           ]
         }
       >
         house
+        <Text
+          style={
+            {
+              "color": "rgba(26,39,51,0.34)",
+            }
+          }
+        >
+           · 
+          MAH-ya
+        </Text>
       </Text>
       <View
         style={
           {
             "alignItems": "center",
-            "alignSelf": "stretch",
-            "marginTop": 24,
-            "rowGap": 16,
+            "marginTop": 4,
+            "rowGap": 12,
           }
         }
       >
-        <Image
-          accessibilityRole="image"
-          resizeMode="cover"
-          source={
-            {
-              "uri": "house.png",
-            }
-          }
+        <View
           style={
             {
-              "alignItems": "center",
-              "alignSelf": "center",
-              "borderRadius": 24,
-              "height": 132,
-              "justifyContent": "center",
-              "overflow": "hidden",
-              "width": 132,
+              "width": 240,
             }
           }
-        />
+        >
+          <View
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "width": "100%",
+                },
+                {
+                  "columnGap": 3,
+                  "height": 44,
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 4,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 7,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 11,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 16,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 15,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 21,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 35,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 40,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 31,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 37,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 36,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 21,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 22,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 30,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 36,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 37,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 27,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 34,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 33,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 33,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 32,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 24,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 18,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 22,
+                }
+              }
+            />
+            <View
+              style={
+                {
+                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 29,
+                }
+              }
+            />
+          </View>
+        </View>
         <View
           accessibilityLabel="Play"
           accessibilityRole="button"
@@ -171,10 +597,10 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
               {
                 "backgroundColor": "#2C5E8C",
                 "borderColor": "#2C5E8C",
-                "borderRadius": 43.5,
+                "borderRadius": 38,
                 "borderWidth": 0,
                 "elevation": 6,
-                "height": 87,
+                "height": 76,
                 "shadowColor": "#2C5E8C",
                 "shadowOffset": {
                   "height": 8,
@@ -182,17 +608,17 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
                 },
                 "shadowOpacity": 0.28,
                 "shadowRadius": 22,
-                "width": 87,
+                "width": 76,
               },
             ]
           }
         >
           <RNSVGSvgView
             align="xMidYMid"
-            bbHeight={31.32}
-            bbWidth={31.32}
+            bbHeight={27.36}
+            bbWidth={27.36}
             focusable={false}
-            height={31.32}
+            height={27.36}
             meetOrSlice={0}
             minX={0}
             minY={0}
@@ -204,14 +630,14 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
                 },
                 {
                   "flex": 0,
-                  "height": 31,
-                  "width": 31,
+                  "height": 27,
+                  "width": 27,
                 },
               ]
             }
             vbHeight={24}
             vbWidth={24}
-            width={31.32}
+            width={27.36}
           >
             <RNSVGGroup
               fill={
@@ -239,12 +665,13 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
           </RNSVGSvgView>
         </View>
         <View
+          accessibilityLabel="Speech speed 1×, tap to change"
           accessibilityRole="button"
           accessibilityState={
             {
               "busy": undefined,
               "checked": undefined,
-              "disabled": false,
+              "disabled": undefined,
               "expanded": undefined,
               "selected": undefined,
             }
@@ -273,45 +700,249 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
             [
               {
                 "alignItems": "center",
-                "borderRadius": 18,
-                "height": 56,
-                "justifyContent": "center",
-                "width": "100%",
+                "borderRadius": 99,
+                "borderWidth": 1.5,
+                "columnGap": 7,
+                "flexDirection": "row",
+                "paddingHorizontal": 14,
+                "paddingVertical": 8,
               },
               {
-                "backgroundColor": "#2C5E8C",
-                "borderColor": "#2C5E8C",
-                "borderWidth": 0,
-                "opacity": 1,
+                "backgroundColor": "transparent",
+                "borderColor": "rgba(26,39,51,0.09)",
               },
             ]
           }
         >
-          <View
+          <RNSVGSvgView
+            align="xMidYMid"
+            bbHeight={15}
+            bbWidth={15}
+            focusable={false}
+            height={15}
+            meetOrSlice={0}
+            minX={0}
+            minY={0}
             style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "justifyContent": "center",
-              }
+              [
+                {
+                  "backgroundColor": "transparent",
+                  "borderWidth": 0,
+                },
+                {
+                  "flex": 0,
+                  "height": 15,
+                  "width": 15,
+                },
+              ]
             }
+            vbHeight={24}
+            vbWidth={24}
+            width={15}
           >
-            <Text
-              style={
-                [
-                  {
-                    "fontSize": 16,
-                    "fontWeight": "600",
-                  },
-                  {
-                    "color": "#FFFFFF",
-                  },
-                ]
+            <RNSVGGroup
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
               }
             >
-              First review tomorrow
-            </Text>
-          </View>
+              <RNSVGPath
+                d="M4 16.5a8.5 8.5 0 0 1 16 0"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 1461331763,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeWidth={1.8}
+              />
+              <RNSVGPath
+                d="M12 16.5L8 13.5"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 1461331763,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeWidth={1.8}
+              />
+              <RNSVGCircle
+                cx="12"
+                cy="16.5"
+                fill={
+                  {
+                    "payload": 1461331763,
+                    "type": 0,
+                  }
+                }
+                propList={
+                  [
+                    "fill",
+                  ]
+                }
+                r="1.2"
+              />
+            </RNSVGGroup>
+          </RNSVGSvgView>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 13,
+                  "fontVariant": [
+                    "tabular-nums",
+                  ],
+                  "fontWeight": "600",
+                },
+                {
+                  "color": "rgba(26,39,51,0.34)",
+                },
+              ]
+            }
+          >
+            1×
+          </Text>
+        </View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 13,
+                "fontWeight": "500",
+                "textAlign": "center",
+              },
+              {
+                "color": "rgba(26,39,51,0.34)",
+              },
+            ]
+          }
+        >
+          Tap to hear
+        </Text>
+      </View>
+    </View>
+    <View
+      style={
+        [
+          {
+            "paddingBottom": 30,
+            "rowGap": 11,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 13.5,
+              "fontWeight": "500",
+              "textAlign": "center",
+            },
+            {
+              "color": "rgba(26,39,51,0.34)",
+            },
+          ]
+        }
+      >
+        First review tomorrow.
+      </Text>
+      <View
+        accessibilityRole="button"
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": false,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "borderRadius": 18,
+              "height": 56,
+              "justifyContent": "center",
+              "width": "100%",
+            },
+            {
+              "backgroundColor": "#2C5E8C",
+              "borderColor": "#2C5E8C",
+              "borderWidth": 0,
+              "opacity": 1,
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
+            }
+          }
+        >
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 17,
+                  "fontWeight": "600",
+                },
+                {
+                  "color": "#FFFFFF",
+                },
+              ]
+            }
+          >
+            Continue
+          </Text>
         </View>
       </View>
     </View>

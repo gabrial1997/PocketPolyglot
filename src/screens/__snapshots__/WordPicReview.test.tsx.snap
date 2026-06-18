@@ -28,20 +28,24 @@ exports[`WordPicReview renders the choose stage from item data (snapshot) 1`] = 
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "flex": 1,
-          "justifyContent": "center",
-          "rowGap": 12,
-        }
+        [
+          {
+            "alignItems": "center",
+            "flex": 1,
+            "justifyContent": "center",
+            "paddingBottom": 8,
+            "rowGap": 14,
+          },
+          undefined,
+        ]
       }
     >
       <Text
         style={
           [
             {
-              "fontSize": 11.5,
-              "fontWeight": "700",
+              "fontSize": 12,
+              "fontWeight": "600",
               "letterSpacing": 1.3,
               "textAlign": "center",
             },
@@ -51,38 +55,42 @@ exports[`WordPicReview renders the choose stage from item data (snapshot) 1`] = 
           ]
         }
       >
-        PICTURE REVIEW
+        REVIEW · PICTURE
       </Text>
+      <Image
+        accessibilityRole="image"
+        resizeMode="cover"
+        source={
+          {
+            "uri": "house.png",
+          }
+        }
+        style={
+          [
+            {
+              "alignItems": "center",
+              "justifyContent": "center",
+              "overflow": "hidden",
+            },
+            {
+              "alignSelf": "stretch",
+              "borderRadius": 24,
+              "height": 168,
+              "width": "100%",
+            },
+          ]
+        }
+      />
       <View
         style={
           {
             "alignItems": "center",
-            "alignSelf": "stretch",
-            "marginTop": 24,
-            "rowGap": 16,
+            "columnGap": 10,
+            "flexDirection": "row",
+            "marginTop": 4,
           }
         }
       >
-        <Image
-          accessibilityRole="image"
-          resizeMode="cover"
-          source={
-            {
-              "uri": "house.png",
-            }
-          }
-          style={
-            {
-              "alignItems": "center",
-              "alignSelf": "center",
-              "borderRadius": 24,
-              "height": 132,
-              "justifyContent": "center",
-              "overflow": "hidden",
-              "width": 132,
-            }
-          }
-        />
         <View
           accessibilityLabel="Play"
           accessibilityRole="button"
@@ -122,30 +130,30 @@ exports[`WordPicReview renders the choose stage from item data (snapshot) 1`] = 
                 "justifyContent": "center",
               },
               {
-                "backgroundColor": "#2C5E8C",
+                "backgroundColor": "transparent",
                 "borderColor": "#2C5E8C",
-                "borderRadius": 43.5,
-                "borderWidth": 0,
-                "elevation": 6,
-                "height": 87,
+                "borderRadius": 25.5,
+                "borderWidth": 1.5,
+                "elevation": 0,
+                "height": 51,
                 "shadowColor": "#2C5E8C",
                 "shadowOffset": {
                   "height": 8,
                   "width": 0,
                 },
-                "shadowOpacity": 0.28,
+                "shadowOpacity": 0,
                 "shadowRadius": 22,
-                "width": 87,
+                "width": 51,
               },
             ]
           }
         >
           <RNSVGSvgView
             align="xMidYMid"
-            bbHeight={31.32}
-            bbWidth={31.32}
+            bbHeight={18.36}
+            bbWidth={18.36}
             focusable={false}
-            height={31.32}
+            height={18.36}
             meetOrSlice={0}
             minX={0}
             minY={0}
@@ -157,14 +165,14 @@ exports[`WordPicReview renders the choose stage from item data (snapshot) 1`] = 
                 },
                 {
                   "flex": 0,
-                  "height": 31,
-                  "width": 31,
+                  "height": 18,
+                  "width": 18,
                 },
               ]
             }
             vbHeight={24}
             vbWidth={24}
-            width={31.32}
+            width={18.36}
           >
             <RNSVGGroup
               fill={
@@ -178,7 +186,7 @@ exports[`WordPicReview renders the choose stage from item data (snapshot) 1`] = 
                 d="M6 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 6 4.5z"
                 fill={
                   {
-                    "payload": 4294967295,
+                    "payload": 4281097868,
                     "type": 0,
                   }
                 }
@@ -352,6 +360,34 @@ exports[`WordPicReview renders the choose stage from item data (snapshot) 1`] = 
             1×
           </Text>
         </View>
+      </View>
+      <Text
+        style={
+          [
+            {
+              "textAlign": "center",
+            },
+            {
+              "color": "rgba(26,39,51,0.58)",
+              "fontSize": 14.5,
+            },
+          ]
+        }
+      >
+        Which word names it?
+      </Text>
+      <View
+        style={
+          {
+            "columnGap": 10,
+            "flexDirection": "row",
+            "flexWrap": "wrap",
+            "marginTop": 6,
+            "rowGap": 10,
+            "width": "100%",
+          }
+        }
+      >
         <View
           accessibilityRole="button"
           accessibilityState={
@@ -389,59 +425,48 @@ exports[`WordPicReview renders the choose stage from item data (snapshot) 1`] = 
                 "alignItems": "center",
                 "borderRadius": 16,
                 "borderWidth": 1.5,
+                "columnGap": 7,
+                "flexBasis": "47%",
                 "flexDirection": "row",
-                "justifyContent": "space-between",
+                "flexGrow": 1,
+                "justifyContent": "center",
                 "minHeight": 52,
-                "paddingHorizontal": 16,
+                "paddingHorizontal": 12,
               },
               {
-                "backgroundColor": "transparent",
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "rgba(26,39,51,0.09)",
                 "opacity": 1,
+              },
+              {
+                "elevation": 1,
+                "shadowColor": "#1A2733",
+                "shadowOffset": {
+                  "height": 1,
+                  "width": 0,
+                },
+                "shadowOpacity": 0.06,
+                "shadowRadius": 2,
               },
             ]
           }
         >
-          <View
+          <Text
             style={
-              {
-                "alignItems": "baseline",
-                "columnGap": 8,
-                "flexDirection": "row",
-                "flexShrink": 1,
-              }
+              [
+                {
+                  "fontSize": 19,
+                  "fontWeight": "500",
+                },
+                {
+                  "color": "#1A2733",
+                  "fontFamily": "Spectral_500Medium",
+                },
+              ]
             }
           >
-            <Text
-              style={
-                [
-                  {
-                    "fontSize": 16,
-                    "fontWeight": "500",
-                  },
-                  {
-                    "color": "#1A2733",
-                  },
-                ]
-              }
-            >
-              māja
-            </Text>
-            <Text
-              style={
-                [
-                  {
-                    "fontSize": 13,
-                  },
-                  {
-                    "color": "rgba(26,39,51,0.58)",
-                  },
-                ]
-              }
-            >
-              house
-            </Text>
-          </View>
+            māja
+          </Text>
         </View>
         <View
           accessibilityRole="button"
@@ -480,61 +505,78 @@ exports[`WordPicReview renders the choose stage from item data (snapshot) 1`] = 
                 "alignItems": "center",
                 "borderRadius": 16,
                 "borderWidth": 1.5,
+                "columnGap": 7,
+                "flexBasis": "47%",
                 "flexDirection": "row",
-                "justifyContent": "space-between",
+                "flexGrow": 1,
+                "justifyContent": "center",
                 "minHeight": 52,
-                "paddingHorizontal": 16,
+                "paddingHorizontal": 12,
               },
               {
-                "backgroundColor": "transparent",
+                "backgroundColor": "#FFFFFF",
                 "borderColor": "rgba(26,39,51,0.09)",
                 "opacity": 1,
+              },
+              {
+                "elevation": 1,
+                "shadowColor": "#1A2733",
+                "shadowOffset": {
+                  "height": 1,
+                  "width": 0,
+                },
+                "shadowOpacity": 0.06,
+                "shadowRadius": 2,
               },
             ]
           }
         >
-          <View
+          <Text
             style={
-              {
-                "alignItems": "baseline",
-                "columnGap": 8,
-                "flexDirection": "row",
-                "flexShrink": 1,
-              }
+              [
+                {
+                  "fontSize": 19,
+                  "fontWeight": "500",
+                },
+                {
+                  "color": "#1A2733",
+                  "fontFamily": "Spectral_500Medium",
+                },
+              ]
             }
           >
-            <Text
-              style={
-                [
-                  {
-                    "fontSize": 16,
-                    "fontWeight": "500",
-                  },
-                  {
-                    "color": "#1A2733",
-                  },
-                ]
-              }
-            >
-              maize
-            </Text>
-            <Text
-              style={
-                [
-                  {
-                    "fontSize": 13,
-                  },
-                  {
-                    "color": "rgba(26,39,51,0.58)",
-                  },
-                ]
-              }
-            >
-              bread
-            </Text>
-          </View>
+            maize
+          </Text>
         </View>
       </View>
+    </View>
+    <View
+      style={
+        [
+          {
+            "paddingBottom": 30,
+            "rowGap": 11,
+          },
+          undefined,
+        ]
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 13.5,
+              "fontWeight": "500",
+              "textAlign": "center",
+            },
+            {
+              "color": "rgba(26,39,51,0.34)",
+            },
+          ]
+        }
+      >
+        Name the picture, then say it — that’s the full loop.
+      </Text>
     </View>
   </View>
 </RCTSafeAreaView>

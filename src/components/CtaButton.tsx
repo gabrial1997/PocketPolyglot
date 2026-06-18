@@ -3,7 +3,7 @@
 import React from 'react';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
-import { radii, sizing, type } from '../theme/tokens';
+import { radii, sizing } from '../theme/tokens';
 
 export function CtaButton({
   title,
@@ -54,5 +54,5 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   icon: { marginRight: 8 },
-  text: { fontSize: type.body, fontWeight: '600' },
+  text: { fontSize: 17, fontWeight: '600' },
 });

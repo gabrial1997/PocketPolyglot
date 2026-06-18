@@ -52,7 +52,7 @@ describe('WordLearnAbstract', () => {
 
   it('completes as exposure-only (spoke:false, no correct) on continue', () => {
     const u = renderCard();
-    fireEvent.press(u.getByText('First review tomorrow'));
+    fireEvent.press(u.getByText('Continue'));
     expect(u.props.onComplete).toHaveBeenCalledWith({
       itemId: 'brivs',
       cardKind: 'word/learn-abstract',

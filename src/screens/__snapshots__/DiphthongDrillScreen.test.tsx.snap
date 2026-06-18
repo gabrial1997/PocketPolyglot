@@ -664,7 +664,7 @@ exports[`DiphthongDrillScreen renders the meet-the-glide stage (snapshot) 1`] = 
             style={
               [
                 {
-                  "fontSize": 16,
+                  "fontSize": 17,
                   "fontWeight": "600",
                 },
                 {
