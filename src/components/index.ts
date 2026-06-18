@@ -8,3 +8,4 @@ export { SpeedChip, type Speed } from './SpeedChip';
 export { ChoiceButton, type ChoiceState } from './ChoiceButton';
 export { CtaButton } from './CtaButton';
 export { TryAgainNote } from './TryAgainNote';
+export { GlideViewport } from './GlideViewport';
