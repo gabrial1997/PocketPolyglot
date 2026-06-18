@@ -60,6 +60,11 @@ export interface MinimalPairRow {
   b: string;
   correct: 'a' | 'b';
   audio_url: string;
+  // Per-side clips (0007): clip of side `a` / `b`. Null until the seeder populates them.
+  a_audio_url: string | null;
+  b_audio_url: string | null;
+  // Isolated-glide clip (0007): diphthong drills only; null for plain pairs.
+  glide_audio_url: string | null;
   // Precomputed RMS amplitude envelope (0..1 per ~30ms frame) for the live soundbar; 0005.
   envelope: number[] | null;
   contrast_type: string;

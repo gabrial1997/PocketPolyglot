@@ -25,7 +25,9 @@ export interface ReviewPair {
   a: string;
   b: string;
   correct: 'a' | 'b';
-  audioUrl: string;
+  audioUrl: string; // the stimulus clip (the word actually played in the perception step)
+  aAudioUrl?: string; // clip of side `a` (per-option playback)
+  bAudioUrl?: string; // clip of side `b`
 }
 
 /** Diphthong-drill only: the gliding combination to "feel" (e.g. ie = i→e). */
@@ -33,6 +35,7 @@ export interface ReviewGlide {
   combo: string; // e.g. "ie"
   from: string; // e.g. "i"
   to: string; // e.g. "e"
+  audioUrl?: string; // isolated-glide clip played by the "meet the glide" step
 }
 
 export interface ReviewItem {
