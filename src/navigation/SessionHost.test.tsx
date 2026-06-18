@@ -113,10 +113,14 @@ it('starts each item fresh — stage/miss/recording do not leak across cards', a
   completeCard(u, 'māja', 'maize', { miss: true });
 
   // Item B must begin at its OWN choose stage — not stuck on A's result screen.
-  // 'paldies' is B's distractor, rendered ONLY at the choose stage.
-  await settle(() => expect(u.getByText('paldies')).toBeTruthy());
-  expect(u.queryByText('Continue')).toBeNull();
-  expect(u.queryByText('māja')).toBeNull(); // item A's content is gone
+  // 'paldies' is B's distractor, rendered ONLY at the choose stage. The GlideViewport transition
+  // keeps A's (leaving) layer mounted for ~640ms, so we poll until the transition has committed and
+  // B stands alone — settle()'s real-timer budget (5s) covers the commit window.
+  await settle(() => {
+    expect(u.getByText('paldies')).toBeTruthy();
+    expect(u.queryByText('Continue')).toBeNull();
+    expect(u.queryByText('māja')).toBeNull(); // item A's content is gone after the transition
+  });
 });
 
 it('bounces to home on an empty batch — via effect, not the misleading prog screen', async () => {
