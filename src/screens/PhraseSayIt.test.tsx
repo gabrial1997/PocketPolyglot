@@ -51,10 +51,20 @@ describe('PhraseSayIt', () => {
     expect(toJSON()).toMatchSnapshot();
   });
 
-  it('plays the native audio when the play orb is tapped', () => {
+  it('does not offer pre-hear audio on the cue stage (productive recall)', () => {
     const u = renderCard();
-    fireEvent.press(u.getByLabelText('Play'));
-    expect(u.props.onPlay).toHaveBeenCalledWith('native');
+    expect(u.queryByLabelText('Play')).toBeNull();
+    expect(u.getByLabelText('Record')).toBeTruthy();
+  });
+
+  it('offers native-vs-you compare AFTER recording', () => {
+    const u = renderCard();
+    fireEvent.press(u.getByLabelText('Record')); // cue -> rec
+    fireEvent.press(u.getByLabelText('Stop recording')); // rec -> compare
+    fireEvent.press(u.getByText('Play original'));
+    expect(u.props.onPlayCompare).toHaveBeenCalledWith('native');
+    fireEvent.press(u.getByText('Play yours'));
+    expect(u.props.onPlayCompare).toHaveBeenCalledWith('you');
   });
 
   it('completes with selfRating "good" when the user rates good', () => {
