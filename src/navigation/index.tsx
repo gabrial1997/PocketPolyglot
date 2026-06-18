@@ -16,7 +16,7 @@ import { supabase } from '../services/supabaseClient';
 import { useSession } from '../session/sessionController';
 import { useReviewCardHandlers } from '../session/useReviewCardHandlers';
 import { CARD_REGISTRY } from './registry';
-import { Screen } from '../components';
+import { Screen, GlideViewport } from '../components';
 import { CalendarIcon, SoundIcon, BarsIcon, type IconProps } from '../components/icons';
 import { HomeHost, PodcastHost, ProgressHost } from '../screens';
 import { type } from '../theme/tokens';
@@ -132,16 +132,18 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
   if (!session.current) return <SessionPlaceholder />; // also narrows current for the card below
 
   return (
-    // key on item id: remount a fresh card per item so ephemeral state (stage, first-try miss)
-    // and the recording buffer never leak from one review into the next.
-    <CardHost
-      key={session.current.item.id}
-      item={session.current.item}
-      kind={session.current.kind}
-      submit={session.submit}
-      advance={session.advance}
-      nextReviewLabel={session.lastReviewLabel}
-    />
+    // GlideViewport owns "remount per item": keyed off the item id, it freezes the leaving card and
+    // glides in the entering one, so per-card ephemeral state (stage, first-try miss, recording
+    // buffer) still resets when the committed item changes — no separate key on CardHost needed.
+    <GlideViewport itemKey={session.current.item.id}>
+      <CardHost
+        item={session.current.item}
+        kind={session.current.kind}
+        submit={session.submit}
+        advance={session.advance}
+        nextReviewLabel={session.lastReviewLabel}
+      />
+    </GlideViewport>
   );
 }
 
