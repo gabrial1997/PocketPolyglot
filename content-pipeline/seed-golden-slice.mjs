@@ -76,6 +76,30 @@ async function synth(client, text, voice, instructions, format = 'mp3') {
   return Buffer.from(await res.arrayBuffer());
 }
 
+// Resolve the isolated-glide clip URL for a diphthong combo. Assets-first (a real recording wins),
+// else a TTS placeholder. Uploads to golden/glide-<combo>.mp3 and returns the public URL.
+async function resolveGlideUrl(db, client, voice, combo) {
+  const objectKey = `${OBJECT_PREFIX}/glide-${combo}.mp3`;
+  // 1) real recording dropped in assets/?
+  for (const ext of ['mp3', 'wav']) {
+    const local = path.join(HERE, 'assets', `glide-${combo}.${ext}`);
+    if (fs.existsSync(local)) {
+      const ct = ext === 'wav' ? 'audio/wav' : 'audio/mpeg';
+      const { error } = await db.storage.from(BUCKET).upload(objectKey, fs.readFileSync(local), { contentType: ct, upsert: true });
+      if (error) throw error;
+      console.log(`  ✓ glide   ${objectKey} (real recording: assets/glide-${combo}.${ext})`);
+      return db.storage.from(BUCKET).getPublicUrl(objectKey).data.publicUrl;
+    }
+  }
+  // 2) TTS placeholder — clearly temporary; swap by dropping a real file in assets/ and re-seeding.
+  const instr = `Pronounce ONLY the isolated Latvian diphthong glide "${combo}" — one continuous gliding vowel sound, not the letter names, no surrounding word. Slow and clear for a learner.`;
+  const buf = await synth(client, combo, voice, instr, 'mp3');
+  const { error } = await db.storage.from(BUCKET).upload(objectKey, buf, { contentType: 'audio/mpeg', upsert: true });
+  if (error) throw error;
+  console.log(`  ! glide   ${objectKey} (TTS PLACEHOLDER for "${combo}" — replace with a recording)`);
+  return db.storage.from(BUCKET).getPublicUrl(objectKey).data.publicUrl;
+}
+
 // RMS amplitude envelope from raw PCM (16-bit LE mono, 24kHz — OpenAI's `pcm` format).
 // One value per ~frameMs window, normalized 0..1. Copied verbatim from tts.mjs (do not reinvent).
 const PCM_RATE = 24000;
@@ -124,10 +148,7 @@ function collectRenders(manifest) {
 
 // Generate native.mp3 + slow.mp3 + envelope.json per render into ./out. Idempotent on disk
 // (overwrites). Returns a map slug -> { envelope }. The native/slow files live at well-known paths.
-async function generateAudio(renders, voice) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error('OPENAI_API_KEY not set (put it in ../.env or the environment).');
-  const client = new OpenAI({ apiKey: key });
+async function generateAudio(renders, voice, client) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   const result = {};
@@ -154,7 +175,7 @@ async function generateAudio(renders, voice) {
 // DB seed (needs the service-role client)
 // ---------------------------------------------------------------------------
 
-async function seed(manifest, db, envelopes) {
+async function seed(manifest, db, envelopes, client, voice) {
   // NOT transactional: safe to re-run (delete-then-insert is idempotent), but a mid-run abort can
   // leave a partial state until the next successful run completes.
   const counts = {
@@ -288,13 +309,24 @@ async function seed(manifest, db, envelopes) {
   for (const d of manifest.drills) {
     const stimulusUrl = await uploadOne(d.slug, 'native');
     // also upload the A/B word clips (used by the drill UI's per-side playback)
-    await uploadOne(`${d.slug}-a`, 'native');
-    await uploadOne(`${d.slug}-b`, 'native');
+    const aUrl = await uploadOne(`${d.slug}-a`, 'native');
+    const bUrl = await uploadOne(`${d.slug}-b`, 'native');
+
+    // Diphthong drills get an ISOLATED glide clip. Assets-first: a real recording dropped at
+    // content-pipeline/assets/glide-<combo>.{mp3,wav} wins; otherwise generate a TTS placeholder
+    // of the combo (clearly temporary — the "meet the glide" step needs *a* glide sound to play).
+    let glideUrl = null;
+    if (d.glide) {
+      glideUrl = await resolveGlideUrl(db, client, voice, d.glide.combo);
+    }
+
     const row = {
       a: d.a,
       b: d.b,
       correct: d.correct,
       audio_url: stimulusUrl ?? '',
+      a_audio_url: aUrl,
+      b_audio_url: bUrl,
       contrast_type: d.contrastType || 'unspecified',
       qa_status: SEED_QA_STATUS,
     };
@@ -302,13 +334,14 @@ async function seed(manifest, db, envelopes) {
     const drillEnv = envelopeFor(d.slug);
     if (drillEnv) row.envelope = drillEnv;
     // 0004 adds minimal_pairs.glide (jsonb). Diphthong drills carry { combo, from, to };
-    // the palatalization drill has none (leave null).
+    // the palatalization drill has none (leave null). 0007 adds glide_audio_url.
     if (d.glide) row.glide = d.glide;
+    if (glideUrl) row.glide_audio_url = glideUrl;
     const { data, error } = await db.from('minimal_pairs').insert(row).select('id').single();
     if (error) throw error;
     pairSlugToId[d.slug] = data.id;
     counts.minimal_pairs += 1;
-    console.log(`  ✓ pair    ${d.slug.padEnd(12)} -> ${d.a} / ${d.b}`);
+    console.log(`  ✓ pair    ${d.slug.padEnd(12)} -> ${d.a} / ${d.b}${glideUrl ? ' (+glide)' : ''}`);
   }
 
   // -- UNLOCK CHIME (one celebratory SFX) -------------------------------------
@@ -426,6 +459,9 @@ async function resolveTestUserId(db) {
 
 async function main() {
   loadEnv();
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY not set (put it in ../.env or the environment).');
+  }
   const forceOffline = process.argv.slice(2).some((a) => a === '--offline' || a === '--no-db');
 
   const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
@@ -437,8 +473,9 @@ async function main() {
   );
 
   // ---- OFFLINE: TTS + envelope (always) ----
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   console.log('1/2  generating audio + envelopes -> ./out');
-  const envelopes = await generateAudio(renders, voice);
+  const envelopes = await generateAudio(renders, voice, client);
   console.log(`\nGenerated ${renders.length} native+slow clips (+ envelopes) -> ${OUT_DIR}`);
 
   // ---- Credential guard: skip the live portion gracefully if no service key ----
@@ -465,7 +502,7 @@ async function main() {
   }
   const { createClient } = await import('@supabase/supabase-js');
   const db = createClient(url, serviceKey, { auth: { persistSession: false } });
-  const counts = await seed(manifest, db, envelopes);
+  const counts = await seed(manifest, db, envelopes, client, voice);
 
   console.log('\n=== summary ===');
   console.log(`  audio renders generated : ${renders.length} (native+slow each)`);
