@@ -29,6 +29,7 @@ exports[`WordHear renders the initial recognition stage from item data (snapshot
     <View
       style={
         {
+          "alignItems": "center",
           "flex": 1,
           "justifyContent": "center",
           "rowGap": 12,
@@ -42,6 +43,7 @@ exports[`WordHear renders the initial recognition stage from item data (snapshot
               "fontSize": 11.5,
               "fontWeight": "700",
               "letterSpacing": 1.3,
+              "textAlign": "center",
             },
             {
               "color": "rgba(26,39,51,0.34)",
@@ -54,6 +56,8 @@ exports[`WordHear renders the initial recognition stage from item data (snapshot
       <View
         style={
           {
+            "alignItems": "center",
+            "alignSelf": "stretch",
             "marginTop": 24,
             "rowGap": 16,
           }

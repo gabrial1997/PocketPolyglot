@@ -37,14 +37,18 @@ export function CardShell({
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, justifyContent: 'center', rowGap: 12 },
+  // Center the column so the cue word/gloss sit mid-screen like the mockups (was left-aligned).
+  body: { flex: 1, justifyContent: 'center', alignItems: 'center', rowGap: 12 },
   eyebrow: {
     fontSize: type.eyebrow,
     fontWeight: '700',
     letterSpacing: type.eyebrowSpacing,
+    textAlign: 'center',
   },
-  hero: { fontSize: type.wordHero, letterSpacing: type.wordHeroSpacing },
-  pron: { fontSize: type.pron },
-  gloss: { fontSize: type.body },
-  controls: { marginTop: 24, rowGap: 16 },
+  hero: { fontSize: type.wordHero, letterSpacing: type.wordHeroSpacing, textAlign: 'center' },
+  pron: { fontSize: type.pron, textAlign: 'center' },
+  gloss: { fontSize: type.body, textAlign: 'center' },
+  // Stretch full-width (so width:'100%' children like CtaButton/Waveform keep their size) but
+  // center fixed-size children (orbs) within the column.
+  controls: { marginTop: 24, rowGap: 16, alignSelf: 'stretch', alignItems: 'center' },
 });
