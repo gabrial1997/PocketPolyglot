@@ -52,7 +52,10 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
   const [say, setSay] = useState<Say>('idle');
   const { playing, play, stop } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const right = picked !== null && pair != null && picked === pair.correct;
-  const missed = picked !== null && !right;
+  // `missed` is STICKY across a Try-again reset (which clears `picked`) so the first-try miss is
+  // remembered for honest SRS correctness — matching DrillScreen and the locked wrong-answer rule.
+  // Deriving it from `picked` would erase the miss the moment Try-again resets the selection.
+  const [missed, setMissed] = useState(false);
 
   // ── MEET ──
   if (phase === 'meet') {
@@ -137,7 +140,12 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
   }
 
   // ── CONTRAST ──
-  const choose = (side: Side): void => { if (picked === null) setPicked(side); };
+  const choose = (side: Side): void => {
+    if (picked === null) {
+      setPicked(side);
+      if (pair != null && side !== pair.correct) setMissed(true);
+    }
+  };
   const sideData = (side: Side) => pair && (side === 'a'
     ? { lv: pair.a, kind: pair.aKind, note: pair.aNote, en: pair.aEn }
     : { lv: pair.b, kind: pair.bKind, note: pair.bNote, en: pair.bEn });

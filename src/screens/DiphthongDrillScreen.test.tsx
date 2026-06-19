@@ -84,6 +84,26 @@ describe('DiphthongDrillScreen', () => {
     expect(u.props.onComplete).not.toHaveBeenCalled();
   });
 
+  it('remembers a first-try miss across Try again — wrong→correct reports correct:false (lapse)', () => {
+    // LOCKED rule + Task 8: a missed first attempt must be recorded honestly, even after the learner
+    // recovers via Try again. The miss is sticky; resetting the selection must NOT erase it.
+    const u = renderCard();
+    toContrast(u);
+    fireEvent.press(u.getByText('lēta')); // wrong side ('b') -> miss
+    fireEvent.press(u.getByText('Try again')); // resets the selection
+    fireEvent.press(u.getByText('lieta')); // correct side ('a') -> advance
+    fireEvent.press(u.getByText('Say it back'));
+    fireEvent.press(u.getByLabelText('Record'));
+    fireEvent.press(u.getByLabelText('Stop recording'));
+    fireEvent.press(u.getByText('Next combination'));
+    expect(u.props.onComplete).toHaveBeenCalledWith({
+      itemId: 'lieta-leta',
+      cardKind: 'diphthong',
+      correct: false,
+      spoke: true,
+    });
+  });
+
   it('a CORRECT pick advances and the full loop reports correct:true + spoke', () => {
     const u = renderCard();
     toContrast(u);
