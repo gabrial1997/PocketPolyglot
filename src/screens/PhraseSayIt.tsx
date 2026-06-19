@@ -20,13 +20,11 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
   const T = useTheme();
   const [stage, setStage] = useState<Stage>('cue');
   const [rated, setRated] = useState<'good' | 'again' | null>(null);
-  const [playWho, setPlayWho] = useState<'native' | 'you' | null>(null);
 
   const rate = (selfRating: 'good' | 'again'): void => {
     setRated(selfRating);
     onComplete({ itemId: item.id, cardKind: 'phrase/sayit', spoke: true, selfRating });
   };
-  const compare = (who: 'native' | 'you'): void => { setPlayWho(who); onPlayCompare?.(who); };
 
   return (
     <Screen>
@@ -59,12 +57,12 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
             <Text style={[styles.cueSub, { color: T.sub, marginTop: 10 }]}>{item.gloss}</Text>
 
             <View style={styles.compare}>
-              <CompareRow label="Native" icon="speaker" seed={`${item.id}-native`} envelope={item.audio.envelope} active={playWho === 'native'} onPress={() => compare('native')} />
-              <CompareRow label="You" icon="mic" seed={`${item.id}-you`} active={playWho === 'you'} onPress={() => compare('you')} />
+              <CompareRow label="Native" icon="speaker" envelope={item.audio.envelope} onPress={() => onPlayCompare?.('native')} />
+              <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
             </View>
 
             <View style={{ marginTop: 18 }}>
-              <PlayBackToBack onPress={() => compare('native')} />
+              <PlayBackToBack onPress={() => onPlayCompare?.('native')} />
             </View>
             <View style={{ marginTop: 12 }}>
               <SpeedChip value={speed} onChange={onSpeedChange} />

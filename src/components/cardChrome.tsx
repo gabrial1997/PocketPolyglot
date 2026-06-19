@@ -10,7 +10,8 @@ import { View, Text, Pressable, StyleSheet, type ViewStyle, type DimensionValue 
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeProvider';
 import { hexA, fonts } from '../theme/tokens';
-import { Waveform } from './Waveform';
+import { LiveWaveform } from './LiveWaveform';
+import { usePlayClip, FRAME_MS } from './usePlayClip';
 import { PlayOrb } from './PlayOrb';
 
 // ── icons (ported from kit.jsx Icon paths) ────────────────────────────────
@@ -141,16 +142,20 @@ export function ExampleRow({ pre, w, post, en, onPress }: { pre: string; w: stri
 }
 
 // ── native-vs-you compare row (pic-review/say/sayit/pron result) ──────────-
-export function CompareRow({ label, icon, seed, envelope, active = false, onPress }: {
-  label: string; icon: 'speaker' | 'mic'; seed: string; envelope?: number[]; active?: boolean; onPress?: () => void;
+// Self-gating reactive soundbar: tapping fires onPress (the parent's onPlayCompare) and runs the
+// soundbar for the clip via usePlayClip, then it settles to rest. The "You" take has no precomputed
+// envelope, so its bar honestly rests rather than faking motion (locked: REAL amplitude only).
+export function CompareRow({ label, icon, envelope, onPress }: {
+  label: string; icon: 'speaker' | 'mic'; envelope?: number[]; onPress?: () => void;
 }): React.JSX.Element {
   const T = useTheme();
+  const { playing, play } = usePlayClip(envelope);
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={[chrome.cmpRow, { backgroundColor: T.surface, borderColor: active ? hexA(T.primary, 0.4) : T.hair }, T.shadow]}>
-      <CardIcon name={icon} size={18} color={active ? T.primary : T.faint} />
-      <Text style={[chrome.cmpLabel, { color: active ? T.ink : T.sub }]}>{label}</Text>
+    <Pressable accessibilityRole="button" onPress={() => play(() => onPress?.())} style={[chrome.cmpRow, { backgroundColor: T.surface, borderColor: playing ? hexA(T.primary, 0.4) : T.hair }, T.shadow]}>
+      <CardIcon name={icon} size={18} color={playing ? T.primary : T.faint} />
+      <Text style={[chrome.cmpLabel, { color: playing ? T.ink : T.sub }]}>{label}</Text>
       <View style={{ flex: 1 }}>
-        <Waveform seed={seed} played={active ? 0.7 : 0} height={26} count={32} envelope={envelope} />
+        <LiveWaveform envelope={envelope} playing={playing} frameMs={FRAME_MS} height={26} count={32} />
       </View>
     </Pressable>
   );

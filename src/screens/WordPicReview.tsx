@@ -2,9 +2,9 @@
 // Stages: choose -> speak -> rec -> result. Picture+audio in -> pick word -> say it -> compare.
 // Out: { correct, spoke:true, recording }. LOCKED wrong-answer rule lives in useLoopStage.
 // Visual: matches mockup pic-review (full image + 2×2 word grid -> word hero + mic -> compare).
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip } from '../components';
+import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS } from '../components';
 import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, GridChoiceButton, CompareRow, PlayBackToBack, ResultNote } from '../components/cardChrome';
 import { TryAgainNote } from '../components';
 import { CardImage } from './CardImage';
@@ -17,8 +17,8 @@ export function WordPicReview(props: Props): React.JSX.Element {
   const { item, onPlay, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed, onSpeedChange } = props;
   const m = useLoopStage();
   const choices = item.choices ?? [];
-  const [playing, setPlaying] = useState(false);
-  const [playWho, setPlayWho] = useState<'native' | 'you' | null>(null);
+  const { playing, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const replay = (): void => play(() => onPlay('native'));
   const recStarted = useRef(false);
   const startRec = (): void => {
     if (recStarted.current) return;
@@ -26,7 +26,6 @@ export function WordPicReview(props: Props): React.JSX.Element {
     onRecordStart();
     m.beginRec();
   };
-  const compare = (who: 'native' | 'you'): void => { setPlayWho(who); onPlayCompare?.(who); };
 
   return (
     <Screen>
@@ -36,7 +35,10 @@ export function WordPicReview(props: Props): React.JSX.Element {
             <Eyebrow>Review · picture</Eyebrow>
             <CardImage media={item.media} word={item.target} full height={168} />
             <View style={styles.playRow}>
-              <PlayOrb size={44} filled={false} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+              <PlayOrb size={44} filled={false} playing={playing} onPress={replay} />
+              <View style={{ flex: 1 }}>
+                <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={28} count={28} />
+              </View>
               <SpeedChip value={speed} onChange={onSpeedChange} />
             </View>
             <PromptText>Which word names it?</PromptText>
@@ -65,7 +67,10 @@ export function WordPicReview(props: Props): React.JSX.Element {
             <CardImage media={item.media} word={item.target} size={116} />
             <WordHero size={50}>{item.target}</WordHero>
             <GlossLine gloss={item.gloss} pron={item.pron} size={13.5} />
-            <PlayOrb size={52} filled={false} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+            <View style={styles.wave}>
+              <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={34} count={30} />
+            </View>
+            <PlayOrb size={52} filled={false} playing={playing} onPress={replay} />
             <SpeedChip value={speed} onChange={onSpeedChange} />
             <View style={styles.mic}>
               <MicOrb rec={m.stage === 'rec'} onPress={() => { if (m.stage === 'rec') { onRecordStop(); m.finishRec(); } else { startRec(); } }} />
@@ -85,10 +90,10 @@ export function WordPicReview(props: Props): React.JSX.Element {
             <WordHero size={48}>{item.target}</WordHero>
             <GlossLine gloss={item.gloss} pron={item.pron} />
             <View style={styles.compare}>
-              <CompareRow label="Native" icon="speaker" seed={`${item.id}-native`} envelope={item.audio.envelope} active={playWho === 'native'} onPress={() => compare('native')} />
-              <CompareRow label="You" icon="mic" seed={`${item.id}-you`} active={playWho === 'you'} onPress={() => compare('you')} />
+              <CompareRow label="Native" icon="speaker" envelope={item.audio.envelope} onPress={() => onPlayCompare?.('native')} />
+              <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
             </View>
-            <PlayBackToBack onPress={() => { setPlayWho('native'); onPlayCompare?.('native'); }} />
+            <PlayBackToBack onPress={() => onPlayCompare?.('native')} />
             <ResultNote>Sounded right — next review in 5 days.</ResultNote>
           </CardBody>
           <CardFooter>
@@ -101,7 +106,8 @@ export function WordPicReview(props: Props): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  playRow: { flexDirection: 'row', alignItems: 'center', columnGap: 10, marginTop: 4 },
+  playRow: { width: '100%', flexDirection: 'row', alignItems: 'center', columnGap: 10, marginTop: 4 },
+  wave: { width: '64%', marginTop: 2 },
   grid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 10, marginTop: 6 },
   mic: { alignItems: 'center', rowGap: 12, marginTop: 8 },
   compare: { width: '100%', rowGap: 10, marginTop: 8 },
