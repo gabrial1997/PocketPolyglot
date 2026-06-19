@@ -130,3 +130,79 @@ it('advance() steps to the next item WITHOUT posting a review to SRS', async () 
   await settleHook(() => expect(result.current.current?.item.id).toBe('b'));
   expect(submit).not.toHaveBeenCalled();
 });
+
+// --- the live unlock loop: locked -> learn the words -> unlock once -> hear ---
+// A word factory matching the requeue/decideKind expectation: lemma id === target so the learned
+// overlay (keyed by the word item's id) lines up with the phrase's componentLemmaIds.
+const newWord = (id: string): ReviewItem => ({
+  id,
+  type: 'word',
+  stage: 'new',
+  reps: 0,
+  target: id,
+  gloss: id,
+  audio: { nativeUrl: `${id}.mp3` },
+});
+
+it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', async () => {
+  const labdien = newWord('labdien'),
+    es = newWord('es'),
+    esmu = newWord('esmu');
+  const p1: ReviewItem = {
+    id: 'p1',
+    type: 'phrase',
+    stage: 'new',
+    reps: 0,
+    target: 'Labdien, es esmu ___.',
+    gloss: 'Hello, I am ___.',
+    audio: { nativeUrl: 'p1.mp3' },
+    componentLemmaIds: ['labdien', 'es', 'esmu'],
+  };
+  // Batch = [P1, labdien, es, esmu]; nothing known yet -> P1 starts locked.
+  const { result } = renderSessionHook([p1, labdien, es, esmu], new Set());
+
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
+  // Gate advance re-queues P1 after its last component word (esmu).
+  await act(async () => {
+    result.current.advance();
+  });
+
+  // Learn the three words; each submit adds the lemma to the in-session overlay.
+  for (const w of ['labdien', 'es', 'esmu']) {
+    await settleHook(() => expect(result.current.current?.item.id).toBe(w));
+    await act(async () => {
+      await result.current.submit({ itemId: w, cardKind: 'word/learn-function', spoke: false });
+    });
+  }
+
+  // All words now known -> P1 re-surfaces as the one-time reveal.
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/unlock'));
+  // Gate advance re-queues P1 immediately next as its first SRS exposure.
+  await act(async () => {
+    result.current.advance();
+  });
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/hear'));
+});
+
+it('phrase/locked enriches the item with the live "N words to go — learn X" hint', async () => {
+  const labdien = newWord('labdien'),
+    es = newWord('es'),
+    esmu = newWord('esmu');
+  const p1: ReviewItem = {
+    id: 'p1',
+    type: 'phrase',
+    stage: 'new',
+    reps: 0,
+    target: 'Labdien, es esmu ___.',
+    gloss: 'Hello, I am ___.',
+    audio: { nativeUrl: 'p1.mp3' },
+    componentLemmaIds: ['labdien', 'es', 'esmu'],
+  };
+  const { result } = renderSessionHook([p1, labdien, es, esmu], new Set());
+
+  await settleHook(() => {
+    expect(result.current.current?.kind).toBe('phrase/locked');
+    expect(result.current.current?.item.lockRemaining).toBe(3);
+    expect(result.current.current?.item.lockLemma).toBe('labdien');
+  });
+});
