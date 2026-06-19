@@ -33,4 +33,17 @@ describe('GlideViewport', () => {
     expect(u.getByText('Card B')).toBeTruthy();
     expect(u.queryByText('Card A')).toBeNull();
   });
+
+  // CONTRACT: GlideViewport transitions only on a CHANGED itemKey, and treats a stable itemKey as
+  // "the same card" — it does NOT swap the rendered node for a same-key children change. The host
+  // must therefore pass a key that uniquely identifies which CARD is showing (id + kind), so a
+  // gated phrase's locked -> unlock -> hear renders — which share one row id — each get their own
+  // transition. See SessionHost (navigation/index.tsx) and StartingLoop.test.tsx.
+  it('does NOT swap the node on a same-key children change (stable key = same card)', () => {
+    const u = render(wrap('ph', 'First node'));
+    u.rerender(wrap('ph', 'Second node')); // same key
+    act(() => { jest.advanceTimersByTime(800); });
+    expect(u.getByText('First node')).toBeTruthy(); // unchanged: stable key holds the first node
+    expect(u.queryByText('Second node')).toBeNull();
+  });
 });

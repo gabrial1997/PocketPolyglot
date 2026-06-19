@@ -134,10 +134,13 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
 
   return (
     <View style={styles.sessionShell}>
-      {/* GlideViewport owns "remount per item": keyed off the item id, it freezes the leaving card
-          and glides in the entering one, so per-card ephemeral state (stage, first-try miss,
-          recording buffer) still resets when the committed item changes. */}
-      <GlideViewport itemKey={session.current.item.id}>
+      {/* GlideViewport owns "remount per CARD encounter": keyed off item id + kind, it freezes the
+          leaving card and glides in the entering one, so per-card ephemeral state (stage, first-try
+          miss, recording buffer) resets when the committed card changes. The kind MUST be part of
+          the key: a gated phrase keeps ONE row id across its locked -> unlock -> hear renders, so
+          keying on id alone left the unlock node frozen (the hear card never mounted, its audio
+          never replayed). See GlideViewport's same-key contract + StartingLoop.test.tsx. */}
+      <GlideViewport itemKey={`${session.current.item.id}:${session.current.kind}`}>
         <CardHost
           item={session.current.item}
           kind={session.current.kind}
