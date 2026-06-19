@@ -44,10 +44,11 @@ LOOP 1
   2  word/*          labdien
   3  word/*          es
   4  word/*          esmu
-  5  phrase/unlock   its OWN card: "PHRASE UNLOCKED · you know all its words now" + chime
-  6  phrase/hear     first hearing: play + waveform + "Show meaning" + Continue
-                     ("first review tomorrow")   [waveform stays the existing one; the live
-                      amplitude-reactive version is the separate #22 spec]
+  5  phrase/unlock   its OWN card: "PHRASE UNLOCKED · you know all its words now" + the Latvian
+                     phrase + its ENGLISH meaning ("Hello, I am ___.") + chime
+  6  phrase/hear     audio card: SAYS the phrase, then REPEATS it; play + waveform + "Show meaning"
+                     + Continue ("first review tomorrow")   [waveform stays the existing one; the
+                      live amplitude-reactive version is the separate #22 spec]
 LOOP 2  — same shape with Kā tev iet? (kā · tev · iet)
 
 (say-it is NOT in the first session — the phrase is HEARD first and matures into say-it
@@ -72,15 +73,22 @@ the overlay. `decideKind` is evaluated against `known.all() ∪ overlay`. This i
 - **locked** (any component word still unknown — `unknownCount > 0`; see gate note below): render
   `phrase/locked` (dimmed phrase + "N words to go"); on Continue (`advance`), re-queue the phrase
   immediately **after its last component word** present in the remaining queue; record `seenLocked`.
-- **all words known + seenLocked + not yet revealed**: render `phrase/unlock` (reveal + chime, its
-  own card); on the gate advance, re-queue the phrase **next**; mark revealed.
-- **all words known + revealed** (or never locked): render `phrase/hear` (first SRS exposure —
-  listen + Continue). Say-it is NOT forced here; it surfaces in later sessions as the phrase
-  matures, via the normal `renderFor` maturity rule.
+- **all words known + seenLocked + not yet revealed**: render `phrase/unlock` (its own card —
+  shows the Latvian phrase **and its English meaning**, "you know all its words now", + the chime);
+  on the gate advance, re-queue the phrase **next**; mark revealed.
+- **all words known + revealed** (or never locked): render `phrase/hear` (first SRS exposure — an
+  audio card that **says the phrase, then repeats it** + Continue). Say-it is NOT forced here; it
+  surfaces in later sessions as the phrase matures, via the normal `renderFor` maturity rule.
 
-So a gated phrase is encountered up to three times in the first session — locked → unlock → hear —
+So a gated phrase is encountered up to three times on first introduction — locked → unlock → hear —
 each reusing the existing single-purpose card; say-it comes later. "Loops twice" = the two phrases,
 each running this shape.
+
+**This is the GENERAL phrase flow, not onboarding-only.** Every phrase is introduced this way:
+locked goal → learn its words → unlock reveal (+ chime, EN meaning) → hear (say + repeat). After
+that first hear, the phrase is just a normal FSRS item — it schedules, matures, and surfaces as
+hear/say-it on its own cadence with no special casing. The starting loop is simply the first two
+phrases to flow through this universal path; nothing about the mechanism is specific to onboarding.
 
 **Gate note (reconciliation).** The mockup subtitle is "Unlocks when its words are known" and the
 unlock card reads "you know all its words now" — i.e. unlock requires **0 unknown** component
@@ -112,7 +120,11 @@ A seed step inserts the 2 phrases + 6 lemmas with glosses, `pron`, OpenAI-TTS `n
 the in-phrase new word `is_new`), and creates `review_state` rows as `new` for the target test
 user(s). Ordered so the batch is `[P1, labdien, es, esmu, P2, kā, tev, iet]` before the working
 queue re-surfaces the phrases. Reuses the existing TTS + envelope pipeline
-(`content-pipeline/seed-golden-slice.mjs`).
+(`content-pipeline/seed-golden-slice.mjs`). The seeder also uploads the unlock chime to
+`content-audio/sfx/unlock-chime.wav`; the plan verifies the vendored
+`content-pipeline/assets/unlock-chime.wav` is byte-identical (sha256) to the Claude Design
+project's `assets/unlock-chime.wav` and pulls the design copy if they differ. (Current vendored
+chime: real 44.1 kHz mono WAV, sha256 `1f7f126b…`.)
 
 ### 4. SRS records misses (verification + lock-in)
 
