@@ -116,9 +116,9 @@ export function ProgressScreen({
 const styles = StyleSheet.create({
   body: { flex: 1, paddingTop: 46 },
   title: { fontSize: 32, fontWeight: '500', letterSpacing: -0.3 },
-  heroRow: { flexDirection: 'row', alignItems: 'flex-end', columnGap: 6, marginTop: 22 },
-  heroNum: { fontSize: 72, fontWeight: '500', lineHeight: 62, letterSpacing: -2 },
-  heroPct: { fontSize: 34, fontWeight: '500', lineHeight: 38, paddingBottom: 4 },
+  heroRow: { flexDirection: 'row', alignItems: 'baseline', columnGap: 6, marginTop: 22 },
+  heroNum: { fontSize: 72, fontWeight: '500', lineHeight: 84, letterSpacing: -2 },
+  heroPct: { fontSize: 34, fontWeight: '500', lineHeight: 38 },
   heroLine: { fontSize: 16.5, marginTop: 12, lineHeight: 23, maxWidth: 300 },
   heroSub: { fontSize: 14, marginTop: 6 },
   gridCard: { marginTop: 20, borderRadius: 22, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 14, borderWidth: StyleSheet.hairlineWidth },

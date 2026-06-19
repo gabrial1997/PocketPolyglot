@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   card: { borderRadius: 28, borderWidth: StyleSheet.hairlineWidth, paddingTop: 24, paddingHorizontal: 22, paddingBottom: 22 },
   eyebrow: { fontSize: 12, letterSpacing: 1.4, fontWeight: '600' },
   numRow: { flexDirection: 'row', alignItems: 'baseline', columnGap: 10, marginTop: 16 },
-  bigNum: { fontSize: 56, lineHeight: 50, letterSpacing: -1 },
+  bigNum: { fontSize: 56, lineHeight: 68, letterSpacing: -1 },
   wordsLabel: { fontSize: type.body, fontWeight: '500' },
   counts: { flexDirection: 'row', alignItems: 'center', columnGap: 16, marginTop: 10 },
   count: { fontSize: 14 },
