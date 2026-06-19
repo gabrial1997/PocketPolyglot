@@ -64,7 +64,9 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
         {accent ? (
           <View style={[styles.badge, { backgroundColor: T.good }]}><CardIcon name="check" size={16} color="#fff" sw={2.4} /></View>
         ) : null}
-        <Text style={[styles.glyph, { color: accent ? T.good : fg, fontFamily: fonts.headline }]}>{glyph}</Text>
+        {/* The "glyph" is the whole pair word (e.g. lācis/ļoti), not a single letter — long words
+            overflow the half-width card at 64px and clip. Shrink-to-fit on one line keeps them whole. */}
+        <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.glyph, { color: accent ? T.good : fg, fontFamily: fonts.headline }]}>{glyph}</Text>
         {accent ? (
           <>
             <Text style={[styles.cardWord, { color: T.ink, fontFamily: fonts.headline }]}>{item.target}</Text>

@@ -94,6 +94,18 @@ describe('DrillScreen', () => {
     );
   });
 
+  it('lets the glyph shrink to fit so long pair words never clip (device-walk: Ļoti/Lācis cut off)', () => {
+    // The seeded palatalization drill pairs are whole words (lācis/ļoti), not single letters. At the
+    // fixed 64px glyph size they overflow the half-width card and clip. The glyph must auto-shrink
+    // on one line so any-length pair word stays fully visible.
+    const u = renderCard({ pair: { a: 'lācis', b: 'ļoti', correct: 'b', audioUrl: 'pair.mp3' } });
+    for (const word of ['lācis', 'ļoti']) {
+      const glyph = u.getByText(word);
+      expect(glyph.props.numberOfLines).toBe(1);
+      expect(glyph.props.adjustsFontSizeToFit).toBe(true);
+    }
+  });
+
   it('signals onRecordStop without fabricating a recording (the recorder owns the take)', () => {
     const u = renderCard();
     runLoop(u);
