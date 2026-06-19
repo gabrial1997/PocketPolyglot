@@ -46,6 +46,11 @@ export function cardKindToDbType(cardKind: string): DbItemType {
   return 'lemma';
 }
 
+// Free-practice fallback size: when nothing is due, a session serves up to this many already-known
+// items so it is never empty. This bounds a single session's LENGTH, not how many sessions you may
+// start — sessions stay unlimited (no cap).
+const PRACTICE_BATCH = 20;
+
 export class SupabaseSrsService implements SrsService {
   constructor(
     private readonly client: SupabaseClient,
@@ -63,7 +68,22 @@ export class SupabaseSrsService implements SrsService {
       .or(`due_at.lte.${nowIso},stage.eq.new`);
     if (error) throw error;
 
-    const rows: ReviewStateRow[] = states ?? [];
+    let rows: ReviewStateRow[] = states ?? [];
+
+    // Caught up (nothing due, nothing new)? Fall back to a free-practice batch: the learner's own
+    // items, soonest-due first, so a session is never empty and "Begin session" never dead-ends.
+    // Practice still feeds the SRS through submit() (chosen behaviour), so intervals keep growing.
+    if (rows.length === 0) {
+      const { data: practice, error: practiceErr } = await this.client
+        .from('review_state')
+        .select('*')
+        .eq('user_id', this.userId)
+        .order('due_at', { ascending: true })
+        .limit(PRACTICE_BATCH);
+      if (practiceErr) throw practiceErr;
+      rows = practice ?? [];
+    }
+
     if (rows.length === 0) return [];
 
     // Bucket the due item ids by content type, then fetch each content table in one round-trip.
