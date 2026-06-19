@@ -61,11 +61,14 @@ export class SupabaseSrsService implements SrsService {
     const nowIso = new Date().toISOString();
 
     // Due if review_state.due_at <= now, OR the item is still 'new' (never scheduled yet).
+    // Ordered by due_at ascending (nulls last) so seeded due_at offsets define curriculum order —
+    // the starting-loop items are seeded earliest. (Full freq/unique-sound ordering is spec #26.)
     const { data: states, error } = await this.client
       .from('review_state')
       .select('*')
       .eq('user_id', this.userId)
-      .or(`due_at.lte.${nowIso},stage.eq.new`);
+      .or(`due_at.lte.${nowIso},stage.eq.new`)
+      .order('due_at', { ascending: true, nullsFirst: false });
     if (error) throw error;
 
     let rows: ReviewStateRow[] = states ?? [];
