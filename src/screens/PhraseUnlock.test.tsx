@@ -53,4 +53,9 @@ describe('PhraseUnlock', () => {
   it('does not crash when onUnlocked is omitted (it is optional)', () => {
     expect(() => renderCard({ onUnlocked: undefined })).not.toThrow();
   });
+
+  it('shows the English meaning on the reveal', () => {
+    const u = renderCard({ item: fixtureItem({ gloss: 'Hello, I am ___.' }) });
+    expect(u.getByText('Hello, I am ___.')).toBeTruthy();
+  });
 });

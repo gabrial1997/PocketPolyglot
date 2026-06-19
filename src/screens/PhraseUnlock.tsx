@@ -63,7 +63,8 @@ export function PhraseUnlock({ item, onUnlocked }: PhraseGateProps): React.JSX.E
         <Animated.View style={[{ marginTop: 16 }, riseStyle]}>
           <PhraseLine phrase={item.target} highlight={(item as { newForm?: string }).newForm} size={32} />
         </Animated.View>
-        <Animated.Text style={[styles.sub, { color: T.sub }, riseStyle]}>You know all its words now.</Animated.Text>
+        <Animated.Text style={[styles.meaning, { color: T.sub }, riseStyle]}>{item.gloss}</Animated.Text>
+        <Animated.Text style={[styles.sub, { color: T.faint }, riseStyle]}>You know all its words now.</Animated.Text>
       </View>
 
       {/* no button — it flows straight into hearing it */}
@@ -84,6 +85,7 @@ const styles = StyleSheet.create({
   halo: { position: 'absolute', width: 96, height: 96, borderRadius: 48 },
   orb: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', shadowOpacity: 0.32, shadowRadius: 24, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
   unlocked: { fontSize: 12, fontWeight: '600', letterSpacing: 1.6, marginTop: 28 },
+  meaning: { fontSize: 16, marginTop: 10, textAlign: 'center' },
   sub: { fontSize: 14.5, marginTop: 14 },
   footer: { paddingBottom: 42, alignItems: 'center', rowGap: 10 },
   track: { width: 110, height: 3, borderRadius: 99, overflow: 'hidden' },

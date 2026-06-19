@@ -248,6 +248,25 @@ exports[`PhraseUnlock renders the unlock reveal from item data (snapshot) 1`] = 
         style={
           {
             "color": "rgba(26,39,51,0.58)",
+            "fontSize": 16,
+            "marginTop": 10,
+            "opacity": 0,
+            "textAlign": "center",
+            "transform": [
+              {
+                "translateY": 10,
+              },
+            ],
+          }
+        }
+      >
+        Good morning!
+      </Text>
+      <Text
+        collapsable={false}
+        style={
+          {
+            "color": "rgba(26,39,51,0.34)",
             "fontSize": 14.5,
             "marginTop": 14,
             "opacity": 0,
