@@ -171,6 +171,19 @@ export function PlayBackToBack({ onPress, label = 'Play back-to-back' }: { onPre
   );
 }
 
+/**
+ * Honest result-note copy for the say-loop cards (word/pic-review, word/say). Pure: takes the
+ * card's own outcome plus the REAL projected next-review labels carried on the item. We do NOT
+ * claim the recording "sounded right" — there is no pronunciation scoring until the Phase-1 ML
+ * service — and we never show a fabricated interval: with no preview (stub/sample data) we fall
+ * back to a neutral, truthful line.
+ */
+export function loopResultNote(missed: boolean, preview?: { pass: string; miss: string }): string {
+  const lead = missed ? 'Good recovery.' : 'Nice work.';
+  if (!preview) return `${lead} Your next review is scheduled.`;
+  return `${lead} ${missed ? preview.miss : preview.pass}.`;
+}
+
 export function ResultNote({ children }: { children: React.ReactNode }): React.JSX.Element {
   const T = useTheme();
   return (

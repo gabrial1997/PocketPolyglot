@@ -69,7 +69,9 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
             </View>
             <Text style={[styles.note, { color: rated === 'good' ? T.good : T.sub }]}>
               {rated === 'good'
-                ? <>Next review in <Text style={{ fontWeight: '700' }}>9 days</Text>.</>
+                ? // REAL projected interval carried on the item (never a fabricated number); a
+                  // neutral truthful fallback when there is no live schedule (stub/sample data).
+                  `${item.reviewPreview?.pass ?? 'Your next review is scheduled'}.`
                 : rated === 'again'
                   ? <>We’ll come back to it <Text style={{ fontWeight: '700', color: T.ink }}>shortly</Text>.</>
                   : ''}

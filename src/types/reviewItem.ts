@@ -84,4 +84,10 @@ export interface ReviewItem {
   lockLemma?: string;
   lockRemaining?: number;
   literalNote?: string;
+
+  // Real projected next-review labels for this card's two outcomes (pass = a Good rating, miss = an
+  // Again rating), computed from the live FSRS state by the SRS service so result notes show the
+  // TRUE interval rather than a fabricated one. Optional + presentational — absent for stub/preview
+  // data, in which case cards fall back to a neutral "your next review is scheduled" line.
+  reviewPreview?: { pass: string; miss: string };
 }

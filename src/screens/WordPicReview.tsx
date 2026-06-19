@@ -5,7 +5,7 @@
 import React, { useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS } from '../components';
-import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, GridChoiceButton, CompareRow, PlayBackToBack, ResultNote } from '../components/cardChrome';
+import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, GridChoiceButton, CompareRow, PlayBackToBack, ResultNote, loopResultNote } from '../components/cardChrome';
 import { TryAgainNote } from '../components';
 import { CardImage } from './CardImage';
 import { useLoopStage } from './useLoopStage';
@@ -94,7 +94,7 @@ export function WordPicReview(props: Props): React.JSX.Element {
               <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
             </View>
             <PlayBackToBack onPress={() => onPlayCompare?.('native')} />
-            <ResultNote>Sounded right — next review in 5 days.</ResultNote>
+            <ResultNote>{loopResultNote(m.missed, item.reviewPreview)}</ResultNote>
           </CardBody>
           <CardFooter>
             <CtaButton title="Continue" onPress={() => onComplete({ itemId: item.id, cardKind: 'word/pic-review', correct: !m.missed, spoke: true })} />

@@ -269,6 +269,39 @@ export function nextReviewLabel(due: Date, now: Date): string {
   return `Next review in ${days} days`;
 }
 
+/** Rebuild the FSRS prior from a persisted review_state row (or a fresh new-card default). The
+ *  single source of truth for "what schedule was this item on" — submit() and the next-review
+ *  projection both go through here so the label the learner sees matches what submit() will write. */
+export function rowToPrior(row: ReviewStateRow | null | undefined): PriorSchedule {
+  return row
+    ? {
+        stability: row.stability,
+        difficulty: row.difficulty,
+        due: row.due_at ? new Date(row.due_at) : null,
+        reps: row.reps,
+        lapses: row.lapses,
+        stage: row.stage,
+        last_review: row.last_review ? new Date(row.last_review) : null,
+      }
+    : { reps: 0, stage: 'new' };
+}
+
+/**
+ * Project the REAL next-review labels the learner would earn from this card's two outcomes —
+ * `pass` (a Good rating) and `miss` (an Again rating) — computed from the same prior FSRS state
+ * submit() will use. Cards render the matching label so a result note shows the true interval
+ * instead of a fabricated one. The pure card picks pass vs miss from its own outcome.
+ */
+export function projectReviewLabels(
+  prior: PriorSchedule,
+  now: Date,
+): { pass: string; miss: string } {
+  return {
+    pass: nextReviewLabel(schedule(prior, Rating.Good, now).due, now),
+    miss: nextReviewLabel(schedule(prior, Rating.Again, now).due, now),
+  };
+}
+
 /** Contract ReviewItem.type -> DB review_state.item_type. */
 export function itemTypeToDbType(type: ReviewItem['type']): 'lemma' | 'phrase' | 'pair' {
   return type === 'word' ? 'lemma' : type;

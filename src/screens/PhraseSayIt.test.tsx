@@ -100,4 +100,18 @@ describe('PhraseSayIt', () => {
     expect(u.props.onRecordStop).toHaveBeenCalledTimes(1);
     expect(u.props.onRecordStop).not.toHaveBeenCalledWith('stub://recording');
   });
+
+  it('shows the REAL projected interval after a "good" rating — not a fabricated number', () => {
+    const u = renderCard({ reviewPreview: { pass: 'Next review in 9 days', miss: 'Next review later today' } });
+    toRating(u);
+    fireEvent.press(u.getByText('Got it'));
+    expect(u.getByText('Next review in 9 days.')).toBeTruthy();
+  });
+
+  it('falls back to a neutral truthful note when no schedule is available (stub/sample data)', () => {
+    const u = renderCard(); // no reviewPreview
+    toRating(u);
+    fireEvent.press(u.getByText('Got it'));
+    expect(u.getByText('Your next review is scheduled.')).toBeTruthy();
+  });
 });

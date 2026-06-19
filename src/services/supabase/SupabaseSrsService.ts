@@ -14,12 +14,14 @@ import type {
 } from './types';
 import {
   cardResultToRating,
+  itemTypeToDbType,
   lemmaRowToReviewItem,
   nextReviewLabel,
   pairRowToReviewItem,
   phraseRowToReviewItem,
+  projectReviewLabels,
+  rowToPrior,
   schedule,
-  type PriorSchedule,
 } from './mappers';
 
 /**
@@ -169,6 +171,15 @@ export class SupabaseSrsService implements SrsService {
       }
     }
 
+    // Attach the REAL projected next-review labels (pass = Good, miss = Again) from each item's
+    // live FSRS state, so result-stage cards show the true interval instead of a fabricated one.
+    // Computed here (not in the card) keeps cards pure: the label arrives as data on the item.
+    const now = new Date(nowIso);
+    for (const item of items) {
+      const state = stateByKey.get(`${itemTypeToDbType(item.type)}:${item.id}`);
+      item.reviewPreview = projectReviewLabels(rowToPrior(state), now);
+    }
+
     return items;
   }
 
@@ -188,17 +199,7 @@ export class SupabaseSrsService implements SrsService {
     if (prevErr) throw prevErr;
 
     const prevState = prevRow as ReviewStateRow | null;
-    const prior: PriorSchedule = prevState
-      ? {
-          stability: prevState.stability,
-          difficulty: prevState.difficulty,
-          due: prevState.due_at ? new Date(prevState.due_at) : null,
-          reps: prevState.reps,
-          lapses: prevState.lapses,
-          stage: prevState.stage,
-          last_review: prevState.last_review ? new Date(prevState.last_review) : null,
-        }
-      : { reps: 0, stage: 'new' };
+    const prior = rowToPrior(prevState);
 
     const next = schedule(prior, rating, now);
     const label = nextReviewLabel(next.due, now);

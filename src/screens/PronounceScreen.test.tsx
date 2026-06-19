@@ -107,4 +107,17 @@ describe('PronounceScreen', () => {
       jest.useRealTimers();
     }
   });
+
+  it('shows NO fabricated pitch curve or pronunciation verdict after recording (Phase-0 honesty)', () => {
+    const u = renderCard();
+    fireEvent.press(u.getByText('Record'));
+    fireEvent.press(u.getByText('Recording…')); // -> recorded
+    // The fabricated PITCH overlay and the canned "Close. Lengthen the ie" verdict are gone —
+    // there is no pronunciation scoring until the Phase-1 ML service.
+    expect(u.queryByText('PITCH')).toBeNull();
+    expect(u.queryByText(/Lengthen the/)).toBeNull();
+    expect(u.queryByText(/Close\./)).toBeNull();
+    // The honest self-compare prompt takes its place.
+    expect(u.getByText('Play both back to compare — trust your ear.')).toBeTruthy();
+  });
 });

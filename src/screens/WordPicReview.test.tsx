@@ -146,4 +146,32 @@ describe('WordPicReview', () => {
     fireEvent.press(u.getByLabelText('Record')); // the mic orb is the record control
     expect(u.props.onRecordStart).toHaveBeenCalled();
   });
+
+  // Drive choose -> speak -> rec -> result WITHOUT pressing Continue, so the result note is visible.
+  function toResult(u: ReturnType<typeof renderCard>, opts: { miss?: boolean } = {}): void {
+    if (opts.miss) fireEvent.press(u.getByText('maize'));
+    fireEvent.press(u.getByText('māja'));
+    fireEvent.press(u.getByLabelText('Record'));
+    fireEvent.press(u.getByLabelText('Stop recording'));
+  }
+
+  it('shows the REAL projected interval on a clean run — never a fabricated number or a pronunciation grade', () => {
+    const u = renderCard({ reviewPreview: { pass: 'Next review in 5 days', miss: 'Next review later today' } });
+    toResult(u);
+    expect(u.getByText('Nice work. Next review in 5 days.')).toBeTruthy();
+    expect(u.queryByText(/Sounded right/)).toBeNull();
+  });
+
+  it('after a recovered miss, frames it as a recovery with the miss interval — not a success claim', () => {
+    const u = renderCard({ reviewPreview: { pass: 'Next review in 5 days', miss: 'Next review later today' } });
+    toResult(u, { miss: true });
+    expect(u.getByText('Good recovery. Next review later today.')).toBeTruthy();
+    expect(u.queryByText(/Nice work/)).toBeNull();
+  });
+
+  it('falls back to a neutral truthful note when no schedule is available (stub/sample data)', () => {
+    const u = renderCard(); // no reviewPreview
+    toResult(u);
+    expect(u.getByText('Nice work. Your next review is scheduled.')).toBeTruthy();
+  });
 });

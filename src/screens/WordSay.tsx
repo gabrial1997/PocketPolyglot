@@ -6,7 +6,7 @@ import React, { useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, MicOrb, ChoiceButton, CtaButton, SpeedChip, TryAgainNote, LiveWaveform, usePlayClip, FRAME_MS } from '../components';
 import { useTheme } from '../theme/ThemeProvider';
-import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, CompareRow, PlayBackToBack, ResultNote } from '../components/cardChrome';
+import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, CompareRow, PlayBackToBack, ResultNote, loopResultNote } from '../components/cardChrome';
 import { useLoopStage } from './useLoopStage';
 import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 
@@ -86,7 +86,7 @@ export function WordSay(props: Props): React.JSX.Element {
               <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
             </View>
             <PlayBackToBack onPress={() => onPlayCompare?.('native')} />
-            <ResultNote>Sounded right — next review in 6 days.</ResultNote>
+            <ResultNote>{loopResultNote(m.missed, item.reviewPreview)}</ResultNote>
           </CardBody>
           <CardFooter>
             <CtaButton title="Continue" onPress={() => onComplete({ itemId: item.id, cardKind: 'word/say', correct: !m.missed, spoke: true })} />

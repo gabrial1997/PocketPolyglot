@@ -1,19 +1,21 @@
 /* eslint-disable react/prop-types */
 // pron — pronunciation comparison (BACKEND_INTEGRATION §4, README 05). Hear the native model, record
-// yourself, compare the two waveforms + pitch curves. Real scoring is backend ML (§7); the match note
-// here is presentational. Out: { spoke:true, recording }.
+// yourself, compare the two takes by ear. Out: { spoke:true, recording }.
+//
+// Phase-0 honesty: there is NO pronunciation scoring yet (GOP lands with the Phase-1 ML service, §7).
+// So this card shows ONLY what's real — the native amplitude waveform + A/B self-compare. It does
+// NOT render a fabricated pitch curve or a fabricated "close, lengthen the ie" verdict; the closing
+// note simply points the learner at their own ear. The pitch overlay returns when real pitch data does.
 //
 // 2026-06-19 VISUAL SYNC: rebuilt to the mockup (screens-b.jsx `PronounceScreen`). Word hero +
 // "SAY IT BACK" eyebrow; Native / You compare rows (surface radius 22, icon chip + 0:01 + waveform);
-// SpeedChip (slows the native model only); a pitch-curve overlay card (native dashed vs you solid
-// primary); the green match note; bottom Record + Compare controls.
+// SpeedChip (slows the native model only); bottom Record + Compare controls.
 //
 // Flow: Record cycles the take (onRecordStart -> rec -> onRecordStop). Compare plays the two clips
 // back-to-back (onPlayCompare) and then completes the card after a readable beat — comparing is the
 // terminal beat of this practice card (the old standalone "Continue" is folded into Compare).
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import Svg, { Polyline } from 'react-native-svg';
 import { Screen, LiveWaveform, FRAME_MS, SpeedChip } from '../components';
 import { CardIcon } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
@@ -21,14 +23,6 @@ import { hexA, fonts } from '../theme/tokens';
 import type { RecordingCardProps } from './cardProps';
 
 const COMPARE_MS = 1700; // play native+you back-to-back, then complete
-
-// Deterministic smooth pitch curve from a seed (mirrors kit Pitch helper).
-function pitchPoints(seed: string): string {
-  let s = 2166136261;
-  for (let i = 0; i < seed.length; i++) { s ^= seed.charCodeAt(i); s = Math.imul(s, 16777619); }
-  const rnd = (): number => { s = (Math.imul(s, 1103515245) + 12345) & 0x7fffffff; return s / 0x7fffffff; };
-  return Array.from({ length: 24 }, (_, i) => `${((i / 23) * 300).toFixed(1)},${(42 - rnd() * 30 - 4).toFixed(1)}`).join(' ');
-}
 
 export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
   const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed, onSpeedChange } = props;
@@ -95,30 +89,13 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
           <SpeedChip value={speed} onChange={onSpeedChange} />
         </View>
 
-        {recorded ? (
-          <View style={[styles.pitchCard, { backgroundColor: T.surface, borderColor: T.hair }, T.shadow]}>
-            <View style={styles.pitchHead}>
-              <Text style={[styles.pitchTitle, { color: T.faint }]}>PITCH</Text>
-              <View style={styles.legend}>
-                <View style={styles.legendItem}><View style={[styles.legendDash, { backgroundColor: T.waveRest }]} /><Text style={[styles.legendText, { color: T.sub }]}>Native</Text></View>
-                <View style={styles.legendItem}><View style={[styles.legendDash, { backgroundColor: T.primary }]} /><Text style={[styles.legendText, { color: T.primary }]}>You</Text></View>
-              </View>
-            </View>
-            <Svg width="100%" height={46} viewBox="0 0 300 46" preserveAspectRatio="none">
-              <Polyline points={pitchPoints(`${item.id}-native-p`)} fill="none" stroke={T.waveRest} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="1 6" />
-              <Polyline points={pitchPoints(`${item.id}-you-p`)} fill="none" stroke={T.primary} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </View>
-        ) : null}
-
         <View style={{ flex: 1 }} />
 
+        {/* No pronunciation grade in Phase 0 — point the learner at their own ear instead of
+            fabricating a verdict. A real match note returns with the GOP scoring service (§7). */}
         {recorded ? (
           <View style={styles.matchNote}>
-            <View style={[styles.matchCircle, { backgroundColor: T.goodSoft }]}>
-              <CardIcon name="check" size={13} color={T.good} sw={2.4} />
-            </View>
-            <Text style={[styles.matchText, { color: T.sub }]}>Close. Lengthen the <Text style={{ color: T.ink }}>ie</Text> a touch.</Text>
+            <Text style={[styles.matchText, { color: T.sub }]}>Play both back to compare — trust your ear.</Text>
           </View>
         ) : null}
       </View>
@@ -151,15 +128,7 @@ const styles = StyleSheet.create({
   rowTime: { fontSize: 12.5, fontVariant: ['tabular-nums'] },
   placeholder: { borderRadius: 22, paddingVertical: 22, paddingHorizontal: 18, alignItems: 'center', borderWidth: 1, borderStyle: 'dashed' },
   placeholderText: { fontSize: 14 },
-  pitchCard: { borderRadius: 22, paddingTop: 14, paddingHorizontal: 18, paddingBottom: 12, marginTop: 12, borderWidth: StyleSheet.hairlineWidth },
-  pitchHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
-  pitchTitle: { fontSize: 11.5, fontWeight: '600', letterSpacing: 1 },
-  legend: { flexDirection: 'row', columnGap: 14 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', columnGap: 5 },
-  legendDash: { width: 14, height: 2.5, borderRadius: 2 },
-  legendText: { fontSize: 11.5, fontWeight: '600' },
   matchNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', columnGap: 8, marginBottom: 16 },
-  matchCircle: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   matchText: { fontSize: 14, fontWeight: '500' },
   controls: { flexDirection: 'row', alignItems: 'center', columnGap: 12, paddingBottom: 30 },
   ctrl: { flex: 1, height: 56, borderRadius: 18, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', columnGap: 9 },

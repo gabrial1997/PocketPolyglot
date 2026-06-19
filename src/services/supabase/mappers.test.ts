@@ -8,6 +8,8 @@ import {
   nextReviewLabel,
   pairRowToReviewItem,
   phraseRowToReviewItem,
+  projectReviewLabels,
+  rowToPrior,
   schedule,
   MATURE_STABILITY_DAYS,
 } from './mappers';
@@ -384,5 +386,43 @@ describe('itemTypeToDbType', () => {
     expect(itemTypeToDbType('word')).toBe('lemma');
     expect(itemTypeToDbType('phrase')).toBe('phrase');
     expect(itemTypeToDbType('pair')).toBe('pair');
+  });
+});
+
+describe('rowToPrior', () => {
+  it('rebuilds the prior from a review_state row', () => {
+    const prior = rowToPrior(reviewState({ stability: 10, reps: 3, lapses: 1, stage: 'review' }));
+    expect(prior.stability).toBe(10);
+    expect(prior.reps).toBe(3);
+    expect(prior.lapses).toBe(1);
+    expect(prior.stage).toBe('review');
+    expect(prior.due).toEqual(new Date('2026-06-20T00:00:00Z'));
+  });
+
+  it('defaults a missing row to a fresh new card', () => {
+    const prior = rowToPrior(undefined);
+    expect(prior).toEqual({ reps: 0, stage: 'new' });
+  });
+});
+
+describe('projectReviewLabels', () => {
+  const now = new Date('2026-06-14T12:00:00Z');
+
+  it('returns the REAL interval for both outcomes, with pass strictly longer than miss', () => {
+    // A matured card: a Good rating pushes the next review far out; an Again rating (lapse) pulls
+    // it right back in. The labels must be the true projected intervals, not a fabricated string.
+    const prior = rowToPrior(reviewState({ stability: 30, stage: 'mature', reps: 8, lapses: 0 }));
+    const { pass, miss } = projectReviewLabels(prior, now);
+    expect(pass).toMatch(/^Next review in \d+ days?$/);
+    expect(miss).toMatch(/^Next review (later today|in 1 day|in \d+ days)$/);
+    const passDays = Number(pass.match(/(\d+)/)?.[1] ?? 0);
+    const missDays = Number(miss.match(/(\d+)/)?.[1] ?? 0);
+    expect(passDays).toBeGreaterThan(missDays);
+  });
+
+  it('matches what submit would write — same prior + Good rating yields the pass label', () => {
+    const prior = rowToPrior(reviewState({ stability: 12, stage: 'review' }));
+    const { pass } = projectReviewLabels(prior, now);
+    expect(pass).toBe(nextReviewLabel(schedule(prior, Rating.Good, now).due, now));
   });
 });

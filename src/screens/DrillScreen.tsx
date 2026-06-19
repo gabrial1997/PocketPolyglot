@@ -98,7 +98,9 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
           </View>
           <View style={styles.sayMic}>
             {say === 'done' ? (
-              <ResultNote>Sounded right — a nice soft <Text style={{ fontWeight: '700', color: T.ink }}>{correctGlyph}</Text>.</ResultNote>
+              // No production grade in Phase 0 — acknowledge finishing the loop and reinforce the
+              // target sound, without claiming the recording "sounded right" (that needs GOP scoring).
+              <ResultNote>Nice work — keep that <Text style={{ fontWeight: '700', color: T.ink }}>{correctGlyph}</Text> soft.</ResultNote>
             ) : (
               <>
                 <MicOrb size={72} rec={say === 'rec'} onPress={() => { if (say === 'rec') { onRecordStop(); setSay('done'); } else { onRecordStart(); setSay('rec'); } }} />
