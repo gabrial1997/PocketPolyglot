@@ -1,20 +1,12 @@
 import { lockState } from './phraseGate';
 
-test('locked when 2+ components are unknown', () => {
-  const known = new Set<string>(['ludzu']);
-  const r = lockState(['viens', 'kafija', 'ludzu'], known);
-  expect(r.locked).toBe(true);
-  expect(r.unknownCount).toBe(2);
+const known = new Set(['a', 'b']);
+
+it('is locked while ANY component word is unknown (all-words-known gate)', () => {
+  expect(lockState(['a', 'b', 'c'], known)).toEqual({ locked: true, unknownCount: 1 });
+  expect(lockState(['a', 'c', 'd'], known)).toEqual({ locked: true, unknownCount: 2 });
 });
 
-test('available (i+1) when exactly one component is unknown', () => {
-  const known = new Set<string>(['viens', 'ludzu']);
-  const r = lockState(['viens', 'kafija', 'ludzu'], known);
-  expect(r.locked).toBe(false);
-  expect(r.unknownCount).toBe(1);
-});
-
-test('available when all known', () => {
-  const known = new Set<string>(['viens', 'kafija', 'ludzu']);
-  expect(lockState(['viens', 'kafija', 'ludzu'], known).locked).toBe(false);
+it('is available only when every component word is known', () => {
+  expect(lockState(['a', 'b'], known)).toEqual({ locked: false, unknownCount: 0 });
 });
