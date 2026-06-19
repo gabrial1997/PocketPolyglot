@@ -336,6 +336,38 @@ describe('schedule', () => {
   });
 });
 
+// --- SRS records misses (lapses) --------------------------------------------
+// Spec §4: a missed graded card must demote (Rating.Again) and, on an already-learned card,
+// record a lapse + pull the due date in. These pin that the algorithm picks misses up.
+describe('records misses (lapses)', () => {
+  const now = new Date('2026-06-19T00:00:00Z');
+
+  it('a first-try miss on a drill maps to Rating.Again', () => {
+    expect(cardResultToRating({ itemId: 'x', cardKind: 'drill', correct: false, spoke: true })).toBe(Rating.Again);
+  });
+
+  it("phrase/sayit self-rating 'again' maps to Rating.Again", () => {
+    expect(cardResultToRating({ itemId: 'x', cardKind: 'phrase/sayit', spoke: true, selfRating: 'again' })).toBe(Rating.Again);
+  });
+
+  it('Again on a learned (review) card lapses: shorter interval AND lapse count up vs Good', () => {
+    // A genuinely learned card: real stability/difficulty so a miss is a true lapse (not a
+    // degenerate stability-0 row, which would make the interval comparison meaningless).
+    const prior = {
+      reps: 3,
+      stage: 'review' as const,
+      stability: 10,
+      difficulty: 5,
+      due: new Date('2026-06-18T00:00:00Z'),
+      last_review: new Date('2026-06-08T00:00:00Z'),
+    };
+    const again = schedule(prior, Rating.Again, now);
+    const good = schedule(prior, Rating.Good, now);
+    expect(again.due.getTime()).toBeLessThan(good.due.getTime());
+    expect(again.lapses).toBeGreaterThan(good.lapses);
+  });
+});
+
 // --- helpers ----------------------------------------------------------------
 
 describe('nextReviewLabel', () => {
