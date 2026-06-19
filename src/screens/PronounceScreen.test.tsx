@@ -3,7 +3,7 @@
 // assert the events it emits — no services, per BACKEND_INTEGRATION §1/§4. Scoring is backend
 // ML, so this card reports { spoke } only (no `correct`).
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { PronounceScreen } from './PronounceScreen';
 import type { ReviewItem } from '../types/reviewItem';
@@ -40,11 +40,16 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
   return { ...utils, props };
 }
 
-// Drive the card listen -> rec -> compare.
+// Drive the card listen -> rec -> compare. Visual-sync: "Compare" plays native+you back-to-back
+// and then completes the card after a readable beat (the old standalone "Continue" is folded in),
+// so we advance fake timers to reach onComplete.
 function runLoop(u: ReturnType<typeof renderCard>) {
-  fireEvent.press(u.getByLabelText('Record')); // listen -> rec, fires onRecordStart
-  fireEvent.press(u.getByLabelText('Stop recording')); // rec -> compare, fires onRecordStop
-  fireEvent.press(u.getByText('Continue')); // compare -> onComplete
+  fireEvent.press(u.getByText('Record')); // listen -> rec, fires onRecordStart
+  fireEvent.press(u.getByText('Recording…')); // rec -> recorded, fires onRecordStop
+  fireEvent.press(u.getByText('Compare')); // plays native+you, then completes after a beat
+  act(() => {
+    jest.runAllTimers();
+  });
 }
 
 describe('PronounceScreen', () => {
@@ -53,38 +58,51 @@ describe('PronounceScreen', () => {
     expect(toJSON()).toMatchSnapshot();
   });
 
-  it('plays the native model when the play orb is tapped', () => {
-    const u = renderCard();
-    fireEvent.press(u.getByLabelText('Play'));
-    expect(u.props.onPlay).toHaveBeenCalledWith('native');
+  it('plays the native model then the user take when Compare is tapped (A/B self-compare)', () => {
+    // Visual-sync: there is no separate "Play" orb; comparing plays native + you back-to-back via
+    // onPlayCompare (the native model playback is folded into Compare).
+    jest.useFakeTimers();
+    try {
+      const u = renderCard();
+      fireEvent.press(u.getByText('Record'));
+      fireEvent.press(u.getByText('Recording…'));
+      fireEvent.press(u.getByText('Compare'));
+      expect(u.props.onPlayCompare).toHaveBeenCalledWith('native');
+      act(() => {
+        jest.runAllTimers();
+      });
+      expect(u.props.onPlayCompare).toHaveBeenCalledWith('you');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('completes with spoke and no `correct` field (scoring is backend ML)', () => {
-    const u = renderCard();
-    runLoop(u);
-    expect(u.props.onComplete).toHaveBeenCalledWith({
-      itemId: 'maja',
-      cardKind: 'pron',
-      spoke: true,
-    });
-    const result = (u.props.onComplete as jest.Mock).mock.calls[0][0];
-    expect(result).not.toHaveProperty('correct');
+    jest.useFakeTimers();
+    try {
+      const u = renderCard();
+      runLoop(u);
+      expect(u.props.onComplete).toHaveBeenCalledWith({
+        itemId: 'maja',
+        cardKind: 'pron',
+        spoke: true,
+      });
+      const result = (u.props.onComplete as jest.Mock).mock.calls[0][0];
+      expect(result).not.toHaveProperty('correct');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('signals onRecordStop without fabricating a recording (the recorder owns the take)', () => {
-    const u = renderCard();
-    runLoop(u);
-    expect(u.props.onRecordStop).toHaveBeenCalledTimes(1);
-    expect(u.props.onRecordStop).not.toHaveBeenCalledWith('stub://recording');
-  });
-
-  it('lets the user replay both the original and their own take (A/B self-compare)', () => {
-    const u = renderCard();
-    fireEvent.press(u.getByLabelText('Record'));
-    fireEvent.press(u.getByLabelText('Stop recording'));
-    fireEvent.press(u.getByText('Play original'));
-    expect(u.props.onPlayCompare).toHaveBeenCalledWith('native');
-    fireEvent.press(u.getByText('Play yours'));
-    expect(u.props.onPlayCompare).toHaveBeenCalledWith('you');
+    jest.useFakeTimers();
+    try {
+      const u = renderCard();
+      runLoop(u);
+      expect(u.props.onRecordStop).toHaveBeenCalledTimes(1);
+      expect(u.props.onRecordStop).not.toHaveBeenCalledWith('stub://recording');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

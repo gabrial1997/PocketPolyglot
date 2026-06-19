@@ -32,18 +32,277 @@ exports[`PhraseUnlock renders the unlock reveal from item data (snapshot) 1`] = 
           "alignItems": "center",
           "flex": 1,
           "justifyContent": "center",
-          "rowGap": 12,
+          "paddingBottom": 8,
         }
       }
     >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "height": 140,
+            "justifyContent": "center",
+            "width": 140,
+          }
+        }
+      >
+        <View
+          collapsable={false}
+          pointerEvents="none"
+          style={
+            {
+              "borderColor": "rgba(44,94,140,0.4)",
+              "borderRadius": 55,
+              "borderWidth": 1.5,
+              "height": 110,
+              "opacity": 0.5,
+              "position": "absolute",
+              "transform": [
+                {
+                  "scale": 0.7,
+                },
+              ],
+              "width": 110,
+            }
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "borderRadius": 48,
+                "height": 96,
+                "position": "absolute",
+                "width": 96,
+              },
+              {
+                "backgroundColor": "rgba(44,94,140,0.1)",
+              },
+            ]
+          }
+        />
+        <View
+          style={
+            [
+              {
+                "alignItems": "center",
+                "borderRadius": 32,
+                "elevation": 6,
+                "height": 64,
+                "justifyContent": "center",
+                "shadowOffset": {
+                  "height": 8,
+                  "width": 0,
+                },
+                "shadowOpacity": 0.32,
+                "shadowRadius": 24,
+                "width": 64,
+              },
+              {
+                "backgroundColor": "#2C5E8C",
+                "shadowColor": "#2C5E8C",
+              },
+            ]
+          }
+        >
+          <RNSVGSvgView
+            align="xMidYMid"
+            bbHeight={25}
+            bbWidth={25}
+            focusable={false}
+            height={25}
+            meetOrSlice={0}
+            minX={0}
+            minY={0}
+            style={
+              [
+                {
+                  "backgroundColor": "transparent",
+                  "borderWidth": 0,
+                },
+                {
+                  "flex": 0,
+                  "height": 25,
+                  "width": 25,
+                },
+              ]
+            }
+            vbHeight={24}
+            vbWidth={24}
+            width={25}
+          >
+            <RNSVGGroup
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
+              }
+            >
+              <RNSVGRect
+                fill={null}
+                height="9.5"
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                rx="2.8"
+                stroke={
+                  {
+                    "payload": 4294967295,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={1.9}
+                width="13"
+                x="5.5"
+                y="10.5"
+              />
+              <RNSVGPath
+                d="M8.5 10.5V7.5a3.5 3.5 0 0 1 6.8-1.4"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 4294967295,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={1.9}
+              />
+            </RNSVGGroup>
+          </RNSVGSvgView>
+        </View>
+      </View>
+      <Text
+        collapsable={false}
+        style={
+          {
+            "color": "#2C5E8C",
+            "fontSize": 12,
+            "fontWeight": "600",
+            "letterSpacing": 1.6,
+            "marginTop": 28,
+            "opacity": 0,
+            "transform": [
+              {
+                "translateY": 10,
+              },
+            ],
+          }
+        }
+      >
+        PHRASE UNLOCKED
+      </Text>
+      <View
+        collapsable={false}
+        style={
+          {
+            "marginTop": 16,
+            "opacity": 0,
+            "transform": [
+              {
+                "translateY": 10,
+              },
+            ],
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#1A2733",
+              "fontFamily": "Spectral_500Medium",
+              "fontSize": 32,
+              "fontWeight": "500",
+              "letterSpacing": -0.5,
+              "lineHeight": 40,
+              "textAlign": "center",
+            }
+          }
+        >
+          <Text>
+            Labrīt!
+          </Text>
+        </Text>
+      </View>
+      <Text
+        collapsable={false}
+        style={
+          {
+            "color": "rgba(26,39,51,0.58)",
+            "fontSize": 14.5,
+            "marginTop": 14,
+            "opacity": 0,
+            "transform": [
+              {
+                "translateY": 10,
+              },
+            ],
+          }
+        }
+      >
+        You know all its words now.
+      </Text>
+    </View>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "paddingBottom": 42,
+          "rowGap": 10,
+        }
+      }
+    >
+      <View
+        style={
+          [
+            {
+              "borderRadius": 99,
+              "height": 3,
+              "overflow": "hidden",
+              "width": 110,
+            },
+            {
+              "backgroundColor": "rgba(26,39,51,0.08)",
+            },
+          ]
+        }
+      >
+        <View
+          collapsable={false}
+          style={
+            {
+              "backgroundColor": "#2C5E8C",
+              "borderRadius": 99,
+              "height": 3,
+              "width": "0%",
+            }
+          }
+        />
+      </View>
       <Text
         style={
           [
             {
-              "fontSize": 11.5,
-              "fontWeight": "700",
-              "letterSpacing": 1.3,
-              "textAlign": "center",
+              "fontSize": 12.5,
             },
             {
               "color": "rgba(26,39,51,0.34)",
@@ -51,61 +310,8 @@ exports[`PhraseUnlock renders the unlock reveal from item data (snapshot) 1`] = 
           ]
         }
       >
-        UNLOCKED
+        Hearing it…
       </Text>
-      <Text
-        style={
-          [
-            {
-              "fontSize": 52,
-              "letterSpacing": -0.8,
-              "textAlign": "center",
-            },
-            {
-              "color": "#1A2733",
-              "fontFamily": "Spectral_500Medium",
-            },
-          ]
-        }
-      >
-        Labrīt!
-      </Text>
-      <Text
-        style={
-          [
-            {
-              "fontSize": 16,
-              "textAlign": "center",
-            },
-            {
-              "color": "rgba(26,39,51,0.58)",
-            },
-          ]
-        }
-      >
-        Good morning!
-      </Text>
-      <View
-        style={
-          {
-            "alignItems": "center",
-            "alignSelf": "stretch",
-            "marginTop": 24,
-            "rowGap": 16,
-          }
-        }
-      >
-        <Text
-          style={
-            {
-              "color": "#2E7D5B",
-              "fontSize": 16,
-            }
-          }
-        >
-          New phrase unlocked
-        </Text>
-      </View>
     </View>
   </View>
 </RCTSafeAreaView>

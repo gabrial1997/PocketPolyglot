@@ -32,7 +32,7 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
           "alignItems": "center",
           "flex": 1,
           "justifyContent": "center",
-          "rowGap": 12,
+          "paddingBottom": 8,
         }
       }
     >
@@ -40,8 +40,8 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
         style={
           [
             {
-              "fontSize": 11.5,
-              "fontWeight": "700",
+              "fontSize": 12,
+              "fontWeight": "600",
               "letterSpacing": 1.3,
               "textAlign": "center",
             },
@@ -53,48 +53,771 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
       >
         NEW PHRASE
       </Text>
-      <Text
+      <View
         style={
-          [
-            {
-              "fontSize": 52,
-              "letterSpacing": -0.8,
-              "textAlign": "center",
-            },
+          {
+            "marginTop": 22,
+          }
+        }
+      >
+        <Text
+          style={
             {
               "color": "#1A2733",
               "fontFamily": "Spectral_500Medium",
-            },
-          ]
-        }
-      >
-        Labrīt!
-      </Text>
-      <Text
-        style={
-          [
-            {
-              "fontSize": 16,
+              "fontSize": 34,
+              "fontWeight": "500",
+              "letterSpacing": -0.5,
+              "lineHeight": 42.5,
               "textAlign": "center",
-            },
-            {
-              "color": "rgba(26,39,51,0.58)",
-            },
-          ]
-        }
-      >
-        Good morning!
-      </Text>
+            }
+          }
+        >
+          <Text>
+            Labrīt!
+          </Text>
+        </Text>
+      </View>
       <View
         style={
           {
             "alignItems": "center",
-            "alignSelf": "stretch",
-            "marginTop": 24,
-            "rowGap": 16,
+            "marginTop": 32,
+            "rowGap": 20,
+            "width": "100%",
           }
         }
       >
+        <View
+          style={
+            {
+              "width": "78%",
+            }
+          }
+        >
+          <View
+            accessibilityLabel="Audio waveform"
+            accessibilityRole="image"
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "width": "100%",
+                },
+                {
+                  "columnGap": 3,
+                  "height": 58,
+                },
+              ]
+            }
+          >
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+            <View
+              collapsable={false}
+              style={
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderRadius": 3,
+                  "flex": 1,
+                  "height": 58,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
+                }
+              }
+            />
+          </View>
+        </View>
         <View
           accessibilityLabel="Play"
           accessibilityRole="button"
@@ -136,10 +859,10 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
               {
                 "backgroundColor": "#2C5E8C",
                 "borderColor": "#2C5E8C",
-                "borderRadius": 43.5,
+                "borderRadius": 45,
                 "borderWidth": 0,
                 "elevation": 6,
-                "height": 87,
+                "height": 90,
                 "shadowColor": "#2C5E8C",
                 "shadowOffset": {
                   "height": 8,
@@ -147,17 +870,17 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
                 },
                 "shadowOpacity": 0.28,
                 "shadowRadius": 22,
-                "width": 87,
+                "width": 90,
               },
             ]
           }
         >
           <RNSVGSvgView
             align="xMidYMid"
-            bbHeight={31.32}
-            bbWidth={31.32}
+            bbHeight={32.4}
+            bbWidth={32.4}
             focusable={false}
-            height={31.32}
+            height={32.4}
             meetOrSlice={0}
             minX={0}
             minY={0}
@@ -169,14 +892,14 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
                 },
                 {
                   "flex": 0,
-                  "height": 31,
-                  "width": 31,
+                  "height": 32,
+                  "width": 32,
                 },
               ]
             }
             vbHeight={24}
             vbWidth={24}
-            width={31.32}
+            width={32.4}
           >
             <RNSVGGroup
               fill={
@@ -202,664 +925,6 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
               />
             </RNSVGGroup>
           </RNSVGSvgView>
-        </View>
-        <View
-          accessibilityLabel="Audio waveform"
-          accessibilityRole="image"
-          style={
-            [
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "width": "100%",
-              },
-              {
-                "columnGap": 3,
-                "height": 54,
-              },
-            ]
-          }
-        >
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
-          <View
-            collapsable={false}
-            style={
-              {
-                "backgroundColor": "#2C5E8C",
-                "borderRadius": 3,
-                "flex": 1,
-                "height": 54,
-                "transform": [
-                  {
-                    "scaleY": 0.08,
-                  },
-                ],
-              }
-            }
-          />
         </View>
         <View
           accessibilityLabel="Speech speed 1×, tap to change"
@@ -1022,13 +1087,24 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
             1×
           </Text>
         </View>
+      </View>
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "height": 70,
+            "justifyContent": "flex-start",
+            "marginTop": 24,
+          }
+        }
+      >
         <View
           accessibilityRole="button"
           accessibilityState={
             {
               "busy": undefined,
               "checked": undefined,
-              "disabled": false,
+              "disabled": undefined,
               "expanded": undefined,
               "selected": undefined,
             }
@@ -1057,45 +1133,203 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
             [
               {
                 "alignItems": "center",
-                "borderRadius": 18,
-                "height": 56,
-                "justifyContent": "center",
-                "width": "100%",
+                "borderRadius": 99,
+                "borderWidth": 1.5,
+                "columnGap": 8,
+                "flexDirection": "row",
+                "paddingHorizontal": 18,
+                "paddingVertical": 10,
               },
               {
-                "backgroundColor": "#2C5E8C",
-                "borderColor": "#2C5E8C",
-                "borderWidth": 0,
-                "opacity": 1,
+                "borderColor": "rgba(26,39,51,0.09)",
               },
             ]
           }
         >
-          <View
+          <RNSVGSvgView
+            align="xMidYMid"
+            bbHeight={16}
+            bbWidth={16}
+            focusable={false}
+            height={16}
+            meetOrSlice={0}
+            minX={0}
+            minY={0}
             style={
-              {
-                "alignItems": "center",
-                "flexDirection": "row",
-                "justifyContent": "center",
-              }
+              [
+                {
+                  "backgroundColor": "transparent",
+                  "borderWidth": 0,
+                },
+                {
+                  "flex": 0,
+                  "height": 16,
+                  "width": 16,
+                },
+              ]
             }
+            vbHeight={24}
+            vbWidth={24}
+            width={16}
           >
-            <Text
-              style={
-                [
-                  {
-                    "fontSize": 17,
-                    "fontWeight": "600",
-                  },
-                  {
-                    "color": "#FFFFFF",
-                  },
-                ]
+            <RNSVGGroup
+              fill={
+                {
+                  "payload": 4278190080,
+                  "type": 0,
+                }
               }
             >
-              Continue
-            </Text>
-          </View>
+              <RNSVGPath
+                d="M5 6h14M5 11h14M5 16h9"
+                fill={null}
+                propList={
+                  [
+                    "fill",
+                    "stroke",
+                    "strokeWidth",
+                    "strokeLinecap",
+                    "strokeLinejoin",
+                  ]
+                }
+                stroke={
+                  {
+                    "payload": 2484741939,
+                    "type": 0,
+                  }
+                }
+                strokeLinecap={1}
+                strokeLinejoin={1}
+                strokeWidth={1.8}
+              />
+            </RNSVGGroup>
+          </RNSVGSvgView>
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                },
+                {
+                  "color": "rgba(26,39,51,0.58)",
+                },
+              ]
+            }
+          >
+            Show meaning
+          </Text>
+        </View>
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "paddingBottom": 30,
+          "rowGap": 11,
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 13.5,
+              "fontWeight": "500",
+              "textAlign": "center",
+            },
+            {
+              "color": "rgba(26,39,51,0.34)",
+            },
+          ]
+        }
+      >
+        First review 
+        <Text
+          style={
+            {
+              "color": "rgba(26,39,51,0.58)",
+              "fontWeight": "600",
+            }
+          }
+        >
+          tomorrow
+        </Text>
+        .
+      </Text>
+      <View
+        accessibilityRole="button"
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": false,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        style={
+          [
+            {
+              "alignItems": "center",
+              "borderRadius": 18,
+              "height": 56,
+              "justifyContent": "center",
+              "width": "100%",
+            },
+            {
+              "backgroundColor": "#2C5E8C",
+              "borderColor": "#2C5E8C",
+              "borderWidth": 0,
+              "opacity": 1,
+            },
+          ]
+        }
+      >
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "center",
+            }
+          }
+        >
+          <Text
+            style={
+              [
+                {
+                  "fontSize": 17,
+                  "fontWeight": "600",
+                },
+                {
+                  "color": "#FFFFFF",
+                },
+              ]
+            }
+          >
+            Continue
+          </Text>
         </View>
       </View>
     </View>

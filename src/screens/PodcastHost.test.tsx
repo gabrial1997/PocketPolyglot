@@ -45,14 +45,16 @@ describe('PodcastHost', () => {
   it('plays the episode audio via the injected AudioService when the orb is tapped', async () => {
     const u = renderHost();
     await u.findByText('Latvian café chat');
-    fireEvent.press(u.getByLabelText('Play'));
+    // Visual-sync: the VoiceOrb starts in the playing state, so its toggle is labelled "Pause".
+    fireEvent.press(u.getByLabelText('Pause'));
     expect(u.audio.play).toHaveBeenCalledWith('ep://1');
   });
 
-  it('reveals the transcript when "Show transcript" is tapped', async () => {
+  it('renders the transcript line from the episode', async () => {
     const u = renderHost();
     await u.findByText('Latvian café chat');
-    fireEvent.press(u.getByText('Show transcript'));
+    // Visual-sync: the transcript is shown by default (toggle is now labelled "Transcript").
+    expect(u.getByText('Transcript')).toBeTruthy();
     expect(u.getByText('Sveiki!')).toBeTruthy();
   });
 });

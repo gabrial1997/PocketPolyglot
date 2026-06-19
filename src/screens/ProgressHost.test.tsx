@@ -26,11 +26,16 @@ function renderHost() {
 describe('ProgressHost', () => {
   it('fetches coverage from the injected service and renders the word count', async () => {
     const u = renderHost();
-    expect(await u.findByText('250 / 1000 words')).toBeTruthy();
+    // Visual-sync: the count line now reads "<known> of the <total> most common words"
+    // (total gets a thousands separator), with <known> in its own emphasized node.
+    expect(await u.findByText(/of the 1,000 most common words/)).toBeTruthy();
+    expect(u.getByText('250')).toBeTruthy();
   });
 
   it('renders the derived percentage of the core vocabulary', async () => {
     const u = renderHost();
-    expect(await u.findByText('25% of the core vocabulary')).toBeTruthy();
+    // Visual-sync: the percentage is the hero stat ("25" + "%") above the framing line.
+    expect(await u.findByText('25')).toBeTruthy();
+    expect(u.getByText('of everyday Latvian speech you can already follow.')).toBeTruthy();
   });
 });

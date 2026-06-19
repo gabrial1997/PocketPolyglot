@@ -1,117 +1,205 @@
+/* eslint-disable react/prop-types */
 // drill — consonant minimal-pair perception drill, L vs Ļ (ports kit screens-drill.jsx `DrillScreen`).
-// Stage machine: listen -> chosen -> say -> done. The L/Ļ palatalization contrast is one English
-// ears miss, so we HEAR the sound, DISCRIMINATE which glyph it was, then SAY IT BACK.
-//   · listen  — hear the clip (item.pair audio) and pick which sound it was.
-//   · chosen  — a CORRECT pick commits + unlocks say-it; a WRONG pick does NOT advance / reveal
-//               (CLAUDE.md: red "Try again", chosen side reddens, correct answer stays hidden).
-//   · say     — produce it (record), the target word as the on-screen guide.
-//   · done    — Continue -> onComplete { correct, spoke:true }.
-// Pure card: data-in (item) / events-out (callbacks). No service imports; only ephemeral UI state.
+// Loop: HEAR the clip -> DISCRIMINATE which glyph it was -> SAY IT BACK. The palatalization contrast
+// is one English ears miss. Pure card: data-in (item) / events-out (callbacks); only ephemeral state.
+//
+// LOCKED wrong-answer rule (CLAUDE.md): a wrong pick does NOT advance — only the chosen wrong glyph
+// reddens, the correct glyph is NEVER revealed (its word stays hidden, no green badge), the miss is
+// remembered (`missed`). A correct pick reveals that glyph's word + a green badge, then unlocks
+// "Say it back".
+//
+// 2026-06-19 VISUAL SYNC: rebuilt to the mockup. Centered "SOUND CHECK · CONSONANT" + serif prompt;
+// audio hero (waveform + PlayOrb 72 + SpeedChip); two big glyph cards (radius 24); the green/carmine
+// feedback line; the say-it-back stage (hero word + outline PlayOrb 54 + MicOrb -> ResultNote); and
+// the staged bottom CTA (Play again / Try again / Say it back / Next pair).
+//
+// Per-side copy (hints) are optional/additive on ReviewPair (front-end-sync handoff PATCH): aHint,
+// bHint. They degrade gracefully — absent, the idle card just shows its glyph.
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, MicOrb, Waveform, SpeedChip, ChoiceButton, CtaButton, TryAgainNote } from '../components';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Screen, PlayOrb, MicOrb, Waveform, SpeedChip } from '../components';
+import { CardIcon, ResultNote } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
-import { type, fonts } from '../theme/tokens';
+import { hexA, fonts } from '../theme/tokens';
 import type { RecordingCardProps } from './cardProps';
+import type { ReviewPair } from '../types/reviewItem';
 
-type Say = 'idle' | 'rec' | 'done';
+type Side = 'a' | 'b';
+type Say = null | 'idle' | 'rec' | 'done';
+type PairHints = ReviewPair & { aHint?: string; bHint?: string };
 
 export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
   const { item, onPlay, onRecordStart, onRecordStop, onComplete, speed, onSpeedChange } = props;
   const T = useTheme();
+  const pair = item.pair as PairHints | undefined;
 
-  // A wrong pick does NOT advance (CLAUDE.md): `committed` is only set by the CORRECT side and is
-  // what unlocks the say-it step; `wrongPick` reddens only the chosen wrong side; `missed` keeps
-  // honest first-try correctness for the SRS interval. The correct side is never revealed.
-  const [committed, setCommitted] = useState<'a' | 'b' | null>(null);
-  const [wrongPick, setWrongPick] = useState<'a' | 'b' | null>(null);
+  const [picked, setPicked] = useState<Side | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [say, setSay] = useState<Say>(null);
+  // `missed` is sticky across a Try-again reset so the first-try miss is remembered for honest SRS
+  // correctness (locked rule + this card's header comment). `right` is the current selection state.
   const [missed, setMissed] = useState(false);
-  const [say, setSay] = useState<Say>('idle');
+  const right = picked !== null && pair != null && picked === pair.correct;
 
-  const pair = item.pair;
+  if (!pair) return <Screen><View style={styles.body} /></Screen>;
+  const correctGlyph = pair.correct === 'a' ? pair.a : pair.b;
 
-  // ── SAY: produce the sound, the target word as the guide ──
-  if (committed !== null) {
+  const choose = (side: Side): void => {
+    if (picked === null) {
+      setPicked(side);
+      if (pair != null && side !== pair.correct) setMissed(true);
+    }
+  };
+
+  const GlyphCard = ({ side, glyph, hint }: { side: Side; glyph: string; hint?: string }): React.JSX.Element => {
+    const isPicked = picked === side;
+    const isCorrect = side === pair.correct;
+    let bg = T.surface, bd = T.hair, fg = T.ink, accent = false;
+    if (picked !== null) {
+      if (right && isCorrect) { bg = T.goodSoft; bd = hexA(T.good, 0.5); fg = T.good; accent = true; }
+      else if (isPicked) { bg = hexA(T.record, T.dark ? 0.12 : 0.07); bd = hexA(T.record, 0.45); fg = T.record; }
+    }
+    return (
+      <Pressable accessibilityRole="button" disabled={picked !== null} onPress={() => choose(side)} style={[styles.glyphCard, { backgroundColor: bg, borderColor: bd }, picked === null ? T.shadow : null]}>
+        {accent ? (
+          <View style={[styles.badge, { backgroundColor: T.good }]}><CardIcon name="check" size={16} color="#fff" sw={2.4} /></View>
+        ) : null}
+        <Text style={[styles.glyph, { color: accent ? T.good : fg, fontFamily: fonts.headline }]}>{glyph}</Text>
+        {accent ? (
+          <>
+            <Text style={[styles.cardWord, { color: T.ink, fontFamily: fonts.headline }]}>{item.target}</Text>
+            <Text style={[styles.cardGloss, { color: T.sub }]}>{item.gloss}</Text>
+          </>
+        ) : hint ? (
+          <Text style={[styles.cardHint, { color: T.faint }]}>{hint}</Text>
+        ) : null}
+      </Pressable>
+    );
+  };
+
+  // ── SAY IT BACK ──
+  if (say !== null) {
     return (
       <Screen>
-        <View style={styles.sayBody}>
-          <Text style={[styles.eyebrow, { color: T.faint }]}>SAY IT BACK</Text>
-          <Text style={[styles.hero, { color: T.ink, fontFamily: fonts.headline }]}>{item.target}</Text>
-          <Text style={[styles.pron, { color: T.faint }]}>
-            {item.gloss}
-            {item.pron ? ` · ${item.pron}` : ''}
-          </Text>
-          <PlayOrb size={50} filled={false} onPress={() => onPlay('native')} />
-          <SpeedChip value={speed} onChange={onSpeedChange} />
-          <View style={styles.sayControls}>
-            {say === 'idle' ? (
-              <MicOrb onPress={() => { onRecordStart(); setSay('rec'); }} />
-            ) : null}
-            {say === 'rec' ? (
-              <>
-                <MicOrb rec onPress={() => { onRecordStop(); setSay('done'); }} />
-                <Text style={[styles.recHint, { color: T.record }]}>Listening… tap to stop</Text>
-              </>
-            ) : null}
-            {say === 'done' ? (
-              <CtaButton
-                title="Continue"
-                onPress={() =>
-                  onComplete({ itemId: item.id, cardKind: 'drill', correct: !missed, spoke: true })
-                }
-              />
-            ) : null}
+        <View style={styles.body}>
+          <View style={styles.headBlock}>
+            <Text style={[styles.eyebrow, { color: T.faint }]}>SOUND CHECK · CONSONANT</Text>
+            <Text style={[styles.prompt, { color: T.ink, fontFamily: fonts.headline }]}>Say it back</Text>
           </View>
+          <Text style={[styles.sayHero, { color: T.ink, fontFamily: fonts.headline }]}>{item.target}</Text>
+          <Text style={[styles.sayPron, { color: T.sub }]}>
+            {item.gloss}{item.pron ? <Text style={{ color: T.faint }}> · {item.pron}</Text> : null}
+          </Text>
+          <View style={styles.sayControls}>
+            <PlayOrb size={54} filled={false} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+            <SpeedChip value={speed} onChange={onSpeedChange} />
+          </View>
+          <View style={styles.sayMic}>
+            {say === 'done' ? (
+              <ResultNote>Sounded right — a nice soft <Text style={{ fontWeight: '700', color: T.ink }}>{correctGlyph}</Text>.</ResultNote>
+            ) : (
+              <>
+                <MicOrb size={72} rec={say === 'rec'} onPress={() => { if (say === 'rec') { onRecordStop(); setSay('done'); } else { onRecordStart(); setSay('rec'); } }} />
+                <Text style={[styles.micHint, { color: say === 'rec' ? T.record : T.faint, fontWeight: say === 'rec' ? '600' : '400' }]}>
+                  {say === 'rec' ? 'Listening… tap to stop' : 'Now say it'}
+                </Text>
+              </>
+            )}
+          </View>
+        </View>
+        <View style={styles.footer}>
+          {say === 'done' ? (
+            <Pressable accessibilityRole="button" onPress={() => onComplete({ itemId: item.id, cardKind: 'drill', correct: !missed, spoke: true })} style={[styles.cta, { backgroundColor: T.primary }]}>
+              <Text style={[styles.ctaText, { color: T.onPrimary }]}>Next pair</Text>
+              <CardIcon name="chevR" size={17} color={T.onPrimary} />
+            </Pressable>
+          ) : (
+            <Text style={[styles.footNote, { color: T.faint }]}>Saying it locks the sound in.</Text>
+          )}
         </View>
       </Screen>
     );
   }
 
-  // ── LISTEN: hear the clip, then discriminate which sound it was ──
-  const choose = (side: 'a' | 'b'): void => {
-    if (!pair) return;
-    if (side === pair.correct) setCommitted(side); // correct: advance to say-it
-    else {
-      setWrongPick(side);
-      setMissed(true); // wrong: stay, redden only this side, never advance
-    }
-  };
-
+  // ── HEAR + DISCRIMINATE ──
   return (
     <Screen>
       <View style={styles.body}>
-        <Text style={[styles.eyebrow, { color: T.faint }]}>SOUND CHECK · CONSONANT</Text>
-        <Text style={[styles.prompt, { color: T.ink, fontFamily: fonts.headline }]}>Which did you hear?</Text>
-        <View style={styles.waveWrap}>
-          <Waveform
-            seed={pair ? `${pair.a}-${pair.b}` : 'l-pair'}
-            envelope={item.audio.envelope}
-            height={52}
-            count={34}
-          />
+        <View style={styles.headBlock}>
+          <Text style={[styles.eyebrow, { color: T.faint }]}>SOUND CHECK · CONSONANT</Text>
+          <Text style={[styles.prompt, { color: T.ink, fontFamily: fonts.headline }]}>Which did you hear?</Text>
         </View>
-        <PlayOrb onPress={() => onPlay('native')} />
-        <SpeedChip value={speed} onChange={onSpeedChange} />
-        {pair ? (
-          <>
-            <ChoiceButton label={pair.a} state={wrongPick === 'a' ? 'wrong' : 'idle'} onPress={() => choose('a')} />
-            <ChoiceButton label={pair.b} state={wrongPick === 'b' ? 'wrong' : 'idle'} onPress={() => choose('b')} />
-            {wrongPick ? <TryAgainNote onRetry={() => setWrongPick(null)} /> : null}
-          </>
-        ) : null}
+
+        <View style={styles.audio}>
+          <View style={styles.wave}>
+            <Waveform seed={`${pair.a}-${pair.b}`} played={playing ? 0.7 : 0} height={52} count={34} envelope={item.audio.envelope} />
+          </View>
+          <PlayOrb size={72} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+          <SpeedChip value={speed} onChange={onSpeedChange} />
+        </View>
+
+        <View style={styles.cards}>
+          <GlyphCard side="a" glyph={pair.a} hint={pair.aHint} />
+          <GlyphCard side="b" glyph={pair.b} hint={pair.bHint} />
+        </View>
+
+        <View style={styles.feedbackWrap}>
+          {picked !== null ? (
+            <Text style={[styles.feedback, { color: right ? T.good : T.record }]}>
+              {right
+                ? <>Right — that’s the soft <Text style={{ fontWeight: '700' }}>{correctGlyph}</Text>.</>
+                : 'Not quite — listen again and try.'}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+
+      <View style={styles.footer}>
+        {right ? (
+          <Pressable accessibilityRole="button" onPress={() => { setSay('idle'); setPlaying(false); }} style={[styles.cta, { backgroundColor: T.primary }]}>
+            <CardIcon name="mic" size={18} color={T.onPrimary} />
+            <Text style={[styles.ctaText, { color: T.onPrimary }]}>Say it back</Text>
+          </Pressable>
+        ) : picked !== null ? (
+          <Pressable accessibilityRole="button" onPress={() => { setPicked(null); setPlaying(false); }} style={[styles.cta, { backgroundColor: T.record }]}>
+            <CardIcon name="replay" size={18} color="#fff" />
+            <Text style={[styles.ctaText, { color: '#fff' }]}>Try again</Text>
+          </Pressable>
+        ) : (
+          <Pressable accessibilityRole="button" onPress={() => { setPlaying(true); onPlay('native'); }} style={[styles.ctaOutline, { borderColor: T.hair }]}>
+            <CardIcon name="replay" size={18} color={T.sub} />
+            <Text style={[styles.ctaText, { color: T.sub }]}>Play again</Text>
+          </Pressable>
+        )}
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, justifyContent: 'center', rowGap: 12 },
-  sayBody: { flex: 1, justifyContent: 'center', alignItems: 'center', rowGap: 12 },
-  eyebrow: { fontSize: type.eyebrow, fontWeight: '700', letterSpacing: type.eyebrowSpacing },
-  prompt: { fontSize: 27, fontWeight: '500', letterSpacing: -0.3, textAlign: 'center' },
-  hero: { fontSize: type.wordHero, letterSpacing: type.wordHeroSpacing },
-  pron: { fontSize: type.pron },
-  waveWrap: { width: '64%', alignSelf: 'center' },
-  sayControls: { alignItems: 'center', rowGap: 12, marginTop: 8 },
-  recHint: { fontSize: type.label, fontWeight: '600' },
+  body: { flex: 1, justifyContent: 'center' },
+  headBlock: { alignItems: 'center', marginBottom: 4 },
+  eyebrow: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textAlign: 'center' },
+  prompt: { fontSize: 27, fontWeight: '500', letterSpacing: -0.3, marginTop: 8, textAlign: 'center' },
+  audio: { alignItems: 'center', rowGap: 18, marginVertical: 32 },
+  wave: { width: '64%' },
+  cards: { flexDirection: 'row', columnGap: 14 },
+  glyphCard: { flex: 1, borderRadius: 24, borderWidth: 1.5, paddingTop: 26, paddingBottom: 20, paddingHorizontal: 14, alignItems: 'center', rowGap: 6 },
+  badge: { position: 'absolute', top: 12, right: 12, width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  glyph: { fontSize: 64, fontWeight: '500', lineHeight: 64 },
+  cardWord: { fontSize: 20, fontWeight: '500', marginTop: 4 },
+  cardGloss: { fontSize: 13 },
+  cardHint: { fontSize: 13, marginTop: 2 },
+  feedbackWrap: { height: 46, marginTop: 18, alignItems: 'center', justifyContent: 'center' },
+  feedback: { fontSize: 14.5, fontWeight: '500' },
+  sayHero: { fontSize: 56, fontWeight: '500', textAlign: 'center', marginTop: 28 },
+  sayPron: { fontSize: 14.5, textAlign: 'center', marginTop: 10 },
+  sayControls: { alignItems: 'center', rowGap: 11, marginTop: 24 },
+  sayMic: { height: 110, marginTop: 20, alignItems: 'center', justifyContent: 'flex-start', rowGap: 12 },
+  micHint: { fontSize: 13 },
+  footer: { paddingBottom: 30 },
+  cta: { height: 54, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', columnGap: 9 },
+  ctaOutline: { height: 54, borderRadius: 18, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', columnGap: 9 },
+  ctaText: { fontSize: 16.5, fontWeight: '600' },
+  footNote: { fontSize: 13.5, fontWeight: '500', textAlign: 'center', paddingVertical: 17 },
 });

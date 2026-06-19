@@ -78,7 +78,7 @@ describe('DiphthongDrillScreen', () => {
     const u = renderCard();
     toContrast(u);
     fireEvent.press(u.getByText('lēta')); // wrong side ('b')
-    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+    expect(u.getByText('Not quite — give it another listen.')).toBeTruthy();
     // Did not advance to the say-it step (no Say-it CTA), and onComplete never fired.
     expect(u.queryByText('Say it back')).toBeNull();
     expect(u.props.onComplete).not.toHaveBeenCalled();
@@ -91,7 +91,7 @@ describe('DiphthongDrillScreen', () => {
     fireEvent.press(u.getByText('Say it back'));
     fireEvent.press(u.getByLabelText('Record')); // idle -> rec
     fireEvent.press(u.getByLabelText('Stop recording')); // rec -> done
-    fireEvent.press(u.getByText('Continue')); // done -> onComplete
+    fireEvent.press(u.getByText('Next combination')); // done -> onComplete (visual-sync CTA copy)
     expect(u.props.onComplete).toHaveBeenCalledWith({
       itemId: 'lieta-leta',
       cardKind: 'diphthong',

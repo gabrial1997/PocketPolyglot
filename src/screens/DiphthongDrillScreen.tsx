@@ -1,158 +1,256 @@
 // diphthong — the hard 'ie' glide drill (ports kit screens-drill.jsx `DiphthongDrillScreen`).
-// Stage machine: meet -> contrast -> say -> done. 'ie' is one gliding sound English ears flatten
-// to a long ē, so we TEACH the movement first (GlideTrack), then test the minimal-pair contrast,
-// then have the learner produce it.
-//   · meet     — feel the glide before hearing it (item.glide -> GlideTrack).
-//   · contrast — minimal-pair pick (item.pair). WRONG pick does NOT advance / reveal (CLAUDE.md).
-//   · say      — produce it (record), glide as the on-screen guide.
-//   · done     — Continue -> onComplete { correct, spoke:true }.
-// Pure card: data-in (item) / events-out (callbacks). No service imports; only ephemeral UI state.
+// MEET the glide (GlideTrack teaches the i→e movement) -> CONTRAST a minimal pair that only ie vs ē
+// separates -> SAY it with the glide as the guide. 'ie' is one gliding sound English ears flatten to
+// a long ē, so we teach the movement before testing it. Pure card: data-in / events-out only.
+//
+// LOCKED wrong-answer rule (CLAUDE.md): in CONTRAST a wrong pick does NOT advance — the chosen card
+// reddens, the correct card is NEVER marked, the miss is remembered (`missed`). A correct pick marks
+// the card green and unlocks "Say it back".
+//
+// 2026-06-19 VISUAL SYNC: rebuilt to the mockup. MEET = "HARD COMBINATION" + DIPHTHONG tag, big serif
+// "ie", the lede, GlideTrack, outline-less PlayOrb 66 + SpeedChip; CONTRAST = "SOUND CHECK · THE GLIDE
+// VS FLAT Ē" + minimal-pair cards with glide/flat indicators; SAY = serif word with the ie in primary
+// + GlideTrack guide + MicOrb -> green ResultNote. Staged bottom CTAs match (Hear it in a word / Try
+// again / Say it back / Next combination).
+//
+// Per-side contrast copy is optional/additive on ReviewPair (handoff PATCH): aKind/bKind ('glide' |
+// 'flat'), aNote/bNote (the vowel, e.g. "ie" / "ē"), aEn/bEn (the gloss). All degrade gracefully.
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, MicOrb, Waveform, SpeedChip, ChoiceButton, CtaButton, TryAgainNote } from '../components';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { Screen, PlayOrb, MicOrb, Waveform, SpeedChip } from '../components';
 import { GlideTrack } from '../components/GlideTrack';
+import { CardIcon, ResultNote, WordTag } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
-import { type, fonts } from '../theme/tokens';
+import { hexA, fonts } from '../theme/tokens';
 import type { RecordingCardProps } from './cardProps';
+import type { ReviewPair } from '../types/reviewItem';
 
+type Side = 'a' | 'b';
 type Phase = 'meet' | 'contrast' | 'say';
 type Say = 'idle' | 'rec' | 'done';
+type PairCopy = ReviewPair & {
+  aKind?: 'glide' | 'flat'; bKind?: 'glide' | 'flat';
+  aNote?: string; bNote?: string; aEn?: string; bEn?: string;
+};
+
+function GlideMini({ color }: { color: string }): React.JSX.Element {
+  return <Svg width={30} height={16} viewBox="0 0 30 16"><Path d="M4 13 Q15 2 26 13" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" /></Svg>;
+}
+function FlatMini({ color }: { color: string }): React.JSX.Element {
+  return <Svg width={30} height={16} viewBox="0 0 30 16"><Path d="M4 8.5 H26" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" /></Svg>;
+}
 
 export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Element {
   const { item, onPlay, onRecordStart, onRecordStop, onComplete, speed, onSpeedChange } = props;
   const T = useTheme();
+  const glide = item.glide;
+  const pair = item.pair as PairCopy | undefined;
 
   const [phase, setPhase] = useState<Phase>('meet');
-  // A wrong pick does NOT advance (CLAUDE.md): `committed` is only set by the CORRECT side and is
-  // what unlocks the say-it step; `wrongPick` reddens only the chosen wrong side; `missed` keeps
-  // honest first-try correctness for the SRS interval. The correct side is never revealed.
-  const [committed, setCommitted] = useState<'a' | 'b' | null>(null);
-  const [wrongPick, setWrongPick] = useState<'a' | 'b' | null>(null);
-  const [missed, setMissed] = useState(false);
+  const [picked, setPicked] = useState<Side | null>(null);
   const [say, setSay] = useState<Say>('idle');
+  const [playing, setPlaying] = useState(false);
+  const right = picked !== null && pair != null && picked === pair.correct;
+  const missed = picked !== null && !right;
 
-  const glide = item.glide;
-  const pair = item.pair;
-
-  // ── MEET: feel the glide before hearing the contrast ──
+  // ── MEET ──
   if (phase === 'meet') {
     return (
       <Screen>
-        <View style={styles.meetBody}>
-          <Text style={[styles.eyebrow, { color: T.faint }]}>HARD COMBINATION</Text>
+        <View style={styles.centerBody}>
+          <View style={styles.tagRow}>
+            <Text style={[styles.eyebrow, { color: T.faint }]}>HARD COMBINATION</Text>
+            <WordTag label="Diphthong" tone="primary" />
+          </View>
           <Text style={[styles.combo, { color: T.ink, fontFamily: fonts.headline }]}>{glide?.combo ?? 'ie'}</Text>
           <Text style={[styles.lede, { color: T.sub }]}>
-            Not “ee” and not a flat “e” — it glides from {glide?.from ?? 'i'} to {glide?.to ?? 'e'} in one move.
+            Not “ee” and not a flat “e” — it <Text style={{ color: T.ink, fontWeight: '600' }}>glides</Text> from {glide?.from ?? 'i'} to {glide?.to ?? 'e'} in one move.
           </Text>
           <View style={styles.glideWrap}>
-            <GlideTrack from={glide?.from} to={glide?.to} color={T.primary} />
+            <GlideTrack from={glide?.from} to={glide?.to} playing={playing} color={T.primary} />
           </View>
-          <PlayOrb size={66} onPress={() => onPlay('glide')} />
+          <PlayOrb size={66} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('glide'); }} />
           <SpeedChip value={speed} onChange={onSpeedChange} />
-          <Text style={[styles.hint, { color: T.faint }]}>Tap to hear the glide</Text>
+          <Text style={[styles.tapHint, { color: T.faint }]}>Tap to hear the glide</Text>
         </View>
         <View style={styles.footer}>
-          <CtaButton title="Hear it in a word" onPress={() => setPhase('contrast')} />
+          <Pressable accessibilityRole="button" onPress={() => { setPhase('contrast'); setPlaying(false); }} style={[styles.cta, { backgroundColor: T.primary }]}>
+            <Text style={[styles.ctaText, { color: T.onPrimary }]}>Hear it in a word</Text>
+            <CardIcon name="chevR" size={17} color={T.onPrimary} />
+          </Pressable>
         </View>
       </Screen>
     );
   }
 
-  // ── SAY: produce it, glide as the guide ──
+  // ── SAY ──
   if (phase === 'say') {
+    const word = item.target;
+    const combo = glide?.combo ?? 'ie';
+    const idx = word.indexOf(combo);
+    const before = idx >= 0 ? word.slice(0, idx) : word;
+    const mid = idx >= 0 ? combo : '';
+    const after = idx >= 0 ? word.slice(idx + combo.length) : '';
     return (
       <Screen>
-        <View style={styles.meetBody}>
+        <View style={styles.centerBody}>
           <Text style={[styles.eyebrow, { color: T.faint }]}>SAY IT BACK</Text>
-          <Text style={[styles.hero, { color: T.ink, fontFamily: fonts.headline }]}>{item.target}</Text>
-          <Text style={[styles.pron, { color: T.faint }]}>{item.gloss}{item.pron ? ` · ${item.pron}` : ''}</Text>
+          <Text style={[styles.sayHero, { color: T.ink, fontFamily: fonts.headline }]}>
+            {before}<Text style={{ color: T.primary }}>{mid}</Text>{after}
+          </Text>
+          <Text style={[styles.sayPron, { color: T.sub }]}>
+            {item.gloss}{item.pron ? <Text style={{ color: T.faint }}> · {item.pron}</Text> : null}
+          </Text>
           <View style={styles.glideWrap}>
-            <GlideTrack from={glide?.from} to={glide?.to} color={T.primary} width={230} />
+            <GlideTrack from={glide?.from} to={glide?.to} playing={playing} color={T.primary} width={230} />
           </View>
-          <PlayOrb size={50} filled={false} onPress={() => onPlay('native')} />
-          <SpeedChip value={speed} onChange={onSpeedChange} />
           <View style={styles.sayControls}>
-            {say === 'idle' ? (
-              <MicOrb onPress={() => { onRecordStart(); setSay('rec'); }} />
-            ) : null}
-            {say === 'rec' ? (
-              <>
-                <MicOrb rec onPress={() => { onRecordStop(); setSay('done'); }} />
-                <Text style={[styles.recHint, { color: T.record }]}>Listening… tap to stop</Text>
-              </>
-            ) : null}
-            {say === 'done' ? (
-              <CtaButton
-                title="Continue"
-                onPress={() =>
-                  onComplete({
-                    itemId: item.id,
-                    cardKind: 'diphthong',
-                    correct: !missed,
-                    spoke: true,
-                  })
-                }
-              />
-            ) : null}
+            <PlayOrb size={50} filled={false} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+            <SpeedChip value={speed} onChange={onSpeedChange} />
           </View>
+          <View style={styles.sayMic}>
+            {say === 'done' ? (
+              <ResultNote>Clean glide — you held the <Text style={{ fontWeight: '700', color: T.ink }}>{combo}</Text>, not a flat ē.</ResultNote>
+            ) : (
+              <>
+                <MicOrb size={72} rec={say === 'rec'} onPress={() => { if (say === 'rec') { onRecordStop(); setSay('done'); } else { onRecordStart(); setSay('rec'); } }} />
+                <Text style={[styles.micHint, { color: say === 'rec' ? T.record : T.faint, fontWeight: say === 'rec' ? '600' : '400' }]}>
+                  {say === 'rec' ? 'Listening… tap to stop' : 'Now say it — let it glide'}
+                </Text>
+              </>
+            )}
+          </View>
+        </View>
+        <View style={styles.footer}>
+          {say === 'done' ? (
+            <Pressable accessibilityRole="button" onPress={() => onComplete({ itemId: item.id, cardKind: 'diphthong', correct: !missed, spoke: true })} style={[styles.cta, { backgroundColor: T.primary }]}>
+              <Text style={[styles.ctaText, { color: T.onPrimary }]}>Next combination</Text>
+              <CardIcon name="chevR" size={17} color={T.onPrimary} />
+            </Pressable>
+          ) : (
+            <Text style={[styles.footNote, { color: T.faint }]}>Holding the glide is what makes it land.</Text>
+          )}
         </View>
       </Screen>
     );
   }
 
-  // ── CONTRAST: minimal pair that only ie vs ē separates ──
-  const choose = (side: 'a' | 'b'): void => {
-    if (!pair) return;
-    if (side === pair.correct) setCommitted(side); // correct: advance to say-it
-    else {
-      setWrongPick(side);
-      setMissed(true); // wrong: stay, redden only this side, never advance
-    }
-  };
+  // ── CONTRAST ──
+  const choose = (side: Side): void => { if (picked === null) setPicked(side); };
+  const sideData = (side: Side) => pair && (side === 'a'
+    ? { lv: pair.a, kind: pair.aKind, note: pair.aNote, en: pair.aEn }
+    : { lv: pair.b, kind: pair.bKind, note: pair.bNote, en: pair.bEn });
 
   return (
     <Screen>
       <View style={styles.body}>
-        <Text style={[styles.eyebrow, { color: T.faint }]}>SOUND CHECK · THE GLIDE VS FLAT Ē</Text>
-        <Text style={[styles.prompt, { color: T.ink, fontFamily: fonts.headline }]}>Which did you hear?</Text>
-        <View style={styles.waveWrap}>
-          <Waveform
-            seed={pair ? `${pair.a}-${pair.b}` : 'ie-pair'}
-            envelope={item.audio.envelope}
-            height={52}
-            count={34}
-          />
+        <View style={styles.headBlock}>
+          <Text style={[styles.eyebrow, { color: T.faint }]}>SOUND CHECK · THE GLIDE VS FLAT Ē</Text>
+          <Text style={[styles.prompt, { color: T.ink, fontFamily: fonts.headline }]}>Which did you hear?</Text>
         </View>
-        <PlayOrb onPress={() => onPlay('native')} />
-        <SpeedChip value={speed} onChange={onSpeedChange} />
-        {committed === null && pair ? (
-          <>
-            <ChoiceButton label={pair.a} state={wrongPick === 'a' ? 'wrong' : 'idle'} onPress={() => choose('a')} />
-            <ChoiceButton label={pair.b} state={wrongPick === 'b' ? 'wrong' : 'idle'} onPress={() => choose('b')} />
-            {wrongPick ? <TryAgainNote onRetry={() => setWrongPick(null)} /> : null}
-          </>
-        ) : null}
-        {committed !== null ? (
-          <CtaButton title="Say it back" onPress={() => setPhase('say')} />
-        ) : null}
+
+        <View style={styles.audio}>
+          <View style={styles.wave}>
+            <Waveform seed={pair ? `${pair.a}-${pair.b}` : 'ie-pair'} played={playing ? 0.7 : 0} height={52} count={34} envelope={item.audio.envelope} />
+          </View>
+          <PlayOrb size={72} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+          <SpeedChip value={speed} onChange={onSpeedChange} />
+        </View>
+
+        <View style={styles.cards}>
+          {(['a', 'b'] as Side[]).map((side) => {
+            const d = sideData(side);
+            if (!d) return null;
+            const isPicked = picked === side;
+            const isCorrect = pair != null && side === pair.correct;
+            let bg = T.surface, bd = T.hair, accent = false;
+            if (picked !== null) {
+              if (right && isCorrect) { bg = T.goodSoft; bd = hexA(T.good, 0.5); accent = true; }
+              else if (isPicked) { bg = hexA(T.record, T.dark ? 0.12 : 0.07); bd = hexA(T.record, 0.45); }
+            }
+            const indColor = accent ? T.good : (picked !== null && isPicked ? T.record : T.faint);
+            return (
+              <Pressable key={side} accessibilityRole="button" disabled={picked !== null} onPress={() => choose(side)} style={[styles.contrastCard, { backgroundColor: bg, borderColor: bd }, picked === null ? T.shadow : null]}>
+                {accent ? (
+                  <View style={[styles.badge, { backgroundColor: T.good }]}><CardIcon name="check" size={16} color="#fff" sw={2.4} /></View>
+                ) : null}
+                <Text style={[styles.contrastWord, { color: accent ? T.good : T.ink, fontFamily: fonts.headline }]}>{d.lv}</Text>
+                {d.kind || d.note ? (
+                  <View style={styles.indRow}>
+                    {d.kind === 'glide' ? <GlideMini color={indColor} /> : d.kind === 'flat' ? <FlatMini color={indColor} /> : null}
+                    {d.note ? <Text style={[styles.indNote, { color: indColor, fontFamily: fonts.headline }]}>{d.note}</Text> : null}
+                  </View>
+                ) : null}
+                {d.en ? <Text style={[styles.contrastEn, { color: T.sub }]}>{d.en}</Text> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.feedbackWrap}>
+          {picked !== null ? (
+            <Text style={[styles.feedback, { color: right ? T.good : T.record, textAlign: 'center' }]}>
+              {right
+                ? <>Right — <Text style={{ fontFamily: fonts.headline, fontWeight: '600' }}>{pair?.correct === 'a' ? pair?.a : pair?.b}</Text> glides {glide?.from ?? 'i'} → {glide?.to ?? 'e'}.</>
+                : 'Not quite — give it another listen.'}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+
+      <View style={styles.footer}>
+        {right ? (
+          <Pressable accessibilityRole="button" onPress={() => { setPhase('say'); setPlaying(false); }} style={[styles.cta, { backgroundColor: T.primary }]}>
+            <CardIcon name="mic" size={18} color={T.onPrimary} />
+            <Text style={[styles.ctaText, { color: T.onPrimary }]}>Say it back</Text>
+          </Pressable>
+        ) : picked !== null ? (
+          <Pressable accessibilityRole="button" onPress={() => { setPicked(null); setPlaying(false); }} style={[styles.cta, { backgroundColor: T.record }]}>
+            <CardIcon name="replay" size={18} color="#fff" />
+            <Text style={[styles.ctaText, { color: '#fff' }]}>Try again</Text>
+          </Pressable>
+        ) : (
+          <Pressable accessibilityRole="button" onPress={() => { setPlaying(true); onPlay('native'); }} style={[styles.ctaOutline, { borderColor: T.hair }]}>
+            <CardIcon name="replay" size={18} color={T.sub} />
+            <Text style={[styles.ctaText, { color: T.sub }]}>Play again</Text>
+          </Pressable>
+        )}
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, justifyContent: 'center', rowGap: 12 },
-  meetBody: { flex: 1, justifyContent: 'center', alignItems: 'center', rowGap: 12 },
+  body: { flex: 1, justifyContent: 'center' },
+  centerBody: { flex: 1, justifyContent: 'center', alignItems: 'center', rowGap: 12 },
+  tagRow: { flexDirection: 'row', alignItems: 'center', columnGap: 10 },
+  headBlock: { alignItems: 'center', marginBottom: 4 },
+  eyebrow: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textAlign: 'center' },
+  combo: { fontSize: 76, fontWeight: '500', letterSpacing: -1, marginTop: 8 },
+  lede: { fontSize: 15, textAlign: 'center', maxWidth: 280, lineHeight: 22, marginTop: 2 },
+  glideWrap: { marginVertical: 10, alignItems: 'center' },
+  tapHint: { fontSize: 13, fontWeight: '500' },
+  prompt: { fontSize: 27, fontWeight: '500', letterSpacing: -0.3, marginTop: 8, textAlign: 'center' },
+  audio: { alignItems: 'center', rowGap: 18, marginVertical: 28 },
+  wave: { width: '64%' },
+  cards: { flexDirection: 'row', columnGap: 14 },
+  contrastCard: { flex: 1, borderRadius: 24, borderWidth: 1.5, paddingTop: 22, paddingBottom: 18, paddingHorizontal: 14, alignItems: 'center', rowGap: 8 },
+  badge: { position: 'absolute', top: 12, right: 12, width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  contrastWord: { fontSize: 34, fontWeight: '500', lineHeight: 36 },
+  indRow: { flexDirection: 'row', alignItems: 'center', columnGap: 7 },
+  indNote: { fontSize: 15, fontStyle: 'italic' },
+  contrastEn: { fontSize: 12.5 },
+  feedbackWrap: { minHeight: 46, marginTop: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  feedback: { fontSize: 14, fontWeight: '500', lineHeight: 20 },
+  sayHero: { fontSize: 56, fontWeight: '500', marginTop: 16, textAlign: 'center' },
+  sayPron: { fontSize: 14.5, marginTop: 10, textAlign: 'center' },
+  sayControls: { alignItems: 'center', rowGap: 11, marginTop: 4 },
+  sayMic: { height: 116, marginTop: 8, alignItems: 'center', justifyContent: 'flex-start', rowGap: 12 },
+  micHint: { fontSize: 13 },
   footer: { paddingBottom: 30 },
-  eyebrow: { fontSize: type.eyebrow, fontWeight: '700', letterSpacing: type.eyebrowSpacing },
-  combo: { fontSize: 76, fontWeight: '500', letterSpacing: -1 },
-  lede: { fontSize: type.body, textAlign: 'center', maxWidth: 280, lineHeight: 22 },
-  hero: { fontSize: type.wordHero, letterSpacing: type.wordHeroSpacing },
-  pron: { fontSize: type.pron },
-  prompt: { fontSize: 27, fontWeight: '500', letterSpacing: -0.3, textAlign: 'center' },
-  hint: { fontSize: type.label, fontWeight: '500' },
-  glideWrap: { marginVertical: 8, alignItems: 'center' },
-  waveWrap: { width: '64%', alignSelf: 'center' },
-  sayControls: { alignItems: 'center', rowGap: 12, marginTop: 8 },
-  recHint: { fontSize: type.label, fontWeight: '600' },
+  cta: { height: 54, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', columnGap: 9 },
+  ctaOutline: { height: 54, borderRadius: 18, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', columnGap: 9 },
+  ctaText: { fontSize: 16.5, fontWeight: '600' },
+  footNote: { fontSize: 13.5, fontWeight: '500', textAlign: 'center', paddingVertical: 17 },
 });

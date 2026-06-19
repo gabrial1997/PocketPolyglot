@@ -28,6 +28,12 @@ export interface ReviewPair {
   audioUrl: string; // the stimulus clip (the word actually played in the perception step)
   aAudioUrl?: string; // clip of side `a` (per-option playback)
   bAudioUrl?: string; // clip of side `b`
+
+  // --- visual-sync installment 2 (optional, presentational) ---
+  aHint?: string; bHint?: string;
+  aKind?: 'glide' | 'flat'; bKind?: 'glide' | 'flat';
+  aNote?: string; bNote?: string;
+  aEn?: string; bEn?: string;
 }
 
 /** Diphthong-drill only: the gliding combination to "feel" (e.g. ie = i→e). */
@@ -71,4 +77,11 @@ export interface ReviewItem {
 
   // phrase items only — the lemma ids that make up the phrase (for the i+1 lock gate).
   componentLemmaIds?: string[];
+
+  // --- visual-sync installment 2 (optional, presentational) ---
+  newForm?: string;
+  newLemma?: string;
+  lockLemma?: string;
+  lockRemaining?: number;
+  literalNote?: string;
 }

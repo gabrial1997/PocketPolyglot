@@ -61,16 +61,18 @@ describe('PhraseSayIt', () => {
     const u = renderCard();
     fireEvent.press(u.getByLabelText('Record')); // cue -> rec
     fireEvent.press(u.getByLabelText('Stop recording')); // rec -> compare
-    fireEvent.press(u.getByText('Play original'));
+    // Visual-sync: compare is via the Native / You rows (CompareRow), not "Play original/yours".
+    fireEvent.press(u.getByText('Native'));
     expect(u.props.onPlayCompare).toHaveBeenCalledWith('native');
-    fireEvent.press(u.getByText('Play yours'));
+    fireEvent.press(u.getByText('You'));
     expect(u.props.onPlayCompare).toHaveBeenCalledWith('you');
   });
 
   it('completes with selfRating "good" when the user rates good', () => {
     const u = renderCard();
     toRating(u);
-    fireEvent.press(u.getByText('Good'));
+    // Visual-sync: the "good" self-rating button reads "Got it".
+    fireEvent.press(u.getByText('Got it'));
     expect(u.props.onComplete).toHaveBeenCalledWith({
       itemId: 'labrit',
       cardKind: 'phrase/sayit',
@@ -82,7 +84,8 @@ describe('PhraseSayIt', () => {
   it('completes with selfRating "again" when the user rates again', () => {
     const u = renderCard();
     toRating(u);
-    fireEvent.press(u.getByText('Again'));
+    // Visual-sync: the "again" self-rating button reads "Not yet".
+    fireEvent.press(u.getByText('Not yet'));
     expect(u.props.onComplete).toHaveBeenCalledWith({
       itemId: 'labrit',
       cardKind: 'phrase/sayit',

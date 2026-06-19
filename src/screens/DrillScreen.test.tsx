@@ -42,11 +42,15 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
 // Drive the card pick -> rec -> done. Pass {miss:true} to tap the WRONG side first (which must
 // NOT advance), then the correct side. Only the correct side ('sit') advances to the say-it step.
 function runLoop(u: ReturnType<typeof renderCard>, opts: { miss?: boolean } = {}) {
-  if (opts.miss) fireEvent.press(u.getByText('sīt')); // wrong: stays on choose, no mic shown
-  fireEvent.press(u.getByText('sit')); // correct ('a'): choose -> say-it
+  if (opts.miss) {
+    fireEvent.press(u.getByText('sīt')); // wrong: stays on choose, no mic shown
+    fireEvent.press(u.getByText('Try again')); // reset the selection (the miss is remembered)
+  }
+  fireEvent.press(u.getByText('sit')); // correct ('a'): reveals the "Say it back" CTA
+  fireEvent.press(u.getByText('Say it back')); // discriminate -> say-it stage (visual-sync)
   fireEvent.press(u.getByLabelText('Record')); // idle -> rec, fires onRecordStart
   fireEvent.press(u.getByLabelText('Stop recording')); // rec -> done, fires onRecordStop
-  fireEvent.press(u.getByText('Continue')); // done -> onComplete
+  fireEvent.press(u.getByText('Next pair')); // done -> onComplete (visual-sync CTA copy)
 }
 
 describe('DrillScreen', () => {
@@ -77,7 +81,7 @@ describe('DrillScreen', () => {
     fireEvent.press(u.getByText('sīt')); // wrong side
     // Did not advance to the say-it step (no mic), and the correct side is not auto-revealed.
     expect(u.queryByLabelText('Record')).toBeNull();
-    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+    expect(u.getByText('Not quite — listen again and try.')).toBeTruthy();
     // The correct side stays a normal, tappable option (not highlighted green).
     expect(u.getByText('sit')).toBeTruthy();
   });

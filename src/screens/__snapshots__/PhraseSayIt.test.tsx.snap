@@ -32,7 +32,7 @@ exports[`PhraseSayIt renders the cue stage from item data (snapshot) 1`] = `
           "alignItems": "center",
           "flex": 1,
           "justifyContent": "center",
-          "rowGap": 12,
+          "paddingBottom": 8,
         }
       }
     >
@@ -40,8 +40,8 @@ exports[`PhraseSayIt renders the cue stage from item data (snapshot) 1`] = `
         style={
           [
             {
-              "fontSize": 11.5,
-              "fontWeight": "700",
+              "fontSize": 12,
+              "fontWeight": "600",
               "letterSpacing": 1.3,
               "textAlign": "center",
             },
@@ -51,13 +51,32 @@ exports[`PhraseSayIt renders the cue stage from item data (snapshot) 1`] = `
           ]
         }
       >
-        SAY THE PHRASE
+        REVIEW · SAY IT
       </Text>
       <Text
         style={
           [
             {
-              "fontSize": 16,
+              "fontSize": 26,
+              "fontWeight": "500",
+              "letterSpacing": -0.3,
+              "marginTop": 26,
+              "textAlign": "center",
+            },
+            {
+              "color": "#1A2733",
+            },
+          ]
+        }
+      >
+        Good morning!
+      </Text>
+      <Text
+        style={
+          [
+            {
+              "fontSize": 14.5,
+              "marginTop": 12,
               "textAlign": "center",
             },
             {
@@ -66,14 +85,13 @@ exports[`PhraseSayIt renders the cue stage from item data (snapshot) 1`] = `
           ]
         }
       >
-        Good morning!
+        Say it in Latvian.
       </Text>
       <View
         style={
           {
             "alignItems": "center",
-            "alignSelf": "stretch",
-            "marginTop": 24,
+            "marginTop": 44,
             "rowGap": 16,
           }
         }
@@ -119,20 +137,20 @@ exports[`PhraseSayIt renders the cue stage from item data (snapshot) 1`] = `
               {
                 "backgroundColor": "transparent",
                 "borderColor": "rgba(26,39,51,0.09)",
-                "borderRadius": 38,
+                "borderRadius": 42,
                 "borderWidth": 1.5,
-                "height": 76,
-                "width": 76,
+                "height": 84,
+                "width": 84,
               },
             ]
           }
         >
           <RNSVGSvgView
             align="xMidYMid"
-            bbHeight={27}
-            bbWidth={27}
+            bbHeight={30}
+            bbWidth={30}
             focusable={false}
-            height={27}
+            height={30}
             meetOrSlice={0}
             minX={0}
             minY={0}
@@ -144,14 +162,14 @@ exports[`PhraseSayIt renders the cue stage from item data (snapshot) 1`] = `
                 },
                 {
                   "flex": 0,
-                  "height": 27,
-                  "width": 27,
+                  "height": 30,
+                  "width": 30,
                 },
               ]
             }
             vbHeight={24}
             vbWidth={24}
-            width={27}
+            width={30}
           >
             <RNSVGGroup
               fill={
@@ -206,6 +224,84 @@ exports[`PhraseSayIt renders the cue stage from item data (snapshot) 1`] = `
             </RNSVGGroup>
           </RNSVGSvgView>
         </View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 13,
+              },
+              {
+                "color": "rgba(26,39,51,0.34)",
+                "fontWeight": "400",
+              },
+            ]
+          }
+        >
+          Tap to record
+        </Text>
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "paddingBottom": 30,
+        }
+      }
+    >
+      <View
+        accessibilityRole="button"
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessibilityValue={
+          {
+            "max": undefined,
+            "min": undefined,
+            "now": undefined,
+            "text": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        focusable={true}
+        onBlur={[Function]}
+        onClick={[Function]}
+        onFocus={[Function]}
+        onResponderGrant={[Function]}
+        onResponderMove={[Function]}
+        onResponderRelease={[Function]}
+        onResponderTerminate={[Function]}
+        onResponderTerminationRequest={[Function]}
+        onStartShouldSetResponder={[Function]}
+        style={
+          {
+            "alignItems": "center",
+            "height": 48,
+            "justifyContent": "center",
+          }
+        }
+      >
+        <Text
+          style={
+            [
+              {
+                "fontSize": 14.5,
+                "fontWeight": "600",
+              },
+              {
+                "color": "rgba(26,39,51,0.34)",
+              },
+            ]
+          }
+        >
+          Show the phrase
+        </Text>
       </View>
     </View>
   </View>

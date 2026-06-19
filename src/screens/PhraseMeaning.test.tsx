@@ -2,7 +2,7 @@
 // (data-in/events-out), so we render it with a fixture ReviewItem and jest.fn callbacks and
 // assert the events it emits — no services, per BACKEND_INTEGRATION §1/§4.
 import React from 'react';
-import { render, fireEvent, act } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { PhraseMeaning } from './PhraseMeaning';
 import type { ReviewItem } from '../types/reviewItem';
@@ -53,25 +53,18 @@ describe('PhraseMeaning', () => {
   });
 
   it('completes once as correct (first try) when the right meaning is chosen', () => {
-    jest.useFakeTimers();
-    try {
-      const u = renderCard();
-      fireEvent.press(u.getByText('Good morning!'));
-      expect(u.props.onAnswer).toHaveBeenCalledWith('gm', true);
-      // The correct pick turns green and advances only after a short readable beat.
-      expect(u.props.onComplete).not.toHaveBeenCalled();
-      act(() => {
-        jest.runAllTimers();
-      });
-      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
-      expect(u.props.onComplete).toHaveBeenCalledWith({
-        itemId: 'labrit',
-        cardKind: 'phrase/meaning',
-        correct: true,
-      });
-    } finally {
-      jest.useRealTimers();
-    }
+    const u = renderCard();
+    fireEvent.press(u.getByText('Good morning!'));
+    expect(u.props.onAnswer).toHaveBeenCalledWith('gm', true);
+    // Visual-sync: the correct pick turns green and enables an explicit Continue (no auto-advance).
+    expect(u.props.onComplete).not.toHaveBeenCalled();
+    fireEvent.press(u.getByText('Continue'));
+    expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+    expect(u.props.onComplete).toHaveBeenCalledWith({
+      itemId: 'labrit',
+      cardKind: 'phrase/meaning',
+      correct: true,
+    });
   });
 
   it('a wrong pick does NOT advance, shows a non-revealing retry note, reddens only the chosen option', () => {
@@ -84,72 +77,52 @@ describe('PhraseMeaning', () => {
     expect(u.getByText('Good morning!')).toBeTruthy();
   });
 
-  it('Try again clears the reddened selection', () => {
+  it('a correct pick clears the reddened wrong selection and its retry note', () => {
+    // Visual-sync: there is no separate "Try again" button — re-picking the correct option clears
+    // the wrong (red) state. The non-revealing retry note + no-advance rule are preserved.
     const u = renderCard();
     fireEvent.press(u.getByText('Good night!'));
     expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
-    fireEvent.press(u.getByLabelText('Try again'));
+    fireEvent.press(u.getByText('Good morning!')); // correct pick clears the wrong state
     expect(u.queryByText('Not quite — give it another try.')).toBeNull();
   });
 
   it('wrong-then-correct records an honest lapse (correct:false) and completes exactly once', () => {
-    jest.useFakeTimers();
-    try {
-      const u = renderCard();
-      fireEvent.press(u.getByText('Good night!')); // miss first
-      fireEvent.press(u.getByLabelText('Try again'));
-      fireEvent.press(u.getByText('Good morning!')); // then correct
-      act(() => {
-        jest.runAllTimers();
-      });
-      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
-      expect(u.props.onComplete).toHaveBeenCalledWith({
-        itemId: 'labrit',
-        cardKind: 'phrase/meaning',
-        correct: false,
-      });
-    } finally {
-      jest.useRealTimers();
-    }
+    const u = renderCard();
+    fireEvent.press(u.getByText('Good night!')); // miss first
+    fireEvent.press(u.getByText('Good morning!')); // then correct
+    fireEvent.press(u.getByText('Continue')); // explicit advance (visual-sync)
+    expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+    expect(u.props.onComplete).toHaveBeenCalledWith({
+      itemId: 'labrit',
+      cardKind: 'phrase/meaning',
+      correct: false,
+    });
   });
 
   it('double-tapping the correct option completes EXACTLY once (no double-complete race)', () => {
-    jest.useFakeTimers();
-    try {
-      const u = renderCard();
-      // Two rapid taps on the correct option BEFORE the advance timer fires.
-      fireEvent.press(u.getByText('Good morning!'));
-      fireEvent.press(u.getByText('Good morning!'));
-      act(() => {
-        jest.runAllTimers();
-      });
-      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
-    } finally {
-      jest.useRealTimers();
-    }
+    const u = renderCard();
+    // Two rapid taps on the correct option are idempotent; only the explicit Continue advances.
+    fireEvent.press(u.getByText('Good morning!'));
+    fireEvent.press(u.getByText('Good morning!'));
+    fireEvent.press(u.getByText('Continue'));
+    expect(u.props.onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('a direct wrong→correct tap (no Try again) clears the red wrong state + retry note and completes once as a lapse', () => {
-    jest.useFakeTimers();
-    try {
-      const u = renderCard();
-      fireEvent.press(u.getByText('Good night!')); // miss first — red + retry note showing
-      expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
-      fireEvent.press(u.getByText('Good morning!')); // correct directly, skipping Try again
-      // The red wrong state + retry note are cleared during the green beat.
-      expect(u.queryByText('Not quite — give it another try.')).toBeNull();
-      act(() => {
-        jest.runAllTimers();
-      });
-      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
-      expect(u.props.onComplete).toHaveBeenCalledWith({
-        itemId: 'labrit',
-        cardKind: 'phrase/meaning',
-        correct: false,
-      });
-    } finally {
-      jest.useRealTimers();
-    }
+  it('a direct wrong→correct tap clears the red wrong state + retry note and completes once as a lapse', () => {
+    const u = renderCard();
+    fireEvent.press(u.getByText('Good night!')); // miss first — red + retry note showing
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+    fireEvent.press(u.getByText('Good morning!')); // correct directly
+    // The red wrong state + retry note are cleared on the correct pick.
+    expect(u.queryByText('Not quite — give it another try.')).toBeNull();
+    fireEvent.press(u.getByText('Continue'));
+    expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+    expect(u.props.onComplete).toHaveBeenCalledWith({
+      itemId: 'labrit',
+      cardKind: 'phrase/meaning',
+      correct: false,
+    });
   });
 
   it('renders nothing interactive when there are no choices (idiom-only, unseeded)', () => {

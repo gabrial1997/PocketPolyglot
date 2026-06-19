@@ -7,14 +7,14 @@
 // pass a `progress` prop. It is exported but not required by any card body.
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, type ViewStyle, type DimensionValue } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeProvider';
 import { hexA, fonts } from '../theme/tokens';
 import { Waveform } from './Waveform';
 import { PlayOrb } from './PlayOrb';
 
 // ── icons (ported from kit.jsx Icon paths) ────────────────────────────────
-type IconName = 'check' | 'speaker' | 'mic' | 'replay' | 'lock' | 'unlock' | 'text' | 'close' | 'play';
+type IconName = 'check' | 'speaker' | 'mic' | 'replay' | 'lock' | 'unlock' | 'text' | 'close' | 'play' | 'chevR' | 'chevD' | 'settings';
 export function CardIcon({ name, size = 20, color, sw = 1.8 }: { name: IconName; size?: number; color: string; sw?: number }): React.JSX.Element {
   const p = { fill: 'none' as const, stroke: color, strokeWidth: sw, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   return (
@@ -33,6 +33,10 @@ export function CardIcon({ name, size = 20, color, sw = 1.8 }: { name: IconName;
       {name === 'text' && <Path d="M5 6h14M5 11h14M5 16h9" {...p} />}
       {name === 'close' && <Path d="M6 6l12 12M18 6L6 18" {...p} />}
       {name === 'play' && <Path d="M6 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 6 4.5z" fill={color} />}
+      {name === 'chevR' && <Path d="M9 5l7 7-7 7" {...p} />}
+      {name === 'chevD' && <Path d="M5 9l7 7 7-7" {...p} />}
+      {name === 'settings' && <Circle cx={12} cy={12} r={3} {...p} />}
+      {name === 'settings' && <Path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.5 5.5l-2 2M7.5 16.5l-2 2M18.5 18.5l-2-2M7.5 7.5l-2-2" {...p} />}
     </Svg>
   );
 }
@@ -194,6 +198,30 @@ export function GridChoiceButton({ label, state = 'idle', disabled = false, onPr
       <Text style={[chrome.gridWord, { color: fg, fontFamily: fonts.headline }]}>{label}</Text>
       {isCorrect ? <CardIcon name="check" size={17} color={T.good} sw={2.4} /> : null}
     </Pressable>
+  );
+}
+
+// ── phrase line — serif phrase, the just-learned word in primary + underlined ──────────────
+// `highlight` is the inflected surface form to emphasise (e.g. "dzeru"); matched case-insensitively
+// and ignoring trailing punctuation. `dim` greys the whole line (the locked glimpse). When no
+// highlight is supplied the line renders plainly — degrades gracefully for transparent phrases.
+export function PhraseLine({ phrase, highlight, dim = false, size = 34 }: {
+  phrase: string; highlight?: string; dim?: boolean; size?: number;
+}): React.JSX.Element {
+  const T = useTheme();
+  const norm = (s: string): string => s.replace(/[.,!?;:]+$/g, '').toLowerCase();
+  const hl = highlight ? norm(highlight) : null;
+  const tokens = phrase.split(/(\s+)/); // keep the whitespace tokens so spacing survives
+  return (
+    <Text style={{ fontFamily: fonts.headline, fontSize: size, fontWeight: '500', letterSpacing: -0.5, lineHeight: size * 1.25, textAlign: 'center', color: dim ? T.faint : T.ink }}>
+      {tokens.map((tok, i) => {
+        if (/^\s+$/.test(tok) || tok === '') return tok;
+        const isHl = !dim && hl !== null && norm(tok) === hl;
+        return isHl
+          ? <Text key={i} style={{ color: T.primary, textDecorationLine: 'underline', textDecorationColor: hexA(T.primary, 0.35) }}>{tok}</Text>
+          : <Text key={i}>{tok}</Text>;
+      })}
+    </Text>
   );
 }
 
