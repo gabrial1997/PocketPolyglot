@@ -47,8 +47,10 @@ function runLoop(u: ReturnType<typeof renderCard>) {
   fireEvent.press(u.getByText('Record')); // listen -> rec, fires onRecordStart
   fireEvent.press(u.getByText('Recording…')); // rec -> recorded, fires onRecordStop
   fireEvent.press(u.getByText('Compare')); // plays native+you, then completes after a beat
+  // Advance PAST the compare sequence (COMPARE_MS 1700 + soundbar ease). NOT runAllTimers: the
+  // LiveWaveform soundbar runs a self-rescheduling rAF loop while a clip sounds, which never drains.
   act(() => {
-    jest.runAllTimers();
+    jest.advanceTimersByTime(2000);
   });
 }
 
@@ -69,7 +71,7 @@ describe('PronounceScreen', () => {
       fireEvent.press(u.getByText('Compare'));
       expect(u.props.onPlayCompare).toHaveBeenCalledWith('native');
       act(() => {
-        jest.runAllTimers();
+        jest.advanceTimersByTime(2000); // past COMPARE_MS; bounded so the soundbar rAF loop can't hang
       });
       expect(u.props.onPlayCompare).toHaveBeenCalledWith('you');
     } finally {

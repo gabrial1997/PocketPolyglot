@@ -2,17 +2,17 @@
 // In: item (target, gloss, pron, audio, media.imageUrl[/Dark]). Image swaps to imageUrlDark in dark.
 // Out: onComplete({ spoke:false }) — exposure only; backend schedules first review.
 // Visual: matches mockup learn-concrete (full-width house image, word hero, audio hero).
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, CtaButton, SpeedChip, Waveform } from '../components';
+import { Screen, PlayOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS } from '../components';
 import { Eyebrow, WordTag, WordHero, GlossLine, Caption, FootNote, CardBody, CardFooter, HeadRow, wordTagFor } from '../components/cardChrome';
 import { CardImage } from './CardImage';
 import type { BaseCardProps } from './cardProps';
 
 export function WordLearnConcrete({ item, onPlay, onComplete, speed, onSpeedChange }: BaseCardProps): React.JSX.Element {
-  const [playing, setPlaying] = useState(false);
+  const { playing, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const tag = wordTagFor(item.wordClass);
-  const play = (): void => { setPlaying((p) => !p); onPlay('native'); };
+  const replay = (): void => play(() => onPlay('native'));
   return (
     <Screen>
       <CardBody>
@@ -25,9 +25,9 @@ export function WordLearnConcrete({ item, onPlay, onComplete, speed, onSpeedChan
         <GlossLine gloss={item.gloss} pron={item.pron} size={17} />
         <View style={styles.audio}>
           <View style={styles.wave}>
-            <Waveform seed={item.id} played={playing ? 0.66 : 0} height={44} count={36} envelope={item.audio.envelope} />
+            <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={44} count={36} />
           </View>
-          <PlayOrb size={66} playing={playing} onPress={play} />
+          <PlayOrb size={66} playing={playing} onPress={replay} />
           <SpeedChip value={speed} onChange={onSpeedChange} />
           <Caption>Tap to hear</Caption>
         </View>

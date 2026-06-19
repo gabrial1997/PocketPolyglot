@@ -17,7 +17,7 @@
 // bHint. They degrade gracefully — absent, the idle card just shows its glyph.
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, MicOrb, Waveform, SpeedChip } from '../components';
+import { Screen, PlayOrb, MicOrb, LiveWaveform, usePlayClip, FRAME_MS, SpeedChip } from '../components';
 import { CardIcon, ResultNote } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { hexA, fonts } from '../theme/tokens';
@@ -34,7 +34,7 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
   const pair = item.pair as PairHints | undefined;
 
   const [picked, setPicked] = useState<Side | null>(null);
-  const [playing, setPlaying] = useState(false);
+  const { playing, play, stop } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const [say, setSay] = useState<Say>(null);
   // `missed` is sticky across a Try-again reset so the first-try miss is remembered for honest SRS
   // correctness (locked rule + this card's header comment). `right` is the current selection state.
@@ -93,7 +93,7 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
             {item.gloss}{item.pron ? <Text style={{ color: T.faint }}> · {item.pron}</Text> : null}
           </Text>
           <View style={styles.sayControls}>
-            <PlayOrb size={54} filled={false} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+            <PlayOrb size={54} filled={false} playing={playing} onPress={() => play(() => onPlay('native'))} />
             <SpeedChip value={speed} onChange={onSpeedChange} />
           </View>
           <View style={styles.sayMic}>
@@ -134,9 +134,9 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
 
         <View style={styles.audio}>
           <View style={styles.wave}>
-            <Waveform seed={`${pair.a}-${pair.b}`} played={playing ? 0.7 : 0} height={52} count={34} envelope={item.audio.envelope} />
+            <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={52} count={34} />
           </View>
-          <PlayOrb size={72} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+          <PlayOrb size={72} playing={playing} onPress={() => play(() => onPlay('native'))} />
           <SpeedChip value={speed} onChange={onSpeedChange} />
         </View>
 
@@ -158,17 +158,17 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
 
       <View style={styles.footer}>
         {right ? (
-          <Pressable accessibilityRole="button" onPress={() => { setSay('idle'); setPlaying(false); }} style={[styles.cta, { backgroundColor: T.primary }]}>
+          <Pressable accessibilityRole="button" onPress={() => { setSay('idle'); stop(); }} style={[styles.cta, { backgroundColor: T.primary }]}>
             <CardIcon name="mic" size={18} color={T.onPrimary} />
             <Text style={[styles.ctaText, { color: T.onPrimary }]}>Say it back</Text>
           </Pressable>
         ) : picked !== null ? (
-          <Pressable accessibilityRole="button" onPress={() => { setPicked(null); setPlaying(false); }} style={[styles.cta, { backgroundColor: T.record }]}>
+          <Pressable accessibilityRole="button" onPress={() => { setPicked(null); stop(); }} style={[styles.cta, { backgroundColor: T.record }]}>
             <CardIcon name="replay" size={18} color="#fff" />
             <Text style={[styles.ctaText, { color: '#fff' }]}>Try again</Text>
           </Pressable>
         ) : (
-          <Pressable accessibilityRole="button" onPress={() => { setPlaying(true); onPlay('native'); }} style={[styles.ctaOutline, { borderColor: T.hair }]}>
+          <Pressable accessibilityRole="button" onPress={() => play(() => onPlay('native'))} style={[styles.ctaOutline, { borderColor: T.hair }]}>
             <CardIcon name="replay" size={18} color={T.sub} />
             <Text style={[styles.ctaText, { color: T.sub }]}>Play again</Text>
           </Pressable>

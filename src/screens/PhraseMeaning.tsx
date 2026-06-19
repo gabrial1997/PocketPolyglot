@@ -10,7 +10,7 @@
 // "What does it mean?"; the 3-option choice list; the carmine/green feedback line; footer Continue.
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, ChoiceButton, SpeedChip, Waveform, CtaButton } from '../components';
+import { Screen, PlayOrb, ChoiceButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, CtaButton } from '../components';
 import { PromptText } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
@@ -23,7 +23,7 @@ type MeaningExtra = { literalNote?: string };
 export function PhraseMeaning({ item, onPlay, onAnswer, onComplete, speed, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
   const T = useTheme();
   const x = item as ReviewItem & MeaningExtra;
-  const [playing, setPlaying] = useState(false);
+  const { playing, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const [wrongValue, setWrongValue] = useState<string | null>(null);
   const [correctValue, setCorrectValue] = useState<string | null>(null);
   const [missed, setMissed] = useState(false);
@@ -56,9 +56,9 @@ export function PhraseMeaning({ item, onPlay, onAnswer, onComplete, speed, onSpe
 
         {/* compact audio row */}
         <View style={styles.audioRow}>
-          <PlayOrb size={46} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+          <PlayOrb size={46} playing={playing} onPress={() => play(() => onPlay('native'))} />
           <View style={{ flex: 1 }}>
-            <Waveform seed={item.id} played={playing ? 0.62 : 0} height={34} count={36} envelope={item.audio.envelope} />
+            <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={34} count={36} />
           </View>
         </View>
         <View style={{ marginTop: 12 }}>

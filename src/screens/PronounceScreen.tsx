@@ -14,7 +14,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Svg, { Polyline } from 'react-native-svg';
-import { Screen, Waveform, SpeedChip } from '../components';
+import { Screen, LiveWaveform, FRAME_MS, SpeedChip } from '../components';
 import { CardIcon } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { hexA, fonts } from '../theme/tokens';
@@ -36,8 +36,10 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
   const [rec, setRec] = useState(false);
   const [recorded, setRecorded] = useState(false);
   const [comparing, setComparing] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  // Which clip is sounding during a compare, so its row's soundbar moves and the other rests.
+  const [playingSide, setPlayingSide] = useState<'native' | 'you' | null>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); }, []);
 
   const toggleRecord = (): void => {
     if (rec) { onRecordStop(); setRec(false); setRecorded(true); }
@@ -46,12 +48,13 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
   const doCompare = (): void => {
     if (!recorded || comparing) return;
     setComparing(true);
+    setPlayingSide('native');
     onPlayCompare?.('native');
-    timer.current = setTimeout(() => onPlayCompare?.('you'), COMPARE_MS / 2);
-    timer.current = setTimeout(() => onComplete({ itemId: item.id, cardKind: 'pron', spoke: true }), COMPARE_MS);
+    timers.current.push(setTimeout(() => { setPlayingSide('you'); onPlayCompare?.('you'); }, COMPARE_MS / 2));
+    timers.current.push(setTimeout(() => { setPlayingSide(null); onComplete({ itemId: item.id, cardKind: 'pron', spoke: true }); }, COMPARE_MS));
   };
 
-  const Row = ({ icon, label, you, seed }: { icon: 'speaker' | 'mic'; label: string; you?: boolean; seed: string }): React.JSX.Element => (
+  const Row = ({ icon, label, you, playing }: { icon: 'speaker' | 'mic'; label: string; you?: boolean; playing: boolean }): React.JSX.Element => (
     <View style={[styles.row, { backgroundColor: T.surface, borderColor: you ? hexA(T.primary, 0.4) : T.hair }, T.shadow]}>
       <View style={styles.rowHead}>
         <View style={[styles.chip, { backgroundColor: you ? T.primarySoft : T.sunken }]}>
@@ -60,7 +63,9 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
         <Text style={[styles.rowLabel, { color: T.ink }]}>{label}</Text>
         <Text style={[styles.rowTime, { color: T.faint }]}>0:01</Text>
       </View>
-      <Waveform seed={seed} played={0} height={42} count={40} envelope={you ? undefined : item.audio.envelope} />
+      {/* The "You" take has no precomputed envelope, so its bar honestly rests rather than faking
+          motion (locked constraint: the soundbar moves with REAL amplitude only). */}
+      <LiveWaveform envelope={you ? undefined : item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={42} count={40} />
     </View>
   );
 
@@ -76,9 +81,9 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
         </View>
 
         <View style={styles.rows}>
-          <Row icon="speaker" label="Native" seed={`${item.id}-native`} />
+          <Row icon="speaker" label="Native" playing={playingSide === 'native'} />
           {recorded ? (
-            <Row icon="mic" label="You" you seed={`${item.id}-you`} />
+            <Row icon="mic" label="You" you playing={playingSide === 'you'} />
           ) : (
             <View style={[styles.placeholder, { backgroundColor: T.surface, borderColor: T.hair }]}>
               <Text style={[styles.placeholderText, { color: T.faint }]}>Record yourself to compare</Text>

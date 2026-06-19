@@ -216,6 +216,8 @@ exports[`PhraseMeaning renders the choices from item data (snapshot) 1`] = `
           }
         >
           <View
+            accessibilityLabel="Audio waveform"
+            accessibilityRole="image"
             style={
               [
                 {
@@ -231,362 +233,578 @@ exports[`PhraseMeaning renders the choices from item data (snapshot) 1`] = `
             }
           >
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 8,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 6,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 14,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 14,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 17,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 11,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 19,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 24,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 18,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 24,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 20,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 24,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 17,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 23,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 25,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 13,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 29,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 29,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 32,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 23,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 21,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 10,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 12,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 6,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 5,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />
             <View
+              collapsable={false}
               style={
                 {
-                  "backgroundColor": "rgba(26,39,51,0.18)",
+                  "backgroundColor": "#2C5E8C",
                   "borderRadius": 3,
                   "flex": 1,
-                  "height": 3,
+                  "height": 34,
+                  "transform": [
+                    {
+                      "scaleY": 0.08,
+                    },
+                  ],
                 }
               }
             />

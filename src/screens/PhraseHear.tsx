@@ -6,18 +6,15 @@
 // "NEW PHRASE"; PhraseLine with the just-learned word in primary + underlined; the "dzert, here as
 // 'dzeru'" hint; audio hero (soundbar + PlayOrb 78 + SpeedChip); "Show meaning" toggle; footer
 // "First review tomorrow." + Continue. Soundbar gate timing preserved from the prior card.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, SpeedChip, LiveWaveform, CtaButton } from '../components';
+import { Screen, PlayOrb, SpeedChip, LiveWaveform, CtaButton, usePlayClip, clipMs, FRAME_MS } from '../components';
 import { CardIcon, Eyebrow, PhraseLine } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import type { BaseCardProps } from './cardProps';
 import type { ReviewItem } from '../types/reviewItem';
 
-const FRAME_MS = 30; // must match content-pipeline/tts.mjs envelope frame size
-const TAIL_MS = 200;
-const FALLBACK_MS = 1600;
 export const REPEAT_DELAY_MS = 700; // gap after the first clip finishes before the repeat
 
 type HearExtra = { newForm?: string; newLemma?: string };
@@ -26,29 +23,17 @@ export function PhraseHear({ item, onPlay, onComplete, speed, onSpeedChange }: B
   const T = useTheme();
   const x = item as ReviewItem & HearExtra;
   const env = item.audio.envelope;
-  const [playing, setPlaying] = useState(false);
+  const { playing, play } = usePlayClip(env); // shared soundbar gate (real-amplitude, no loop)
   const [shown, setShown] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // STOPGAP (unchanged): the card can't observe playback end through the service boundary yet, so
-  // we run the soundbar for the clip's known length. Amplitudes are real; only the stop gate is
-  // approximated. Deeper fix deferred (surface playback position via AudioService — see soundbar.md).
-  const playClip = (): void => {
-    onPlay('native');
-    if (timer.current) clearTimeout(timer.current);
-    setPlaying(true);
-    const ms = env && env.length ? env.length * FRAME_MS + TAIL_MS : FALLBACK_MS;
-    timer.current = setTimeout(() => setPlaying(false), ms);
-  };
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  const playClip = (): void => play(() => onPlay('native'));
 
   // First exposure SAYS the phrase, then REPEATS it once (BACKEND_INTEGRATION §4 / 2026-06-19 spec).
   // The repeat waits out the first clip's length (+ a short gap) so it doesn't overlap playback.
   // Runs once on mount — GlideViewport remounts the card per item, so each new phrase replays.
   useEffect(() => {
     playClip(); // say it
-    const ms = (env && env.length ? env.length * FRAME_MS + TAIL_MS : FALLBACK_MS) + REPEAT_DELAY_MS;
-    const t = setTimeout(() => playClip(), ms); // repeat it once
+    const t = setTimeout(() => playClip(), clipMs(env) + REPEAT_DELAY_MS); // repeat it once
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

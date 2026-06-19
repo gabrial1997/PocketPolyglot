@@ -18,7 +18,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { Screen, PlayOrb, MicOrb, Waveform, SpeedChip } from '../components';
+import { Screen, PlayOrb, MicOrb, LiveWaveform, usePlayClip, FRAME_MS, SpeedChip } from '../components';
 import { GlideTrack } from '../components/GlideTrack';
 import { CardIcon, ResultNote, WordTag } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
@@ -50,7 +50,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
   const [phase, setPhase] = useState<Phase>('meet');
   const [picked, setPicked] = useState<Side | null>(null);
   const [say, setSay] = useState<Say>('idle');
-  const [playing, setPlaying] = useState(false);
+  const { playing, play, stop } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const right = picked !== null && pair != null && picked === pair.correct;
   const missed = picked !== null && !right;
 
@@ -70,12 +70,12 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
           <View style={styles.glideWrap}>
             <GlideTrack from={glide?.from} to={glide?.to} playing={playing} color={T.primary} />
           </View>
-          <PlayOrb size={66} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('glide'); }} />
+          <PlayOrb size={66} playing={playing} onPress={() => play(() => onPlay('glide'))} />
           <SpeedChip value={speed} onChange={onSpeedChange} />
           <Text style={[styles.tapHint, { color: T.faint }]}>Tap to hear the glide</Text>
         </View>
         <View style={styles.footer}>
-          <Pressable accessibilityRole="button" onPress={() => { setPhase('contrast'); setPlaying(false); }} style={[styles.cta, { backgroundColor: T.primary }]}>
+          <Pressable accessibilityRole="button" onPress={() => { setPhase('contrast'); stop(); }} style={[styles.cta, { backgroundColor: T.primary }]}>
             <Text style={[styles.ctaText, { color: T.onPrimary }]}>Hear it in a word</Text>
             <CardIcon name="chevR" size={17} color={T.onPrimary} />
           </Pressable>
@@ -106,7 +106,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
             <GlideTrack from={glide?.from} to={glide?.to} playing={playing} color={T.primary} width={230} />
           </View>
           <View style={styles.sayControls}>
-            <PlayOrb size={50} filled={false} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+            <PlayOrb size={50} filled={false} playing={playing} onPress={() => play(() => onPlay('native'))} />
             <SpeedChip value={speed} onChange={onSpeedChange} />
           </View>
           <View style={styles.sayMic}>
@@ -152,9 +152,9 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
 
         <View style={styles.audio}>
           <View style={styles.wave}>
-            <Waveform seed={pair ? `${pair.a}-${pair.b}` : 'ie-pair'} played={playing ? 0.7 : 0} height={52} count={34} envelope={item.audio.envelope} />
+            <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={52} count={34} />
           </View>
-          <PlayOrb size={72} playing={playing} onPress={() => { setPlaying((p) => !p); onPlay('native'); }} />
+          <PlayOrb size={72} playing={playing} onPress={() => play(() => onPlay('native'))} />
           <SpeedChip value={speed} onChange={onSpeedChange} />
         </View>
 
@@ -201,17 +201,17 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
 
       <View style={styles.footer}>
         {right ? (
-          <Pressable accessibilityRole="button" onPress={() => { setPhase('say'); setPlaying(false); }} style={[styles.cta, { backgroundColor: T.primary }]}>
+          <Pressable accessibilityRole="button" onPress={() => { setPhase('say'); stop(); }} style={[styles.cta, { backgroundColor: T.primary }]}>
             <CardIcon name="mic" size={18} color={T.onPrimary} />
             <Text style={[styles.ctaText, { color: T.onPrimary }]}>Say it back</Text>
           </Pressable>
         ) : picked !== null ? (
-          <Pressable accessibilityRole="button" onPress={() => { setPicked(null); setPlaying(false); }} style={[styles.cta, { backgroundColor: T.record }]}>
+          <Pressable accessibilityRole="button" onPress={() => { setPicked(null); stop(); }} style={[styles.cta, { backgroundColor: T.record }]}>
             <CardIcon name="replay" size={18} color="#fff" />
             <Text style={[styles.ctaText, { color: '#fff' }]}>Try again</Text>
           </Pressable>
         ) : (
-          <Pressable accessibilityRole="button" onPress={() => { setPlaying(true); onPlay('native'); }} style={[styles.ctaOutline, { borderColor: T.hair }]}>
+          <Pressable accessibilityRole="button" onPress={() => play(() => onPlay('native'))} style={[styles.ctaOutline, { borderColor: T.hair }]}>
             <CardIcon name="replay" size={18} color={T.sub} />
             <Text style={[styles.ctaText, { color: T.sub }]}>Play again</Text>
           </Pressable>
