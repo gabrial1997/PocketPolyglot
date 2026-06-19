@@ -2,11 +2,15 @@
 // (data-in/events-out), so we render it with a fixture ReviewItem and jest.fn callbacks and
 // assert the events it emits — no services, per BACKEND_INTEGRATION §1/§4.
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
-import { PhraseHear } from './PhraseHear';
+import { PhraseHear, REPEAT_DELAY_MS } from './PhraseHear';
 import type { ReviewItem } from '../types/reviewItem';
 import type { BaseCardProps } from './cardProps';
+
+// The fixture carries no envelope, so the card uses its FALLBACK_MS clip length (1600ms); the
+// repeat is scheduled clipLength + REPEAT_DELAY_MS after mount. Advance past that to see it fire.
+const FALLBACK_MS = 1600;
 
 function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
   return {
@@ -37,6 +41,16 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
 }
 
 describe('PhraseHear', () => {
+  // The card auto-plays on mount and schedules a repeat timer, so drive every test with fake timers
+  // — otherwise those deferred state updates fire outside act() and warn.
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
   it('renders the phrase from item data (snapshot)', () => {
     const { toJSON } = renderCard();
     expect(toJSON()).toMatchSnapshot();
@@ -56,5 +70,15 @@ describe('PhraseHear', () => {
       cardKind: 'phrase/hear',
       spoke: false,
     });
+  });
+
+  it('says the phrase then repeats it once on first show', () => {
+    const u = renderCard(); // mount auto-plays once
+    expect(u.props.onPlay).toHaveBeenCalledWith('native');
+    expect(u.props.onPlay).toHaveBeenCalledTimes(1);
+    act(() => {
+      jest.advanceTimersByTime(FALLBACK_MS + REPEAT_DELAY_MS + 50);
+    });
+    expect(u.props.onPlay).toHaveBeenCalledTimes(2); // repeats it, exactly once
   });
 });

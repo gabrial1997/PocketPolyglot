@@ -18,6 +18,7 @@ import type { ReviewItem } from '../types/reviewItem';
 const FRAME_MS = 30; // must match content-pipeline/tts.mjs envelope frame size
 const TAIL_MS = 200;
 const FALLBACK_MS = 1600;
+export const REPEAT_DELAY_MS = 700; // gap after the first clip finishes before the repeat
 
 type HearExtra = { newForm?: string; newLemma?: string };
 
@@ -40,6 +41,17 @@ export function PhraseHear({ item, onPlay, onComplete, speed, onSpeedChange }: B
     timer.current = setTimeout(() => setPlaying(false), ms);
   };
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  // First exposure SAYS the phrase, then REPEATS it once (BACKEND_INTEGRATION §4 / 2026-06-19 spec).
+  // The repeat waits out the first clip's length (+ a short gap) so it doesn't overlap playback.
+  // Runs once on mount — GlideViewport remounts the card per item, so each new phrase replays.
+  useEffect(() => {
+    playClip(); // say it
+    const ms = (env && env.length ? env.length * FRAME_MS + TAIL_MS : FALLBACK_MS) + REPEAT_DELAY_MS;
+    const t = setTimeout(() => playClip(), ms); // repeat it once
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <Screen>

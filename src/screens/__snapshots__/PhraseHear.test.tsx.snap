@@ -909,19 +909,41 @@ exports[`PhraseHear renders the phrase from item data (snapshot) 1`] = `
                 }
               }
             >
-              <RNSVGPath
-                d="M6 4.5v15a1 1 0 0 0 1.5.87l12-7.5a1 1 0 0 0 0-1.74l-12-7.5A1 1 0 0 0 6 4.5z"
+              <RNSVGRect
                 fill={
                   {
                     "payload": 4294967295,
                     "type": 0,
                   }
                 }
+                height="17"
                 propList={
                   [
                     "fill",
                   ]
                 }
+                rx="1.6"
+                width="5"
+                x="5"
+                y="3.5"
+              />
+              <RNSVGRect
+                fill={
+                  {
+                    "payload": 4294967295,
+                    "type": 0,
+                  }
+                }
+                height="17"
+                propList={
+                  [
+                    "fill",
+                  ]
+                }
+                rx="1.6"
+                width="5"
+                x="14"
+                y="3.5"
               />
             </RNSVGGroup>
           </RNSVGSvgView>
