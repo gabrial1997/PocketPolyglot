@@ -59,7 +59,7 @@ export function Eyebrow({ children }: { children: string }): React.JSX.Element {
 }
 export function WordHero({ children, size = 52 }: { children: React.ReactNode; size?: number }): React.JSX.Element {
   const T = useTheme();
-  return <Text style={{ color: T.ink, fontFamily: fonts.headline, fontSize: size, letterSpacing: -0.8, lineHeight: size, textAlign: 'center' }}>{children}</Text>;
+  return <Text style={{ color: T.ink, fontFamily: fonts.headline, fontSize: size, letterSpacing: -0.8, lineHeight: Math.round(size * 1.18), textAlign: 'center' }}>{children}</Text>;
 }
 export function GlossLine({ gloss, pron, size = 16 }: { gloss: string; pron?: string; size?: number }): React.JSX.Element {
   const T = useTheme();
@@ -82,7 +82,7 @@ export function PromptText({ children, variant = 'ui' }: { children: React.React
   const T = useTheme();
   return (
     <Text style={[chrome.center, variant === 'serif'
-      ? { color: T.sub, fontFamily: fonts.headline, fontSize: 20, letterSpacing: -0.2 }
+      ? { color: T.sub, fontFamily: fonts.headline, fontSize: 20, lineHeight: 26, letterSpacing: -0.2 }
       : { color: T.sub, fontSize: 14.5 }]}>{children}</Text>
   );
 }

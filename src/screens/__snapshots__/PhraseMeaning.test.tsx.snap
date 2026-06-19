@@ -780,6 +780,7 @@ exports[`PhraseMeaning renders the choices from item data (snapshot) 1`] = `
                 "fontFamily": "Spectral_500Medium",
                 "fontSize": 20,
                 "letterSpacing": -0.2,
+                "lineHeight": 26,
               },
             ]
           }

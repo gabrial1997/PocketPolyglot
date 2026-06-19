@@ -2,7 +2,7 @@
 // simple two-route stack (home -> session). A real navigator (react-navigation/expo-router) can
 // replace this; the load-bearing piece is the CARD_REGISTRY keyed by stable CardKind strings.
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import type { User } from '@supabase/supabase-js';
@@ -17,6 +17,7 @@ import { useSession } from '../session/sessionController';
 import { useReviewCardHandlers } from '../session/useReviewCardHandlers';
 import { CARD_REGISTRY } from './registry';
 import { Screen, GlideViewport } from '../components';
+import { SessionTop } from '../components/cardChrome';
 import { CalendarIcon, SoundIcon, BarsIcon, type IconProps } from '../components/icons';
 import { HomeHost, PodcastHost, ProgressHost } from '../screens';
 import { type } from '../theme/tokens';
@@ -132,18 +133,28 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
   if (!session.current) return <SessionPlaceholder />; // also narrows current for the card below
 
   return (
-    // GlideViewport owns "remount per item": keyed off the item id, it freezes the leaving card and
-    // glides in the entering one, so per-card ephemeral state (stage, first-try miss, recording
-    // buffer) still resets when the committed item changes — no separate key on CardHost needed.
-    <GlideViewport itemKey={session.current.item.id}>
-      <CardHost
-        item={session.current.item}
-        kind={session.current.kind}
-        submit={session.submit}
-        advance={session.advance}
-        nextReviewLabel={session.lastReviewLabel}
-      />
-    </GlideViewport>
+    <View style={styles.sessionShell}>
+      {/* GlideViewport owns "remount per item": keyed off the item id, it freezes the leaving card
+          and glides in the entering one, so per-card ephemeral state (stage, first-try miss,
+          recording buffer) still resets when the committed item changes. */}
+      <GlideViewport itemKey={session.current.item.id}>
+        <CardHost
+          item={session.current.item}
+          kind={session.current.kind}
+          submit={session.submit}
+          advance={session.advance}
+          nextReviewLabel={session.lastReviewLabel}
+        />
+      </GlideViewport>
+      {/* Session chrome (close + progress) floats above the gliding cards so the learner can leave
+          to home at any time. box-none lets taps fall through to the centered card body; only the
+          close button captures them. */}
+      <SafeAreaView style={styles.sessionTopOverlay} pointerEvents="box-none">
+        <View style={styles.sessionTopInner} pointerEvents="box-none">
+          <SessionTop step={session.step} total={session.total} onClose={onExit} />
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -236,6 +247,9 @@ export function App(): React.JSX.Element {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   screen: { flex: 1 },
+  sessionShell: { flex: 1 },
+  sessionTopOverlay: { position: 'absolute', top: 0, left: 0, right: 0 },
+  sessionTopInner: { paddingHorizontal: 24, paddingTop: 6 },
   boot: { flex: 1, backgroundColor: '#0E1318' },
   placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tabBar: {

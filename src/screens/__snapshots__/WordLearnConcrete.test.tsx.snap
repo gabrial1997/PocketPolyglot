@@ -131,7 +131,7 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
             "fontFamily": "Spectral_500Medium",
             "fontSize": 52,
             "letterSpacing": -0.8,
-            "lineHeight": 52,
+            "lineHeight": 61,
             "textAlign": "center",
           }
         }
