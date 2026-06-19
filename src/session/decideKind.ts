@@ -10,11 +10,15 @@ export function decideKind(
   item: ReviewItem,
   known: ReadonlySet<string>,
   seenLocked: ReadonlySet<string>,
+  revealed: ReadonlySet<string>,
 ): { kind: CardKind; nowUnlocked: boolean } {
   if (item.type === 'phrase' && item.componentLemmaIds) {
     const { locked } = lockState(item.componentLemmaIds, known);
     if (locked) return { kind: 'phrase/locked', nowUnlocked: false };
-    if (seenLocked.has(item.id)) return { kind: 'phrase/unlock', nowUnlocked: true };
+    // One-time reveal: only if it was seen locked AND we have not shown the reveal yet.
+    if (seenLocked.has(item.id) && !revealed.has(item.id)) {
+      return { kind: 'phrase/unlock', nowUnlocked: true };
+    }
   }
   return { kind: renderFor(item), nowUnlocked: false };
 }

@@ -1,29 +1,30 @@
 import { decideKind } from './decideKind';
 import type { ReviewItem } from '../types/reviewItem';
 
-const phrase: ReviewItem = {
-  id: 'ph1',
-  type: 'phrase',
-  stage: 'new',
-  reps: 0,
-  target: 'Vienu kafiju, lūdzu.',
-  gloss: 'One coffee, please.',
-  audio: { nativeUrl: 'x' },
-  componentLemmaIds: ['viens', 'kafija', 'ludzu'],
-};
+const phrase = (overrides: Partial<ReviewItem> = {}): ReviewItem => ({
+  id: 'p1', type: 'phrase', stage: 'new', reps: 0,
+  target: 'Labdien, es esmu ___.', gloss: 'Hello, I am ___.',
+  audio: { nativeUrl: 'p1.mp3' }, componentLemmaIds: ['labdien', 'es', 'esmu'],
+  ...overrides,
+});
+const empty = new Set<string>();
 
-test('locked phrase → phrase/locked', () => {
-  const r = decideKind(phrase, new Set(['ludzu']), new Set());
-  expect(r.kind).toBe('phrase/locked');
+it('locked while any word unknown', () => {
+  const k = new Set(['labdien']);
+  expect(decideKind(phrase(), k, empty, empty).kind).toBe('phrase/locked');
 });
 
-test('a phrase seen locked, now available → phrase/unlock', () => {
-  const r = decideKind(phrase, new Set(['viens', 'ludzu']), new Set(['ph1']));
+it('reveals unlock ONCE when all words known and it was seen locked', () => {
+  const k = new Set(['labdien', 'es', 'esmu']);
+  const seen = new Set(['p1']);
+  const r = decideKind(phrase(), k, seen, empty);
   expect(r.kind).toBe('phrase/unlock');
   expect(r.nowUnlocked).toBe(true);
 });
 
-test('available phrase never seen locked → normal review kind', () => {
-  const r = decideKind(phrase, new Set(['viens', 'kafija', 'ludzu']), new Set());
-  expect(r.kind).toBe('phrase/hear');
+it('after the unlock is revealed, resolves to the review kind (hear for a new phrase)', () => {
+  const k = new Set(['labdien', 'es', 'esmu']);
+  const seen = new Set(['p1']);
+  const revealed = new Set(['p1']);
+  expect(decideKind(phrase(), k, seen, revealed).kind).toBe('phrase/hear');
 });
