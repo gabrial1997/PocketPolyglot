@@ -39,14 +39,23 @@ Two loops, six words, two phrases. (Native sign-off by Elizabete is a follow-up,
 
 ```
 LOOP 1
-  1  phrase/locked   "Labdien, es esmu ___."   masked: "·····, ·· ···· ___" + meaning + "Learn 3 words"
+  1  phrase/locked   "UPCOMING PHRASE" — phrase shown DIMMED "Labdien, es esmu ___."
+                     + "N words to go — learn <lemma>" (counts down as words are learned)
   2  word/*          labdien
   3  word/*          es
   4  word/*          esmu
-  5  phrase/unlock   reveal "Labdien, es esmu ___." + chime
-  6  phrase/sayit    produce it
+  5  phrase/unlock   its OWN card: "PHRASE UNLOCKED · you know all its words now" + chime
+  6  phrase/hear     first hearing: play + waveform + "Show meaning" + Continue
+                     ("first review tomorrow")   [waveform stays the existing one; the live
+                      amplitude-reactive version is the separate #22 spec]
 LOOP 2  — same shape with Kā tev iet? (kā · tev · iet)
+
+(say-it is NOT in the first session — the phrase is HEARD first and matures into say-it
+ over later reviews, per the card's "hear first · say it as it matures" rule.)
 ```
+
+Source of truth for these stages: the founder's phrase-card mockup (`03 · Phrase card`,
+Screenshot 2026-06-19).
 
 ## Design
 
@@ -60,15 +69,26 @@ the overlay. `decideKind` is evaluated against `known.all() ∪ overlay`. This i
 **B. Re-surface the phrase via a working queue.** The controller holds a mutable working queue
 (seeded from `getDueBatch`). Phrase resolution per encounter:
 
-- **locked** (`unknownCount > 1`): render `phrase/locked`; on Continue (`advance`), re-queue the
-  phrase immediately **after its last component word** present in the remaining queue; record
-  `seenLocked`.
-- **available + seenLocked + not yet revealed**: render `phrase/unlock` (reveal + chime); on the
-  gate advance, re-queue the phrase **next** (production); mark revealed.
-- **available + revealed** (or never locked): render `phrase/sayit` (SRS production).
+- **locked** (any component word still unknown — `unknownCount > 0`; see gate note below): render
+  `phrase/locked` (dimmed phrase + "N words to go"); on Continue (`advance`), re-queue the phrase
+  immediately **after its last component word** present in the remaining queue; record `seenLocked`.
+- **all words known + seenLocked + not yet revealed**: render `phrase/unlock` (reveal + chime, its
+  own card); on the gate advance, re-queue the phrase **next**; mark revealed.
+- **all words known + revealed** (or never locked): render `phrase/hear` (first SRS exposure —
+  listen + Continue). Say-it is NOT forced here; it surfaces in later sessions as the phrase
+  matures, via the normal `renderFor` maturity rule.
 
-So a gated phrase is encountered up to three times — locked → unlock → say-it — each reusing the
-existing single-purpose card. "Loops twice" = the two phrases, each running this shape.
+So a gated phrase is encountered up to three times in the first session — locked → unlock → hear —
+each reusing the existing single-purpose card; say-it comes later. "Loops twice" = the two phrases,
+each running this shape.
+
+**Gate note (reconciliation).** The mockup subtitle is "Unlocks when its words are known" and the
+unlock card reads "you know all its words now" — i.e. unlock requires **0 unknown** component
+words. The current `phraseGate.lockState` uses `unknownCount > 1` (the i+1 "one new word allowed"
+rule), which would surface the phrase while one word is still new. For the starting loop we adopt
+the mockup's **all-words-known** gate. The plan resolves this by making the unlock threshold strict
+(`unknownCount > 0` ⇒ still locked); whether to keep i+1 as a separate "within reach" signal for
+showing the upcoming teaser is noted as an open item, not built here.
 
 *Chosen over* a hardcoded onboarding script or per-card server re-fetch of the known-set, because
 it uses the **real generic loop** (so walking it genuinely validates the core loop) and works for
@@ -107,15 +127,20 @@ Verify end-to-end and add the missing automated coverage:
 
 ### 5. Locked teaser presentation
 
-`phrase/locked` shows: the **English meaning** ("Hello, I am ___."), a **masked shape** of the
-Latvian (`·····, ·· ···· ___`), and a "Learn N words to unlock it" line. The Latvian itself is the
-reward, revealed only at unlock. Matches the existing PhraseLocked mockup.
+Per the founder's mockup (supersedes the earlier "masked dots" sketch): `phrase/locked` shows the
+real Latvian phrase **dimmed/greyed** ("Labdien, es esmu ___." in faint ink) with a **"N words to
+go — learn <lemma>"** line and an "it appears here as '<inflected form>'" hint. As each component
+word is learned the count decrements; the phrase is never masked into dots — it's simply dim until
+unlock. `PhraseLine` already supports this via its `dim` prop (+ `highlight` for the inflected
+form).
 
 ## Acceptance (walk on device)
 
-1. New deck → first card is `phrase/locked` for "Labdien, es esmu ___." (masked + meaning).
-2. Learn labdien, es, esmu → the phrase re-appears as `phrase/unlock` (reveal + chime) → then
-   `phrase/sayit`.
+1. New deck → first card is `phrase/locked` for "Labdien, es esmu ___." (dimmed phrase + "3 words
+   to go").
+2. Learn labdien, es, esmu (the locked count decrements if revisited) → the phrase re-appears as
+   `phrase/unlock` (reveal + chime, its own card) → then `phrase/hear` (first listening, Continue →
+   "first review tomorrow"). Say-it does NOT appear in this first session.
 3. Same for "Kā tev iet?" (kā, tev, iet).
 4. Exit-to-home (already shipped) works from any card.
 5. A deliberately-missed graded card records a lapse: a `review_log` row with `correct:false`
