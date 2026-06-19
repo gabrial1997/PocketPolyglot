@@ -27,6 +27,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import OpenAI from 'openai';
 
@@ -37,6 +38,10 @@ const MANIFEST = path.join(HERE, 'golden-slice.json');
 // app derives from EXPO_PUBLIC_SUPABASE_URL (src/session/cardWiring.ts UNLOCK_CHIME_URL).
 const UNLOCK_CHIME_LOCAL = path.join(HERE, 'assets', 'unlock-chime.wav');
 const UNLOCK_CHIME_KEY = 'sfx/unlock-chime.wav';
+// The vendored design asset's sha256. The seed asserts the local file matches before upload, so a
+// stray/placeholder chime can never reach Storage. Update ONLY when intentionally re-vendoring the
+// chime from the design project's assets/unlock-chime.wav.
+const UNLOCK_CHIME_SHA256 = '1f7f126b3f5d47e134249f7c195b592975e406cec1756541bc8ec309c5dc14fb';
 const BUCKET = process.env.CONTENT_BUCKET || 'content-audio';
 const TTS_MODEL = process.env.TTS_MODEL || 'gpt-4o-mini-tts';
 const OBJECT_PREFIX = 'golden';
@@ -348,15 +353,21 @@ async function seed(manifest, db, envelopes, client, voice) {
   // Upload the vendored WAV to the stable key the app points UNLOCK_CHIME_URL at. Same storage
   // client pattern as uploadOne, but a fixed local file (assets/), not a generated MP3 in out/.
   if (fs.existsSync(UNLOCK_CHIME_LOCAL)) {
+    const chimeBuf = fs.readFileSync(UNLOCK_CHIME_LOCAL);
+    // Guard: the file we upload must be the vendored design chime, not a stray/placeholder. If this
+    // ever fails, re-vendor content-pipeline/assets/unlock-chime.wav from the design project.
+    const sha = crypto.createHash('sha256').update(chimeBuf).digest('hex');
+    if (sha !== UNLOCK_CHIME_SHA256) {
+      throw new Error(
+        `unlock-chime.wav sha256 ${sha} != expected ${UNLOCK_CHIME_SHA256} — re-vendor the design asset before seeding.`,
+      );
+    }
     const { error } = await db.storage
       .from(BUCKET)
-      .upload(UNLOCK_CHIME_KEY, fs.readFileSync(UNLOCK_CHIME_LOCAL), {
-        contentType: 'audio/wav',
-        upsert: true,
-      });
+      .upload(UNLOCK_CHIME_KEY, chimeBuf, { contentType: 'audio/wav', upsert: true });
     if (error) throw error;
     counts.chimeUploaded += 1;
-    console.log(`  ✓ chime   ${UNLOCK_CHIME_KEY}`);
+    console.log(`  ✓ chime   ${UNLOCK_CHIME_KEY}  (sha256 ${sha.slice(0, 12)}… verified)`);
   } else {
     console.log(`  ! chime   ${UNLOCK_CHIME_LOCAL} missing — skipped`);
   }
@@ -436,6 +447,14 @@ function makeStateRow(userId, itemType, itemId, seedState) {
     // Coarse FSRS defaults scaled by reps; the next real review recomputes these from the log.
     row.stability = stage === 'mature' ? 30 : Math.max(1, reps * 2);
     row.difficulty = 5;
+  } else if (seedState.order != null) {
+    // Starting loop: a smaller `order` => an earlier due_at, so getDueBatch's
+    // `ORDER BY due_at ASC NULLS LAST` (Task 6) surfaces these 'new' items first, in sequence
+    // [intro phrase, its words, how-are-you phrase, its words]. The base sits in the past so these
+    // ordered items sort ahead of the engineered review rows (due ~now) and the unordered 'new'
+    // items (null due_at, sorted last). Stage stays 'new' — they are still first-exposure cards.
+    const ORDER_BASE = new Date('2026-06-01T00:00:00Z').getTime();
+    row.due_at = new Date(ORDER_BASE + seedState.order * 60_000).toISOString();
   }
   return row;
 }
