@@ -19,10 +19,18 @@ async function ensureAudioMode(): Promise<void> {
 export class ExpoAudioService implements AudioService {
   private player: AudioPlayer | null = null;
   private playing = false;
+  // Monotonic token: every play()/stop() bumps it. A play() that finds `gen` changed after an
+  // await knows a newer tap superseded it and bails — so two fire-and-forget taps (the device
+  // "multiple voices" bug) can never both create a live player. See ExpoAudioService.test.ts.
+  private gen = 0;
 
   async play(url: string, opts?: { rate?: number }): Promise<void> {
-    await this.stop();
+    const myGen = ++this.gen;
+    // Tear down the previous player SYNCHRONOUSLY, before the first await — so a second tap (which
+    // bumps `gen`) sees a cleared player immediately. Not via stop(): that would bump gen again.
+    this.teardown();
     await ensureAudioMode();
+    if (this.gen !== myGen) return; // a newer tap won the race while we awaited
     const rate = opts?.rate ?? 1.0;
     const player = createAudioPlayer({ uri: url });
     // Pitch-corrected rate: "slow" = native clip at e.g. 0.7× with pitch preserved.
@@ -41,6 +49,15 @@ export class ExpoAudioService implements AudioService {
   }
 
   async stop(): Promise<void> {
+    this.gen++; // cancel any in-flight play() that is mid-await
+    this.teardown();
+  }
+
+  isPlaying(): boolean {
+    return this.playing;
+  }
+
+  private teardown(): void {
     this.playing = false;
     const current = this.player;
     this.player = null;
@@ -51,9 +68,5 @@ export class ExpoAudioService implements AudioService {
         /* already removed */
       }
     }
-  }
-
-  isPlaying(): boolean {
-    return this.playing;
   }
 }
