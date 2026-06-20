@@ -41,7 +41,11 @@ const phrase: ReviewItem = {
   componentLemmaIds: ['labdien', 'es', 'esmu'],
 };
 
-function fakeServices(batch: ReviewItem[], play: jest.Mock): ServiceBundle {
+function fakeServices(
+  batch: ReviewItem[],
+  play: jest.Mock,
+  knownIds: Set<string> = new Set<string>(),
+): ServiceBundle {
   return {
     audio: { play, stop: async () => {}, isPlaying: () => false },
     recorder: { start: async () => {}, stop: async () => 'rec://x', isRecording: () => false },
@@ -50,7 +54,7 @@ function fakeServices(batch: ReviewItem[], play: jest.Mock): ServiceBundle {
       submit: async () => ({ nextReviewLabel: 'Tomorrow' }),
       getDueSummary: async () => ({ newCount: 0, reviewCount: 0 }),
     },
-    known: { has: () => false, all: () => new Set<string>(), refresh: async () => {} },
+    known: { has: (id: string) => knownIds.has(id), all: () => knownIds, refresh: async () => {} },
     progress: { getCoverage: async () => ({ known: 0, total: 1000 }) },
     podcast: { getEpisode: async () => ({ title: 'x', transcript: '', audioUrl: 'x' }) },
   };
@@ -111,4 +115,45 @@ it('locked -> learn 3 words -> unlock -> hear: the hear card actually appears (n
   const after = play.mock.calls.length;
   await settle(() => undefined, 25, 40); // ~1s more with no interaction
   expect(play.mock.calls.length).toBe(after); // no further plays — not looping
+});
+
+// Mirrors the SEEDED golden-slice walk after the Task 5 re-tune: the FIRST unlock the user meets is
+// 'Vienu kafiju, lūdzu.' (ph-kafija). Its components are viens/kafija/ludzu, but viens + kafija are
+// in knownForTestUser, so only ONE word (ludzu) must be learned in-session before the unlock fires.
+// The seed orders ph-kafija(1) -> ludzu(2), so the batch reaching the controller is [phrase, ludzu].
+it('seed walk: ph-kafija locked on one word -> learn ludzu -> unlock fires (single-word path)', async () => {
+  const play = jest.fn(async () => {});
+  const kafijaPhrase: ReviewItem = {
+    id: 'ph-kafija',
+    type: 'phrase',
+    stage: 'new',
+    reps: 0,
+    target: 'Vienu kafiju, lūdzu.',
+    gloss: 'One coffee, please.',
+    audio: { nativeUrl: 'ph-kafija.mp3' },
+    componentLemmaIds: ['viens', 'kafija', 'ludzu'], // viens + kafija pre-known; ludzu is the blocker
+  };
+  const u = render(
+    <ThemeProvider>
+      <ServiceProvider
+        services={fakeServices([kafijaPhrase, word('ludzu')], play, new Set(['viens', 'kafija']))}
+      >
+        <SessionHost onExit={() => undefined} />
+      </ServiceProvider>
+    </ThemeProvider>,
+  );
+
+  // Phrase starts LOCKED — two of three components already known, ludzu still missing.
+  await settle(() => expect(u.getByText('UPCOMING PHRASE')).toBeTruthy());
+  fireEvent.press(u.getByLabelText('Continue')); // gate advance -> re-queue after ludzu
+
+  // Learn the single blocking word.
+  await settle(() => expect(u.getByText('ludzu')).toBeTruthy());
+  const continues = u.getAllByText('Continue');
+  fireEvent.press(continues[continues.length - 1]);
+
+  // All three components now known -> the one-time unlock reveal (the chime card) fires...
+  await settle(() => expect(u.getByText('PHRASE UNLOCKED')).toBeTruthy());
+  // ...and flows into hearing the new phrase, exactly as the multi-word loop does.
+  await settle(() => expect(u.getByText('NEW PHRASE')).toBeTruthy());
 });

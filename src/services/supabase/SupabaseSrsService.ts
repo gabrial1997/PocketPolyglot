@@ -70,7 +70,12 @@ export class SupabaseSrsService implements SrsService {
       .select('*')
       .eq('user_id', this.userId)
       .or(`due_at.lte.${nowIso},stage.eq.new`)
-      .order('due_at', { ascending: true, nullsFirst: false });
+      .order('due_at', { ascending: true, nullsFirst: false })
+      // Secondary key: NEW items share a NULL due_at, so without a tiebreak Postgres returns them in
+      // an indeterminate order — the seeded starting loop scatters. item_id is stable + deterministic
+      // and the seed assigns ids so this matches the intended curriculum order. (Spec #26: full
+      // freq/unique-sound ranking later.)
+      .order('item_id', { ascending: true });
     if (error) throw error;
 
     let rows: ReviewStateRow[] = states ?? [];
@@ -170,6 +175,18 @@ export class SupabaseSrsService implements SrsService {
         items.push(pairRowToReviewItem(row, stateByKey.get(`pair:${row.id}`)));
       }
     }
+
+    // Restore curriculum order. The per-type fetch+push above regroups items by type (all lemmas,
+    // then all phrases, then all pairs) — losing the due_at order from `rows`. Re-sort items into the
+    // `rows` sequence so a seeded walk interleaves correctly: a locked phrase, then its component
+    // word cards, then (once re-queued) its unlock — instead of every word, then every phrase.
+    const orderOf = new Map<string, number>();
+    rows.forEach((s, i) => orderOf.set(`${s.item_type}:${s.item_id}`, i));
+    items.sort(
+      (a, b) =>
+        (orderOf.get(`${itemTypeToDbType(a.type)}:${a.id}`) ?? rows.length) -
+        (orderOf.get(`${itemTypeToDbType(b.type)}:${b.id}`) ?? rows.length),
+    );
 
     // Attach the REAL projected next-review labels (pass = Good, miss = Again) from each item's
     // live FSRS state, so result-stage cards show the true interval instead of a fabricated one.

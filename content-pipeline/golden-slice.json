@@ -1,9 +1,9 @@
 {
   "voice": "alloy",
-  "_note": "knownForTestUser is engineered so 'Vienu kafiju, lūdzu.' (components viens, kafija, ludzu) starts LOCKED: kafija + ludzu both unknown = 2 (i+1 rule: locked when >=2 unknown). Learning kafija in-session drops it to 1 unknown (ludzu) => AVAILABLE = the unlock. The known set equals the review-stage words (viens/maja/labs/suns); all stage:new words (kafija/ludzu/brivs) are unknown. NOTE: the live in-session 'phrase/unlock' reveal additionally requires a batch reload because the known-set is only refreshed on reload (the in-session known-set mutation + re-queue is out of this slice's scope, per Task 5) — Task 14 verifies locked-at-start directly and the unlock after reload.",
+  "_note": "STRICT gate: a phrase is LOCKED while ANY component is unknown and unlocks only when ALL are known (starting-loop Task 1). The seed is engineered so the FIRST unlock in the walk is the simplest one — 'Vienu kafiju, lūdzu.' (ph-kafija, components viens/kafija/ludzu). viens + kafija are in knownForTestUser (forced review-stage = known), so ludzu is the SOLE unknown: ph-kafija starts locked, and learning ludzu in-session flips it to all-known, firing the live 'phrase/unlock' overlay + chime. The cluster is ordered ph-kafija(order 1) -> ludzu(order 2) so the locked phrase is met immediately, its one blocking word is taught next, then the in-session working-queue re-queues ph-kafija for its unlock — no unrelated cards between. The other two loops follow: ph-intro(order 3) -> labdien/es/esmu(4-6), ph-howareyou(order 7) -> ka/tev/iet(8-10). The live unlock comes from the in-session working-queue + known-set mutation (starting-loop Task 3), NOT a batch reload. seedState.order maps to a due_at offset for stage:new items only; getDueBatch sorts by due_at then item_id and re-sorts the per-type-fetched items back into that order (SupabaseSrsService Task 5 / card-polish Task 5), so the seeded sequence survives to the card order.",
   "lemmas": [
     { "slug": "maja",  "lemma": "māja",  "gloss": "house",  "wordClass": "concrete", "pron": "MAH-ya", "media": "placeholder", "seedState": { "stage": "review", "reps": 1 } },
-    { "slug": "kafija","lemma": "kafija","gloss": "coffee", "wordClass": "concrete", "pron": "KAH-fee-ya", "media": "placeholder", "seedState": { "stage": "new", "reps": 0 } },
+    { "slug": "kafija","lemma": "kafija","gloss": "coffee", "wordClass": "concrete", "pron": "KAH-fee-ya", "media": "placeholder", "seedState": { "stage": "review", "reps": 1 } },
     { "slug": "suns",  "lemma": "suns",  "gloss": "dog",    "wordClass": "concrete", "pron": "soons" },
     { "slug": "udens", "lemma": "ūdens", "gloss": "water",  "wordClass": "concrete", "pron": "OO-dens" },
     { "slug": "galds", "lemma": "galds", "gloss": "table",  "wordClass": "concrete", "pron": "galds" },
@@ -12,29 +12,29 @@
     { "slug": "labs",  "lemma": "labs",  "gloss": "good",   "wordClass": "abstract", "pron": "labs", "seedState": { "stage": "review", "reps": 1 } },
     { "slug": "liels", "lemma": "liels", "gloss": "big",    "wordClass": "abstract", "pron": "LYELS" },
     { "slug": "mazs",  "lemma": "mazs",  "gloss": "small",  "wordClass": "abstract", "pron": "mazs" },
-    { "slug": "ludzu", "lemma": "lūdzu", "gloss": "please", "wordClass": "function", "pron": "LOO-dzu", "examples": [ { "pre": "", "w": "Lūdzu", "post": ", nāc.", "en": "Please, come." } ], "seedState": { "stage": "new", "reps": 0 } },
+    { "slug": "ludzu", "lemma": "lūdzu", "gloss": "please", "wordClass": "function", "pron": "LOO-dzu", "examples": [ { "pre": "", "w": "Lūdzu", "post": ", nāc.", "en": "Please, come." } ], "seedState": { "stage": "new", "reps": 0, "order": 2 } },
     { "slug": "viens", "lemma": "viens", "gloss": "one",    "wordClass": "function", "pron": "VEE-ens", "seedState": { "stage": "review", "reps": 3 } },
     { "slug": "un",    "lemma": "un",    "gloss": "and",    "wordClass": "function", "pron": "oon" },
     { "slug": "ne",    "lemma": "nē",    "gloss": "no",     "wordClass": "function", "pron": "neh" },
 
-    { "slug": "labdien", "lemma": "labdien", "gloss": "hello", "wordClass": "function", "pron": "LAHB-dyen", "seedState": { "stage": "new", "reps": 0, "order": 2 } },
-    { "slug": "es",      "lemma": "es",      "gloss": "I",     "wordClass": "function", "pron": "ess",     "seedState": { "stage": "new", "reps": 0, "order": 3 } },
-    { "slug": "esmu",    "lemma": "esmu",    "gloss": "am",    "wordClass": "function", "pron": "ES-moo",  "seedState": { "stage": "new", "reps": 0, "order": 4 } },
-    { "slug": "ka",      "lemma": "kā",      "gloss": "how",   "wordClass": "function", "pron": "kah",     "seedState": { "stage": "new", "reps": 0, "order": 7 } },
-    { "slug": "tev",     "lemma": "tev",     "gloss": "you",   "wordClass": "function", "pron": "tev",     "seedState": { "stage": "new", "reps": 0, "order": 8 } },
-    { "slug": "iet",     "lemma": "iet",     "gloss": "to go", "wordClass": "function", "pron": "ee-ET",   "seedState": { "stage": "new", "reps": 0, "order": 9 } }
+    { "slug": "labdien", "lemma": "labdien", "gloss": "hello", "wordClass": "function", "pron": "LAHB-dyen", "seedState": { "stage": "new", "reps": 0, "order": 4 } },
+    { "slug": "es",      "lemma": "es",      "gloss": "I",     "wordClass": "function", "pron": "ess",     "seedState": { "stage": "new", "reps": 0, "order": 5 } },
+    { "slug": "esmu",    "lemma": "esmu",    "gloss": "am",    "wordClass": "function", "pron": "ES-moo",  "seedState": { "stage": "new", "reps": 0, "order": 6 } },
+    { "slug": "ka",      "lemma": "kā",      "gloss": "how",   "wordClass": "function", "pron": "kah",     "seedState": { "stage": "new", "reps": 0, "order": 8 } },
+    { "slug": "tev",     "lemma": "tev",     "gloss": "you",   "wordClass": "function", "pron": "tev",     "seedState": { "stage": "new", "reps": 0, "order": 9 } },
+    { "slug": "iet",     "lemma": "iet",     "gloss": "to go", "wordClass": "function", "pron": "ee-ET",   "seedState": { "stage": "new", "reps": 0, "order": 10 } }
   ],
   "phrases": [
     { "slug": "ph-ludzu",  "target": "Lūdzu.",                "gloss": "Please.",            "components": ["ludzu"],               "seedState": { "stage": "new", "reps": 0 } },
     { "slug": "ph-labs-suns","target": "Labs suns.",          "gloss": "Good dog.",          "components": ["labs","suns"],         "seedState": { "stage": "learning", "reps": 1 } },
-    { "slug": "ph-kafija", "target": "Vienu kafiju, lūdzu.",  "gloss": "One coffee, please.","components": ["viens","kafija","ludzu"], "seedState": { "stage": "review", "reps": 2 } },
+    { "slug": "ph-kafija", "target": "Vienu kafiju, lūdzu.",  "gloss": "One coffee, please.","components": ["viens","kafija","ludzu"], "seedState": { "stage": "new", "reps": 0, "order": 1 } },
 
-    { "slug": "ph-intro",     "target": "Labdien, es esmu ___.", "gloss": "Hello, I am ___.", "components": ["labdien","es","esmu"], "seedState": { "stage": "new", "reps": 0, "order": 1 } },
-    { "slug": "ph-howareyou", "target": "Kā tev iet?",           "gloss": "How are you?",    "components": ["ka","tev","iet"],      "seedState": { "stage": "new", "reps": 0, "order": 6 } }
+    { "slug": "ph-intro",     "target": "Labdien, es esmu ___.", "gloss": "Hello, I am ___.", "components": ["labdien","es","esmu"], "seedState": { "stage": "new", "reps": 0, "order": 3 } },
+    { "slug": "ph-howareyou", "target": "Kā tev iet?",           "gloss": "How are you?",    "components": ["ka","tev","iet"],      "seedState": { "stage": "new", "reps": 0, "order": 7 } }
   ],
   "drills": [
     { "slug": "drill-loti", "target": "ļoti", "gloss": "very", "pron": "LYO-tee", "a": "lācis", "b": "ļoti", "correct": "b", "contrastType": "palatalization" },
     { "slug": "drill-lieta","target": "lieta","gloss": "thing","pron": "LYEH-ta","a": "lieta","b": "lēta","correct": "a","contrastType": "diphthong", "glide": { "combo": "ie", "from": "i", "to": "e" } }
   ],
-  "knownForTestUser": ["viens", "maja", "labs", "suns"]
+  "knownForTestUser": ["viens", "kafija", "maja", "labs", "suns"]
 }
