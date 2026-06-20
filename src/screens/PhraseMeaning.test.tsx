@@ -129,4 +129,17 @@ describe('PhraseMeaning', () => {
     const u = renderCard({ choices: [] });
     expect(u.queryByText('Good morning!')).toBeNull();
   });
+
+  it('reveals the literal reading + usage note once solved', () => {
+    const u = renderCard({ literal: 'good-morning!', usageNote: 'said before noon' });
+    fireEvent.press(u.getByText('Good morning!')); // correct
+    expect(u.getByText('said before noon')).toBeTruthy(); // usage note as the feedback line
+    expect(u.getByText(/good-morning!/)).toBeTruthy(); // literal reading via LiteralNote
+  });
+
+  it('falls back to the generic idiom feedback when no usage note is authored', () => {
+    const u = renderCard();
+    fireEvent.press(u.getByText('Good morning!'));
+    expect(u.getByText('That’s it — the words don’t add up literally.')).toBeTruthy();
+  });
 });

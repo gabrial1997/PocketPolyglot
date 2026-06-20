@@ -11,18 +11,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, ChoiceButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, CtaButton } from '../components';
-import { PromptText } from '../components/cardChrome';
+import { PromptText, LiteralNote } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import type { ChoiceCardProps } from './cardProps';
-import type { ReviewItem } from '../types/reviewItem';
-
-// Optional additive field: the literal word-for-word gloss shown once the idiom is understood.
-type MeaningExtra = { literalNote?: string };
 
 export function PhraseMeaning({ item, onPlay, onAnswer, onComplete, speed, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
   const T = useTheme();
-  const x = item as ReviewItem & MeaningExtra;
   const { playing, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const [wrongValue, setWrongValue] = useState<string | null>(null);
   const [correctValue, setCorrectValue] = useState<string | null>(null);
@@ -37,8 +32,10 @@ export function PhraseMeaning({ item, onPlay, onAnswer, onComplete, speed, onSpe
   };
 
   const solved = correctValue !== null;
+  // Once solved, the usage note (the functional "what it really means" nuance) becomes the
+  // feedback line; the literal word-for-word reading is shown below it via LiteralNote.
   const feedback = solved
-    ? (x.literalNote ?? 'That’s it — the words don’t add up literally.')
+    ? (item.usageNote ?? 'That’s it — the words don’t add up literally.')
     : wrongValue
       ? 'Not quite — give it another try.'
       : '';
@@ -82,6 +79,8 @@ export function PhraseMeaning({ item, onPlay, onAnswer, onComplete, speed, onSpe
         </View>
 
         <Text style={[styles.feedback, { color: solved ? T.sub : T.record }]}>{feedback}</Text>
+        {/* literal word-for-word reading, revealed once the idiom is solved (usage note shown above) */}
+        {solved ? <LiteralNote literal={item.literal} usageNote={undefined} /> : null}
       </View>
 
       <View style={styles.footer}>
