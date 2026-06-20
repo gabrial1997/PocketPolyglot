@@ -12,15 +12,15 @@
     { "slug": "labs",  "lemma": "labs",  "gloss": "good",   "wordClass": "abstract", "pron": "labs", "seedState": { "stage": "review", "reps": 1 } },
     { "slug": "liels", "lemma": "liels", "gloss": "big",    "wordClass": "abstract", "pron": "LYELS" },
     { "slug": "mazs",  "lemma": "mazs",  "gloss": "small",  "wordClass": "abstract", "pron": "mazs" },
-    { "slug": "ludzu", "lemma": "lūdzu", "gloss": "please", "wordClass": "function", "pron": "LOO-dzu", "examples": [ { "pre": "", "w": "Lūdzu", "post": ", nāc.", "en": "Please, come." } ], "seedState": { "stage": "new", "reps": 0, "order": 2 } },
+    { "slug": "ludzu", "lemma": "lūdzu", "gloss": "please", "wordClass": "function", "pron": "LOO-dzu", "literal": "I ask / beg", "usageNote": "Means \"please\" — and \"you're welcome\" when replying to thanks.", "examples": [ { "pre": "", "w": "Lūdzu", "post": ", nāc.", "en": "Please, come." } ], "seedState": { "stage": "new", "reps": 0, "order": 2 } },
     { "slug": "viens", "lemma": "viens", "gloss": "one",    "wordClass": "function", "pron": "VEE-ens", "seedState": { "stage": "review", "reps": 3 } },
     { "slug": "un",    "lemma": "un",    "gloss": "and",    "wordClass": "function", "pron": "oon" },
     { "slug": "ne",    "lemma": "nē",    "gloss": "no",     "wordClass": "function", "pron": "neh" },
 
-    { "slug": "labdien", "lemma": "labdien", "gloss": "hello", "wordClass": "function", "pron": "LAHB-dyen", "seedState": { "stage": "new", "reps": 0, "order": 4 } },
+    { "slug": "labdien", "lemma": "labdien", "gloss": "good day", "wordClass": "function", "pron": "LAHB-dyen", "seedState": { "stage": "new", "reps": 0, "order": 4 } },
     { "slug": "es",      "lemma": "es",      "gloss": "I",     "wordClass": "function", "pron": "ess",     "seedState": { "stage": "new", "reps": 0, "order": 5 } },
     { "slug": "esmu",    "lemma": "esmu",    "gloss": "am",    "wordClass": "function", "pron": "ES-moo",  "seedState": { "stage": "new", "reps": 0, "order": 6 } },
-    { "slug": "ka",      "lemma": "kā",      "gloss": "how",   "wordClass": "function", "pron": "kah",     "seedState": { "stage": "new", "reps": 0, "order": 8 } },
+    { "slug": "ka",      "lemma": "kā",      "gloss": "how",   "wordClass": "function", "pron": "kah",     "literal": "like / as", "usageNote": "Used to ask \"how\" — as in Kā tev iet? (How are you?).", "seedState": { "stage": "new", "reps": 0, "order": 8 } },
     { "slug": "tev",     "lemma": "tev",     "gloss": "you",   "wordClass": "function", "pron": "tev",     "seedState": { "stage": "new", "reps": 0, "order": 9 } },
     { "slug": "iet",     "lemma": "iet",     "gloss": "to go", "wordClass": "function", "pron": "ee-ET",   "seedState": { "stage": "new", "reps": 0, "order": 10 } }
   ],
@@ -29,8 +29,8 @@
     { "slug": "ph-labs-suns","target": "Labs suns.",          "gloss": "Good dog.",          "components": ["labs","suns"],         "seedState": { "stage": "learning", "reps": 1 } },
     { "slug": "ph-kafija", "target": "Vienu kafiju, lūdzu.",  "gloss": "One coffee, please.","components": ["viens","kafija","ludzu"], "seedState": { "stage": "new", "reps": 0, "order": 1 } },
 
-    { "slug": "ph-intro",     "target": "Labdien, es esmu ___.", "gloss": "Hello, I am ___.", "components": ["labdien","es","esmu"], "seedState": { "stage": "new", "reps": 0, "order": 3 } },
-    { "slug": "ph-howareyou", "target": "Kā tev iet?",           "gloss": "How are you?",    "components": ["ka","tev","iet"],      "seedState": { "stage": "new", "reps": 0, "order": 7 } }
+    { "slug": "ph-intro",     "target": "Labdien, es esmu ___.", "gloss": "Good day, I am ___.", "components": ["labdien","es","esmu"], "seedState": { "stage": "new", "reps": 0, "order": 3 } },
+    { "slug": "ph-howareyou", "target": "Kā tev iet?",           "gloss": "How are you?",    "components": ["ka","tev","iet"],      "literal": "how to-you goes?", "usageNote": "Everyday \"How are you?\"", "seedState": { "stage": "new", "reps": 0, "order": 7 } }
   ],
   "drills": [
     { "slug": "drill-loti", "target": "ļoti", "gloss": "very", "pron": "LYO-tee", "a": "lācis", "b": "ļoti", "correct": "b", "contrastType": "palatalization" },

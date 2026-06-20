@@ -268,6 +268,9 @@ async function seed(manifest, db, envelopes, client, voice) {
     if (l.media && typeof l.media === 'object') row.media = l.media;
     if (l.mnemonic) row.mnemonic = l.mnemonic;
     if (l.examples) row.examples = l.examples;
+    // literal/usage note (0008) — only where the literal reading differs from the functional gloss.
+    if (l.literal) row.literal_gloss = l.literal;
+    if (l.usageNote) row.usage_note = l.usageNote;
 
     const { data, error } = await db.from('lemmas').insert(row).select('id').single();
     if (error) throw error;
@@ -281,6 +284,8 @@ async function seed(manifest, db, envelopes, client, voice) {
   for (const p of manifest.phrases) {
     const audioUrl = await uploadOne(p.slug, 'native');
     const phraseRow = { target: p.target, gloss_en: p.gloss, audio_url: audioUrl, qa_status: SEED_QA_STATUS };
+    if (p.literal) phraseRow.literal_gloss = p.literal;
+    if (p.usageNote) phraseRow.usage_note = p.usageNote;
     const phraseEnv = envelopeFor(p.slug);
     if (phraseEnv) phraseRow.envelope = phraseEnv;
     const { data, error } = await db.from('phrases').insert(phraseRow).select('id').single();
