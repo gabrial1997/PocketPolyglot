@@ -9,7 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, SpeedChip, LiveWaveform, CtaButton, usePlayClip, clipMs, FRAME_MS } from '../components';
-import { CardIcon, Eyebrow, PhraseLine } from '../components/cardChrome';
+import { CardIcon, Eyebrow, PhraseLine, LiteralNote } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import type { BaseCardProps } from './cardProps';
@@ -52,6 +52,12 @@ export function PhraseHear({ item, onPlay, onComplete, speed, onSpeedChange }: B
             <Text style={{ fontFamily: fonts.headline, fontWeight: '600', color: T.primary }}>{x.newLemma ?? x.newForm}</Text>
             {x.newForm ? `, here as “${x.newForm}”` : ''}
           </Text>
+        ) : null}
+
+        {item.literal ? (
+          <View style={{ marginTop: 14 }}>
+            <LiteralNote literal={item.literal} usageNote={item.usageNote} />
+          </View>
         ) : null}
 
         {/* audio hero */}

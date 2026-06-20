@@ -81,4 +81,15 @@ describe('PhraseHear', () => {
     });
     expect(u.props.onPlay).toHaveBeenCalledTimes(2); // repeats it, exactly once
   });
+
+  it('shows the literal/usage note when the phrase carries one', () => {
+    const u = renderCard({ literal: 'how to-you goes?', usageNote: 'everyday "How are you?"' });
+    expect(u.getByText(/how to-you goes\?/)).toBeTruthy();
+    expect(u.getByText('everyday "How are you?"')).toBeTruthy();
+  });
+
+  it('shows no literal note when the phrase has none', () => {
+    const u = renderCard();
+    expect(u.queryByText(/Literally:/)).toBeNull();
+  });
 });
