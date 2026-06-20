@@ -35,6 +35,9 @@ export interface LemmaRow {
   semantic_field: string | null;
   phonetic_key: string | null;
   qa_status: 'draft' | 'native_ok' | 'locked';
+  // Literal/usage note (0008): the literal reading + a freeform usage nuance. Both null unless authored.
+  literal_gloss: string | null;
+  usage_note: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -50,6 +53,9 @@ export interface PhraseRow {
   is_idiom: boolean;
   seed: string | null;
   qa_status: 'draft' | 'native_ok' | 'locked';
+  // Literal/usage note (0008): the literal reading + a freeform usage nuance. Both null unless authored.
+  literal_gloss: string | null;
+  usage_note: string | null;
   created_at: string;
 }
 

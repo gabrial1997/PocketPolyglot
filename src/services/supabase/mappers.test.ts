@@ -37,6 +37,8 @@ function lemma(overrides: Partial<LemmaRow> = {}): LemmaRow {
     semantic_field: 'dwelling',
     phonetic_key: 'mja',
     qa_status: 'locked',
+    literal_gloss: null,
+    usage_note: null,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     ...overrides,
@@ -53,6 +55,8 @@ function phrase(overrides: Partial<PhraseRow> = {}): PhraseRow {
     is_idiom: false,
     seed: null,
     qa_status: 'locked',
+    literal_gloss: null,
+    usage_note: null,
     created_at: '2026-01-01T00:00:00Z',
     ...overrides,
   };
@@ -153,6 +157,18 @@ describe('lemmaRowToReviewItem', () => {
     expect(item.mnemonic).toBeUndefined();
     expect(item.examples).toBeUndefined();
   });
+
+  it('maps literal_gloss + usage_note onto literal + usageNote', () => {
+    const item = lemmaRowToReviewItem(lemma({ literal_gloss: 'like / as', usage_note: 'used as "how"' }));
+    expect(item.literal).toBe('like / as');
+    expect(item.usageNote).toBe('used as "how"');
+  });
+
+  it('leaves literal + usageNote undefined when the columns are null', () => {
+    const item = lemmaRowToReviewItem(lemma({ literal_gloss: null, usage_note: null }));
+    expect(item.literal).toBeUndefined();
+    expect(item.usageNote).toBeUndefined();
+  });
 });
 
 // --- phraseRowToReviewItem --------------------------------------------------
@@ -192,6 +208,18 @@ describe('phraseRowToReviewItem', () => {
   it('maps is_idiom onto isIdiom', () => {
     expect(phraseRowToReviewItem(phrase({ is_idiom: true })).isIdiom).toBe(true);
     expect(phraseRowToReviewItem(phrase({ is_idiom: false })).isIdiom).toBe(false);
+  });
+
+  it('maps literal_gloss + usage_note onto literal + usageNote', () => {
+    const item = phraseRowToReviewItem(phrase({ literal_gloss: 'how to-you goes?', usage_note: 'everyday greeting' }));
+    expect(item.literal).toBe('how to-you goes?');
+    expect(item.usageNote).toBe('everyday greeting');
+  });
+
+  it('leaves literal + usageNote undefined when the columns are null', () => {
+    const item = phraseRowToReviewItem(phrase({ literal_gloss: null, usage_note: null }));
+    expect(item.literal).toBeUndefined();
+    expect(item.usageNote).toBeUndefined();
   });
 });
 

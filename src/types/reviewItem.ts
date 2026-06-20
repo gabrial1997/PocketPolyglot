@@ -83,7 +83,11 @@ export interface ReviewItem {
   newLemma?: string;
   lockLemma?: string;
   lockRemaining?: number;
-  literalNote?: string;
+
+  // literal/actual notes (optional, presentational) — surfaced only where the literal reading
+  // differs from the functional gloss. literal = the word-for-word reading; usageNote = nuance.
+  literal?: string;
+  usageNote?: string;
 
   // Real projected next-review labels for this card's two outcomes (pass = a Good rating, miss = an
   // Again rating), computed from the live FSRS state by the SRS service so result notes show the

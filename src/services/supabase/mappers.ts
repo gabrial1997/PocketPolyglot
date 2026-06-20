@@ -56,6 +56,8 @@ export function lemmaRowToReviewItem(
   if (row.media) item.media = row.media;
   if (row.mnemonic) item.mnemonic = row.mnemonic;
   if (row.examples) item.examples = row.examples;
+  if (row.literal_gloss) item.literal = row.literal_gloss;
+  if (row.usage_note) item.usageNote = row.usage_note;
   return item;
 }
 
@@ -65,7 +67,7 @@ export function phraseRowToReviewItem(
   reviewState?: Pick<ReviewStateRow, 'stage' | 'reps'>,
 ): ReviewItem {
   const { stage, reps } = stageAndReps(reviewState);
-  return {
+  const item: ReviewItem = {
     id: row.id,
     type: 'phrase',
     stage,
@@ -78,6 +80,9 @@ export function phraseRowToReviewItem(
       ...(row.envelope ? { envelope: row.envelope } : {}),
     },
   };
+  if (row.literal_gloss) item.literal = row.literal_gloss;
+  if (row.usage_note) item.usageNote = row.usage_note;
+  return item;
 }
 
 /** minimal-pair row -> ReviewItem (type:'pair'). */
