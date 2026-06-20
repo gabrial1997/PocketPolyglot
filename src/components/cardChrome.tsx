@@ -249,8 +249,8 @@ export function SessionTop({ step, total, onClose }: { step: number; total: numb
   const pct = total > 0 ? Math.max(0, Math.min(1, step / total)) : 0;
   return (
     <View style={chrome.stRow}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Close session" hitSlop={8} onPress={onClose} style={[chrome.stClose, { backgroundColor: T.dark ? 'rgba(255,255,255,0.06)' : 'rgba(26,39,51,0.05)' }]}>
-        <CardIcon name="close" size={17} color={T.sub} />
+      <Pressable accessibilityRole="button" accessibilityLabel="Close session" hitSlop={8} onPress={onClose} style={[chrome.stClose, { backgroundColor: T.dark ? 'rgba(255,255,255,0.12)' : 'rgba(26,39,51,0.10)', borderColor: T.hair }]}>
+        <CardIcon name="close" size={17} color={T.ink} />
       </Pressable>
       <View style={[chrome.stTrack, { backgroundColor: T.dark ? 'rgba(255,255,255,0.09)' : 'rgba(26,39,51,0.08)' }]}>
         <View style={[chrome.stFill, { backgroundColor: T.primary, width: `${pct * 100}%` as DimensionValue }]} />
@@ -288,7 +288,7 @@ const chrome = StyleSheet.create({
   gridCell: { flexBasis: '47%', flexGrow: 1, minHeight: 52, borderRadius: 16, borderWidth: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', columnGap: 7, paddingHorizontal: 12 },
   gridWord: { fontSize: 19, fontWeight: '500' },
   stRow: { flexDirection: 'row', alignItems: 'center', columnGap: 14 },
-  stClose: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  stClose: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
   stTrack: { flex: 1, height: 4, borderRadius: 99, overflow: 'hidden' },
   stFill: { height: 4, borderRadius: 99 },
   stLabel: { fontSize: 13, fontWeight: '600', minWidth: 36, textAlign: 'right' },

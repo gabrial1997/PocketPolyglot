@@ -1,8 +1,8 @@
 // App root + minimal stack. Wraps everything in ThemeProvider + ServiceProvider and renders a
 // simple two-route stack (home -> session). A real navigator (react-navigation/expo-router) can
 // replace this; the load-bearing piece is the CARD_REGISTRY keyed by stable CardKind strings.
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Platform, SafeAreaView } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Platform, SafeAreaView, Animated, AccessibilityInfo } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import type { User } from '@supabase/supabase-js';
@@ -118,9 +118,40 @@ function SessionPlaceholder({ label }: { label?: string }): React.JSX.Element {
 }
 
 /** SessionHost — pulls the controller state and mounts the card for the current item. */
+const EXIT_FADE_MS = 200;
+
 export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Element {
   const session = useSession();
   const finished = !session.loading && (session.done || !session.current);
+
+  // Exit fade: leaving via the X shouldn't be an abrupt cut. Fade the whole session out, then hand
+  // back to home. Reduced motion / the finished-bounce skip the animation. (Probe + timer-commit
+  // pattern mirrors GlideViewport/StageFade — the Animated callback is unreliable under fake timers.)
+  const exitOpacity = useRef(new Animated.Value(1)).current;
+  const reduceMotion = useRef(false);
+  const closing = useRef(false); // guard: a double-tap during the fade must not fire onExit twice
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled?.()
+      .then((on) => {
+        reduceMotion.current = !!on;
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleClose = useCallback(() => {
+    if (closing.current) return;
+    closing.current = true;
+    if (reduceMotion.current) {
+      onExit();
+      return;
+    }
+    Animated.timing(exitOpacity, {
+      toValue: 0,
+      duration: EXIT_FADE_MS,
+      useNativeDriver: Platform.OS !== 'web',
+    }).start();
+    setTimeout(onExit, EXIT_FADE_MS + 20);
+  }, [exitOpacity, onExit]);
 
   // Empty batch / finished — bounce back to home in an effect, never via setState during render.
   useEffect(() => {
@@ -133,7 +164,7 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
   if (!session.current) return <SessionPlaceholder />; // also narrows current for the card below
 
   return (
-    <View style={styles.sessionShell}>
+    <Animated.View style={[styles.sessionShell, { opacity: exitOpacity }]}>
       {/* GlideViewport owns "remount per CARD encounter": keyed off item id + kind, it freezes the
           leaving card and glides in the entering one, so per-card ephemeral state (stage, first-try
           miss, recording buffer) resets when the committed card changes. The kind MUST be part of
@@ -154,10 +185,10 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
           close button captures them. */}
       <SafeAreaView style={styles.sessionTopOverlay} pointerEvents="box-none">
         <View style={styles.sessionTopInner} pointerEvents="box-none">
-          <SessionTop step={session.step} total={session.total} onClose={onExit} />
+          <SessionTop step={session.step} total={session.total} onClose={handleClose} />
         </View>
       </SafeAreaView>
-    </View>
+    </Animated.View>
   );
 }
 

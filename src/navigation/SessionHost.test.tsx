@@ -7,10 +7,12 @@
 // effects on a macrotask, so microtask-only flushing can starve the async data load under CI load
 // (an earlier version did exactly that and was flaky). Real ticks + a bounded deadline are robust.
 import React from 'react';
-import { render, fireEvent, act } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { render, fireEvent, act, within } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { SessionHost } from './index';
+import { CardIcon } from '../components/cardChrome';
 import { CONFIRM_MS } from '../screens/useLoopStage';
 import type { ServiceBundle } from '../services';
 import type { ReviewItem } from '../types/reviewItem';
@@ -127,6 +129,29 @@ it('starts each item fresh — stage/miss/recording do not leak across cards', a
     expect(u.queryByText('Continue')).toBeNull();
     expect(u.queryByText('māja')).toBeNull(); // item A's content is gone after the transition
   });
+});
+
+it('renders the exit X high-contrast — ink icon on a bumped chip, not a faint sub-tone', async () => {
+  const u = renderHost([itemA, itemB]);
+  await settle(() => expect(u.getByText('māja')).toBeTruthy());
+
+  const close = u.getByLabelText('Close session'); // default ThemeProvider resolves to light in jest
+  const bg = StyleSheet.flatten(close.props.style).backgroundColor;
+  expect(bg).toBe('rgba(26,39,51,0.10)'); // bumped from the old near-invisible 0.05
+
+  const icon = within(close).UNSAFE_getByType(CardIcon);
+  expect(icon.props.color).toBe('#1A2733'); // T.ink — full-contrast, not the ~58% T.sub it was
+  expect(icon.props.color).not.toBe('rgba(26,39,51,0.58)'); // not T.sub
+});
+
+it('pressing the exit X returns to home (after a brief fade), exactly once', async () => {
+  const onExit = jest.fn();
+  const u = renderHost([itemA, itemB], onExit);
+  await settle(() => expect(u.getByText('māja')).toBeTruthy());
+
+  fireEvent.press(u.getByLabelText('Close session'));
+  // The fade-out commits onExit on a short timer (real timers here) — settle() covers the window.
+  await settle(() => expect(onExit).toHaveBeenCalledTimes(1));
 });
 
 it('bounces to home on an empty batch — via effect, not the misleading prog screen', async () => {
