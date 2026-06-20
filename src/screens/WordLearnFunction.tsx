@@ -4,7 +4,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS } from '../components';
-import { Eyebrow, WordTag, WordHero, GlossLine, Caption, FootNote, CardBody, CardFooter, HeadRow, ExampleRow, wordTagFor } from '../components/cardChrome';
+import { Eyebrow, WordTag, WordHero, GlossLine, Caption, FootNote, CardBody, CardFooter, HeadRow, ExampleRow, LiteralNote, wordTagFor } from '../components/cardChrome';
 import type { BaseCardProps } from './cardProps';
 
 export function WordLearnFunction({ item, onPlay, onComplete, speed, onSpeedChange }: BaseCardProps): React.JSX.Element {
@@ -20,6 +20,7 @@ export function WordLearnFunction({ item, onPlay, onComplete, speed, onSpeedChan
         </HeadRow>
         <WordHero size={52}>{item.target}</WordHero>
         <GlossLine gloss={item.gloss} pron={item.pron} size={17} />
+        <LiteralNote literal={item.literal} usageNote={item.usageNote} />
         <View style={styles.examples}>
           {(item.examples ?? []).map((ex, i) => (
             <ExampleRow key={i} pre={ex.pre} w={ex.w} post={ex.post} en={ex.en} onPress={() => onPlay(i)} />

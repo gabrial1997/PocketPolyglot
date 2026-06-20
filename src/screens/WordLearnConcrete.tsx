@@ -5,7 +5,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS } from '../components';
-import { Eyebrow, WordTag, WordHero, GlossLine, Caption, FootNote, CardBody, CardFooter, HeadRow, wordTagFor } from '../components/cardChrome';
+import { Eyebrow, WordTag, WordHero, GlossLine, Caption, FootNote, CardBody, CardFooter, HeadRow, LiteralNote, wordTagFor } from '../components/cardChrome';
 import { CardImage } from './CardImage';
 import type { BaseCardProps } from './cardProps';
 
@@ -23,6 +23,7 @@ export function WordLearnConcrete({ item, onPlay, onComplete, speed, onSpeedChan
         <CardImage media={item.media} word={item.target} full height={180} />
         <WordHero size={52}>{item.target}</WordHero>
         <GlossLine gloss={item.gloss} pron={item.pron} size={17} />
+        <LiteralNote literal={item.literal} usageNote={item.usageNote} />
         <View style={styles.audio}>
           <View style={styles.wave}>
             <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={44} count={36} />

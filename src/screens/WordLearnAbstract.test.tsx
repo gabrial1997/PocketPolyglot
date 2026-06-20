@@ -59,4 +59,15 @@ describe('WordLearnAbstract', () => {
       spoke: false,
     });
   });
+
+  it('shows the literal/usage note when the item carries one', () => {
+    const u = renderCard({ literal: 'like / as', usageNote: 'used as "how"' });
+    expect(u.getByText(/like \/ as/)).toBeTruthy();
+    expect(u.getByText('used as "how"')).toBeTruthy();
+  });
+
+  it('shows no literal note when the item has none', () => {
+    const u = renderCard();
+    expect(u.queryByText(/Literally:/)).toBeNull();
+  });
 });
