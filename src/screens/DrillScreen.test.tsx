@@ -2,6 +2,7 @@
 // (data-in/events-out), so we render it with a fixture ReviewItem and jest.fn callbacks and
 // assert the events it emits — no services, per BACKEND_INTEGRATION §1/§4.
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { DrillScreen } from './DrillScreen';
@@ -104,6 +105,15 @@ describe('DrillScreen', () => {
       expect(glyph.props.numberOfLines).toBe(1);
       expect(glyph.props.adjustsFontSizeToFit).toBe(true);
     }
+  });
+
+  it('gives the glyph vertical headroom so a top macron (ā/ī/ū) is never cropped by the line box', () => {
+    // Device-walk: lācis rendered with the macron over ā sliced off. lineHeight === fontSize leaves
+    // no room above the cap height for top diacritics; adjustsFontSizeToFit only fits width. The
+    // glyph must reserve vertical headroom (lineHeight strictly greater than fontSize).
+    const u = renderCard({ pair: { a: 'lācis', b: 'ļoti', correct: 'b', audioUrl: 'pair.mp3' } });
+    const flat = StyleSheet.flatten(u.getByText('lācis').props.style) as { fontSize: number; lineHeight: number };
+    expect(flat.lineHeight).toBeGreaterThan(flat.fontSize);
   });
 
   it('signals onRecordStop without fabricating a recording (the recorder owns the take)', () => {

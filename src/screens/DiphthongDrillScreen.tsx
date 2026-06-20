@@ -245,7 +245,8 @@ const styles = StyleSheet.create({
   cards: { flexDirection: 'row', columnGap: 14 },
   contrastCard: { flex: 1, borderRadius: 24, borderWidth: 1.5, paddingTop: 22, paddingBottom: 18, paddingHorizontal: 14, alignItems: 'center', rowGap: 8 },
   badge: { position: 'absolute', top: 12, right: 12, width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  contrastWord: { fontSize: 34, fontWeight: '500', lineHeight: 36 },
+  // lineHeight comfortably > fontSize so a top macron on the contrast word isn't cropped (clip fix).
+  contrastWord: { fontSize: 34, fontWeight: '500', lineHeight: 42 },
   indRow: { flexDirection: 'row', alignItems: 'center', columnGap: 7 },
   indNote: { fontSize: 15, fontStyle: 'italic' },
   contrastEn: { fontSize: 12.5 },

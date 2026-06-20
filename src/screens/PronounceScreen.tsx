@@ -118,7 +118,8 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   wordBlock: { alignItems: 'center', marginTop: 18, marginBottom: 22 },
   eyebrow: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, marginBottom: 8 },
-  hero: { fontSize: 52, fontWeight: '500', letterSpacing: -0.8, lineHeight: 52, fontFamily: fonts.headline },
+  // lineHeight > fontSize so a top macron on the target word isn't cropped (device-walk clip fix).
+  hero: { fontSize: 52, fontWeight: '500', letterSpacing: -0.8, lineHeight: 62, fontFamily: fonts.headline },
   pron: { fontSize: 16, marginTop: 8 },
   rows: { rowGap: 12 },
   row: { borderRadius: 22, padding: 18, borderWidth: StyleSheet.hairlineWidth },

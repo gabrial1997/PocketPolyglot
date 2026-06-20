@@ -1004,7 +1004,8 @@ exports[`DrillScreen renders the pick stage from item.pair (snapshot) 1`] = `
                 {
                   "fontSize": 64,
                   "fontWeight": "500",
-                  "lineHeight": 64,
+                  "lineHeight": 78,
+                  "paddingTop": 4,
                 },
                 {
                   "color": "#1A2733",
@@ -1084,7 +1085,8 @@ exports[`DrillScreen renders the pick stage from item.pair (snapshot) 1`] = `
                 {
                   "fontSize": 64,
                   "fontWeight": "500",
-                  "lineHeight": 64,
+                  "lineHeight": 78,
+                  "paddingTop": 4,
                 },
                 {
                   "color": "#1A2733",

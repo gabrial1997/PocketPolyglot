@@ -67,7 +67,7 @@ exports[`PronounceScreen renders the listen stage from item data (snapshot) 1`] 
                 "fontSize": 52,
                 "fontWeight": "500",
                 "letterSpacing": -0.8,
-                "lineHeight": 52,
+                "lineHeight": 62,
               },
               {
                 "color": "#1A2733",

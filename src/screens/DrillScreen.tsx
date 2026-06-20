@@ -190,7 +190,9 @@ const styles = StyleSheet.create({
   cards: { flexDirection: 'row', columnGap: 14 },
   glyphCard: { flex: 1, borderRadius: 24, borderWidth: 1.5, paddingTop: 26, paddingBottom: 20, paddingHorizontal: 14, alignItems: 'center', rowGap: 6 },
   badge: { position: 'absolute', top: 12, right: 12, width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  glyph: { fontSize: 64, fontWeight: '500', lineHeight: 64 },
+  // lineHeight > fontSize reserves headroom above the cap so a top macron (ā/ī/ū) isn't cropped by
+  // the line box; paddingTop nudges the glyph down for the same reason. (~1.22× — device-walk fix.)
+  glyph: { fontSize: 64, fontWeight: '500', lineHeight: 78, paddingTop: 4 },
   cardWord: { fontSize: 20, fontWeight: '500', marginTop: 4 },
   cardGloss: { fontSize: 13 },
   cardHint: { fontSize: 13, marginTop: 2 },
