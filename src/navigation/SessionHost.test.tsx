@@ -11,6 +11,7 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { SessionHost } from './index';
+import { CONFIRM_MS } from '../screens/useLoopStage';
 import type { ServiceBundle } from '../services';
 import type { ReviewItem } from '../types/reviewItem';
 
@@ -90,7 +91,9 @@ async function settle(check: () => void, stepMs = 25, maxSteps = 200) {
 }
 
 // choose -> speak -> rec -> result -> Continue, optionally missing the first answer.
-function completeCard(
+// A correct pick holds a CONFIRM_MS green beat before advancing to speak; this suite runs on REAL
+// timers, so wait out that window before reaching for the (speak-stage) Record control.
+async function completeCard(
   u: ReturnType<typeof renderHost>,
   correctLabel: string,
   wrongLabel: string,
@@ -98,6 +101,9 @@ function completeCard(
 ) {
   if (opts.miss) fireEvent.press(u.getByText(wrongLabel));
   fireEvent.press(u.getByText(correctLabel));
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, CONFIRM_MS + 30));
+  });
   fireEvent.press(u.getByLabelText('Record'));
   fireEvent.press(u.getByLabelText('Stop recording'));
   fireEvent.press(u.getByText('Continue'));
@@ -110,7 +116,7 @@ it('starts each item fresh — stage/miss/recording do not leak across cards', a
   await settle(() => expect(u.getByText('māja')).toBeTruthy());
 
   // Complete A with a wrong first answer (so its `missed` flag is set), then advance.
-  completeCard(u, 'māja', 'maize', { miss: true });
+  await completeCard(u, 'māja', 'maize', { miss: true });
 
   // Item B must begin at its OWN choose stage — not stuck on A's result screen.
   // 'paldies' is B's distractor, rendered ONLY at the choose stage. The GlideViewport transition

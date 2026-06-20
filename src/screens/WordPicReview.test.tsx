@@ -1,11 +1,15 @@
 // Behavior + snapshot tests for the core-loop card (word/pic-review). The card is PURE
 // (data-in/events-out), so we render it with a fixture ReviewItem and jest.fn callbacks and
 // assert the events it emits — no services, per BACKEND_INTEGRATION §1/§4.
+//
+// A correct pick now holds a CONFIRM_MS green beat before advancing to speak (locked "correct ->
+// green + advance" rule, in useLoopStage). Tests use fake timers and advanceConfirm() to step past it.
 import React from 'react';
-import { Image } from 'react-native';
-import { render, fireEvent } from '@testing-library/react-native';
+import { Image, StyleSheet } from 'react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { WordPicReview } from './WordPicReview';
+import { CONFIRM_MS } from './useLoopStage';
 import type { ReviewItem } from '../types/reviewItem';
 import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 
@@ -46,16 +50,28 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
   return { ...utils, props };
 }
 
+// Step past the green confirm beat so the card advances choose -> speak.
+function advanceConfirm(): void {
+  act(() => jest.advanceTimersByTime(CONFIRM_MS));
+}
+
 // Drive the card choose -> speak -> rec -> result. Pass {miss:true} to tap a wrong choice first.
 function runLoop(u: ReturnType<typeof renderCard>, opts: { miss?: boolean } = {}) {
   if (opts.miss) fireEvent.press(u.getByText('maize')); // wrong: stays on choose
-  fireEvent.press(u.getByText('māja')); // correct: choose -> speak
+  fireEvent.press(u.getByText('māja')); // correct: green confirm beat...
+  advanceConfirm(); // ...then choose -> speak
   fireEvent.press(u.getByLabelText('Record')); // speak -> rec, fires onRecordStart
   fireEvent.press(u.getByLabelText('Stop recording')); // rec -> result, fires onRecordStop
   fireEvent.press(u.getByText('Continue')); // result -> onComplete
 }
 
 describe('WordPicReview', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => {
+    act(() => jest.runOnlyPendingTimers());
+    jest.useRealTimers();
+  });
+
   it('renders the choose stage from item data (snapshot)', () => {
     const { toJSON } = renderCard();
     expect(toJSON()).toMatchSnapshot();
@@ -92,6 +108,21 @@ describe('WordPicReview', () => {
     expect(u.props.onAnswer).toHaveBeenCalledWith('maize', false);
   });
 
+  it('marks the correct choice green and holds the confirm beat before advancing to speak', () => {
+    const u = renderCard();
+    const idleColor = StyleSheet.flatten(u.getByText('māja').props.style).color;
+    fireEvent.press(u.getByText('māja')); // correct
+    // Still on the choose stage during the confirm beat (not a straight jump to speak).
+    expect(u.queryByText('Now say it')).toBeNull();
+    // The chosen option is now distinctly highlighted (green correct state), not its idle color,
+    // and not the same as the untouched wrong option.
+    const confirmColor = StyleSheet.flatten(u.getByText('māja').props.style).color;
+    expect(confirmColor).not.toBe(idleColor);
+    expect(confirmColor).not.toBe(StyleSheet.flatten(u.getByText('maize').props.style).color);
+    advanceConfirm();
+    expect(u.getByText('Now say it')).toBeTruthy();
+  });
+
   it('completes a clean first-try run as correct + spoke', () => {
     const u = renderCard();
     runLoop(u);
@@ -120,6 +151,7 @@ describe('WordPicReview', () => {
     expect(u.getByLabelText('Try again')).toBeTruthy();
     // The correct option ('māja') is still just a normal option, tappable to proceed.
     fireEvent.press(u.getByText('māja'));
+    advanceConfirm(); // green confirm beat -> speak
     expect(u.getByText('Now say it')).toBeTruthy();
   });
 
@@ -141,7 +173,8 @@ describe('WordPicReview', () => {
 
   it('begins recording from the mic orb on the speak stage', () => {
     const u = renderCard();
-    fireEvent.press(u.getByText('māja')); // choose -> speak
+    fireEvent.press(u.getByText('māja')); // choose -> (confirm) -> speak
+    advanceConfirm();
     expect(u.getByText('Now say it')).toBeTruthy(); // prompt caption shown (not a tap target)
     fireEvent.press(u.getByLabelText('Record')); // the mic orb is the record control
     expect(u.props.onRecordStart).toHaveBeenCalled();
@@ -151,6 +184,7 @@ describe('WordPicReview', () => {
   function toResult(u: ReturnType<typeof renderCard>, opts: { miss?: boolean } = {}): void {
     if (opts.miss) fireEvent.press(u.getByText('maize'));
     fireEvent.press(u.getByText('māja'));
+    advanceConfirm();
     fireEvent.press(u.getByLabelText('Record'));
     fireEvent.press(u.getByLabelText('Stop recording'));
   }

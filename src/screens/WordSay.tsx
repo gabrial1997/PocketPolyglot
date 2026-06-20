@@ -4,7 +4,7 @@
 // Visual: matches mockup word/say (gloss cue + word list -> say it -> native/you compare).
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, MicOrb, ChoiceButton, CtaButton, SpeedChip, TryAgainNote, LiveWaveform, usePlayClip, FRAME_MS } from '../components';
+import { Screen, PlayOrb, MicOrb, ChoiceButton, CtaButton, SpeedChip, TryAgainNote, LiveWaveform, usePlayClip, FRAME_MS, StageFade } from '../components';
 import { useTheme } from '../theme/ThemeProvider';
 import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, CompareRow, PlayBackToBack, ResultNote, loopResultNote } from '../components/cardChrome';
 import { useLoopStage } from './useLoopStage';
@@ -29,6 +29,7 @@ export function WordSay(props: Props): React.JSX.Element {
 
   return (
     <Screen>
+      <StageFade stageKey={m.stage}>
       {m.stage === 'choose' ? (
         <>
           <CardBody>
@@ -40,8 +41,8 @@ export function WordSay(props: Props): React.JSX.Element {
                 <ChoiceButton
                   key={c.value}
                   label={c.value}
-                  state={c.value === m.wrongValue ? 'wrong' : 'idle'}
-                  disabled={c.value === m.wrongValue}
+                  state={c.value === m.rightValue ? 'correct' : c.value === m.wrongValue ? 'wrong' : 'idle'}
+                  disabled={c.value === m.wrongValue || m.rightValue !== null}
                   onPress={() => { onAnswer(c.value, c.correct); m.pick(c.value, c.correct); }}
                 />
               ))}
@@ -93,6 +94,7 @@ export function WordSay(props: Props): React.JSX.Element {
           </CardFooter>
         </>
       ) : null}
+      </StageFade>
     </Screen>
   );
 }

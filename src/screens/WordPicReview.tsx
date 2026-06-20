@@ -4,7 +4,7 @@
 // Visual: matches mockup pic-review (full image + 2×2 word grid -> word hero + mic -> compare).
 import React, { useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS } from '../components';
+import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, StageFade } from '../components';
 import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, GridChoiceButton, CompareRow, PlayBackToBack, ResultNote, loopResultNote } from '../components/cardChrome';
 import { TryAgainNote } from '../components';
 import { CardImage } from './CardImage';
@@ -29,6 +29,7 @@ export function WordPicReview(props: Props): React.JSX.Element {
 
   return (
     <Screen>
+      <StageFade stageKey={m.stage}>
       {m.stage === 'choose' ? (
         <>
           <CardBody>
@@ -47,8 +48,8 @@ export function WordPicReview(props: Props): React.JSX.Element {
                 <GridChoiceButton
                   key={c.value}
                   label={c.value}
-                  state={c.value === m.wrongValue ? 'wrong' : 'idle'}
-                  disabled={c.value === m.wrongValue}
+                  state={c.value === m.rightValue ? 'correct' : c.value === m.wrongValue ? 'wrong' : 'idle'}
+                  disabled={c.value === m.wrongValue || m.rightValue !== null}
                   onPress={() => { onAnswer(c.value, c.correct); m.pick(c.value, c.correct); }}
                 />
               ))}
@@ -101,6 +102,7 @@ export function WordPicReview(props: Props): React.JSX.Element {
           </CardFooter>
         </>
       ) : null}
+      </StageFade>
     </Screen>
   );
 }
