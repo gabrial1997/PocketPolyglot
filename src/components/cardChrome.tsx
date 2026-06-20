@@ -71,6 +71,22 @@ export function GlossLine({ gloss, pron, size = 16 }: { gloss: string; pron?: st
     </Text>
   );
 }
+// ── literal / usage note (learn cards + phrase cards) ──────────────────────
+// Optional, presentational. Renders nothing unless a literal reading is authored on the item — so
+// callers may mount it unconditionally. `literal` = the word-for-word reading; `usageNote` = nuance.
+export function LiteralNote({ literal, usageNote }: { literal?: string; usageNote?: string }): React.JSX.Element | null {
+  const T = useTheme();
+  if (!literal) return null;
+  return (
+    <View style={chrome.litNote}>
+      <Text style={[chrome.litLine, { color: T.sub }]}>
+        <Text style={{ fontWeight: '700' }}>Literally: </Text>
+        {literal}
+      </Text>
+      {usageNote ? <Text style={[chrome.litUsage, { color: T.faint }]}>{usageNote}</Text> : null}
+    </View>
+  );
+}
 export function Caption({ children }: { children: React.ReactNode }): React.JSX.Element {
   const T = useTheme();
   return <Text style={[chrome.caption, { color: T.faint }]}>{children}</Text>;
@@ -268,6 +284,9 @@ const chrome = StyleSheet.create({
   eyebrow: { fontSize: 12, fontWeight: '600', letterSpacing: 1.3, textAlign: 'center' },
   caption: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
   footNote: { fontSize: 13.5, fontWeight: '500', textAlign: 'center' },
+  litNote: { width: '100%', alignItems: 'center', rowGap: 3, marginTop: 2 },
+  litLine: { fontSize: 14, fontWeight: '500', textAlign: 'center', lineHeight: 20 },
+  litUsage: { fontSize: 13, fontWeight: '500', textAlign: 'center', lineHeight: 18 },
   tag: { paddingVertical: 5, paddingHorizontal: 12, borderRadius: 99, borderWidth: 1 },
   tagText: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2 },
   mnem: { width: '100%', borderRadius: 20, padding: 18, borderWidth: StyleSheet.hairlineWidth },
