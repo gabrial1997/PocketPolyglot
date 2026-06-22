@@ -3,12 +3,18 @@
 // never the service instances — that keeps cards pure and snapshot-testable.
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardResult } from '../types/cardResult';
+import type { PlaybackStatus } from '../types/playback';
+
+export type { PlaybackStatus } from '../types/playback';
 
 /** Playback. Cards call this via their onPlay callbacks; the orb visual follows the promise. */
 export interface AudioService {
   play(url: string, opts?: { rate?: number }): Promise<void>;
   stop(): Promise<void>;
   isPlaying(): boolean;
+  /** Subscribe to live playback status (position/duration/playing). Returns an unsubscribe fn.
+   *  Used by the controller-side PlaybackProvider to feed the soundbar — cards never call this. */
+  subscribe(listener: (status: PlaybackStatus) => void): () => void;
 }
 
 /** Recording. Backs MicOrb. Handles mic permission. */

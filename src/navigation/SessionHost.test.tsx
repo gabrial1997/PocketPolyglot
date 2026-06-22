@@ -53,7 +53,7 @@ const itemB: ReviewItem = {
 
 function fakeServices(batch: ReviewItem[]): ServiceBundle {
   return {
-    audio: { play: async () => {}, stop: async () => {}, isPlaying: () => false },
+    audio: { play: async () => {}, stop: async () => {}, isPlaying: () => false, subscribe: () => () => {} },
     recorder: { start: async () => {}, stop: async () => 'rec://x', isRecording: () => false },
     srs: {
       getDueBatch: async () => batch,

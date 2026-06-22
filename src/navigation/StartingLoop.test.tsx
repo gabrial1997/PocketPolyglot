@@ -47,7 +47,7 @@ function fakeServices(
   knownIds: Set<string> = new Set<string>(),
 ): ServiceBundle {
   return {
-    audio: { play, stop: async () => {}, isPlaying: () => false },
+    audio: { play, stop: async () => {}, isPlaying: () => false, subscribe: () => () => {} },
     recorder: { start: async () => {}, stop: async () => 'rec://x', isRecording: () => false },
     srs: {
       getDueBatch: async () => batch,

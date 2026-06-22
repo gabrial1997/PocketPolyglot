@@ -14,6 +14,7 @@ function renderHost() {
     play: jest.fn(async () => {}),
     stop: async () => {},
     isPlaying: () => false,
+    subscribe: () => () => {},
   };
   const services = {
     ...createStubServices(),

@@ -54,6 +54,13 @@ function liveCount(): number {
   return createdPlayers().filter((p) => p.played && !p.removed).length;
 }
 
+// Pull the playbackStatusUpdate callback the service registered on the most recent player.
+function lastStatusCb(): (status: Record<string, unknown>) => void {
+  const player = createdPlayers().at(-1) as unknown as { addListener: jest.Mock };
+  const call = player.addListener.mock.calls.find((c) => c[0] === 'playbackStatusUpdate');
+  return call?.[1] as (status: Record<string, unknown>) => void;
+}
+
 beforeEach(() => {
   createMock.mockClear();
 });
@@ -80,5 +87,58 @@ describe('ExpoAudioService', () => {
     expect(svc.isPlaying()).toBe(false);
     expect(liveCount()).toBe(0);
     expect(createdPlayers()[0]?.removed).toBe(true);
+  });
+});
+
+describe('ExpoAudioService.subscribe', () => {
+  it('emits playing + ms-converted position/duration from expo-audio status (seconds → ms)', async () => {
+    const svc = new ExpoAudioService();
+    const seen: Array<{ playing: boolean; positionMs: number; durationMs: number }> = [];
+    svc.subscribe((s) => seen.push(s));
+    await svc.play('a.mp3');
+
+    lastStatusCb()({ playing: true, didJustFinish: false, currentTime: 0.5, duration: 2 });
+    expect(seen.at(-1)).toEqual({ playing: true, positionMs: 500, durationMs: 2000 });
+  });
+
+  it('emits playing:false on didJustFinish', async () => {
+    const svc = new ExpoAudioService();
+    const seen: Array<{ playing: boolean }> = [];
+    svc.subscribe((s) => seen.push(s));
+    await svc.play('a.mp3');
+
+    lastStatusCb()({ playing: false, didJustFinish: true, currentTime: 2, duration: 2 });
+    expect(seen.at(-1)?.playing).toBe(false);
+  });
+
+  it('emits playing:false when stop() is called', async () => {
+    const svc = new ExpoAudioService();
+    const seen: Array<{ playing: boolean }> = [];
+    svc.subscribe((s) => seen.push(s));
+    await svc.play('a.mp3');
+    await svc.stop();
+    expect(seen.at(-1)?.playing).toBe(false);
+  });
+
+  it('does not emit for a superseded player (gen guard)', async () => {
+    const svc = new ExpoAudioService();
+    const seen: unknown[] = [];
+    svc.subscribe((s) => seen.push(s));
+    await svc.play('a.mp3');
+    const stale = lastStatusCb(); // first player's callback
+    await svc.play('b.mp3'); // supersedes; bumps gen
+    seen.length = 0;
+    stale({ playing: true, didJustFinish: false, currentTime: 1, duration: 2 });
+    expect(seen).toHaveLength(0); // stale player must not leak status
+  });
+
+  it('unsubscribe stops delivery', async () => {
+    const svc = new ExpoAudioService();
+    const seen: unknown[] = [];
+    const off = svc.subscribe((s) => seen.push(s));
+    await svc.play('a.mp3');
+    off();
+    lastStatusCb()({ playing: true, didJustFinish: false, currentTime: 0.1, duration: 2 });
+    expect(seen).toHaveLength(0);
   });
 });

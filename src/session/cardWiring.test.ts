@@ -42,6 +42,9 @@ function fakeAudio() {
     isPlaying() {
       return false;
     },
+    subscribe() {
+      return () => {};
+    },
   };
   return { audio, calls };
 }

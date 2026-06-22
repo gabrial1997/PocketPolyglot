@@ -3,6 +3,7 @@
 // impls (BACKEND_INTEGRATION §5, database-schema-seed §5). Cards never see these directly.
 import type {
   AudioService,
+  PlaybackStatus,
   RecorderService,
   SrsService,
   KnownWordsStore,
@@ -15,14 +16,31 @@ import type { CardResult } from '../types/cardResult';
 
 export class StubAudioService implements AudioService {
   private playing = false;
+  private listeners = new Set<(s: PlaybackStatus) => void>();
   async play(_url: string, _opts?: { rate?: number }): Promise<void> {
     this.playing = true;
+    this.emit({ playing: true, positionMs: 0, durationMs: 0 });
   }
   async stop(): Promise<void> {
     this.playing = false;
+    this.emit({ playing: false, positionMs: 0, durationMs: 0 });
   }
   isPlaying(): boolean {
     return this.playing;
+  }
+  subscribe(listener: (s: PlaybackStatus) => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+  /** Test/dev helper: push an arbitrary status to subscribers. Not part of AudioService.
+   *  durationMs is deliberately 0 in play() so usePlayClip uses its timer fallback (web preview). */
+  emitStatus(s: PlaybackStatus): void {
+    this.emit(s);
+  }
+  private emit(s: PlaybackStatus): void {
+    for (const l of this.listeners) l(s);
   }
 }
 
