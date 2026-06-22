@@ -83,6 +83,26 @@ describe('usePlayClip real-position bridge', () => {
     expect(result.current.positionMs).toBe(333); // real media position, not the timer
   });
 
+  it('ignores a foreign clip: real status while THIS hook never called play() does not light the bar', () => {
+    // Single global status + no clip identity: another card (or the unlock chime) is what's sounding.
+    // A card that didn't start playback must stay at rest, not animate the wrong envelope.
+    const env = new Array(10).fill(0.5);
+    const status: PlaybackStatus = { playing: true, positionMs: 333, durationMs: 1000 };
+    const { result } = renderHook(() => usePlayClip(env), { wrapper: withStatus(status) });
+    expect(result.current.playing).toBe(false); // did not call play() → not our clip
+    expect(result.current.positionMs).toBeUndefined();
+  });
+
+  it('a toggle-stop (stop()) drops out of real mode immediately, even while real status still reports playing', () => {
+    const env = new Array(10).fill(0.5);
+    const status: PlaybackStatus = { playing: true, positionMs: 333, durationMs: 1000 };
+    const { result } = renderHook(() => usePlayClip(env), { wrapper: withStatus(status) });
+    act(() => result.current.play());
+    expect(result.current.playing).toBe(true); // real mode
+    act(() => result.current.stop()); // the PlayOrb toggle-stop path
+    expect(result.current.playing).toBe(false); // settles at once, not on the audio.stop() round-trip
+  });
+
   it('falls back to the timer when the context has no real duration (stub: durationMs 0)', () => {
     const env = new Array(10).fill(0.5); // 500ms gate at 1x
     const status: PlaybackStatus = { playing: true, positionMs: 0, durationMs: 0 };

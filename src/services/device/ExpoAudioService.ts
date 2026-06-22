@@ -100,6 +100,17 @@ export class ExpoAudioService implements AudioService {
 
   preload(url: string): void {
     if (this.warm?.url === url || this.player) return; // already warm, or actively playing
+    // Replacing a warm player for a *different* url (e.g. the next card preloads before this one's
+    // warm was ever consumed): remove the stale one first so it can't leak a native decoder. Keeps
+    // at most one outstanding warm player — the same "exactly one extra" discipline as the gen guard.
+    if (this.warm) {
+      try {
+        this.warm.player.remove();
+      } catch {
+        /* already removed */
+      }
+      this.warm = null;
+    }
     try {
       const player = createAudioPlayer({ uri: url });
       this.warm = { url, player };

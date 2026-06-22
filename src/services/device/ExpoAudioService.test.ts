@@ -106,6 +106,15 @@ describe('ExpoAudioService.preload', () => {
     await svc.play('b.mp3');
     expect(createdPlayers().length).toBeGreaterThanOrEqual(2);
   });
+
+  it('preloading a different url removes the previous warm player (no leak)', () => {
+    const svc = new ExpoAudioService();
+    svc.preload('a.mp3');
+    svc.preload('b.mp3'); // supersedes the unconsumed warm player for a.mp3
+    const players = createdPlayers();
+    expect(players).toHaveLength(2);
+    expect(players[0]?.removed).toBe(true); // first warm torn down, not leaked
+  });
 });
 
 describe('ExpoAudioService.subscribe', () => {

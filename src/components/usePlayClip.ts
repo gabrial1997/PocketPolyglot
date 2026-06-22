@@ -70,9 +70,14 @@ export function usePlayClip(envelope?: number[]): {
 
   useEffect(() => clear, [clear]);
 
-  // Real mode: the controller's PlaybackProvider is reporting an actual clip (known duration).
-  // Trust the real stream for both playing and position. Otherwise hold the rate-scaled timer gate.
-  const realDriven = status.playing && status.durationMs > 0;
+  // Real mode: the controller's PlaybackProvider is reporting an actual clip (known duration) AND
+  // *this* hook started it — `timerPlaying` is set only by our own play(), so it is the clip-identity
+  // scope the global status lacks. Without it, any clip sounding anywhere (the unlock chime, the next
+  // card auto-playing during a GlideViewport transition) would flip every mounted card's bar into real
+  // mode and animate the wrong soundbar against the wrong envelope. The precomputed envelope IS the
+  // real clip length, so `timerPlaying` spans the clip; a toggle-stop clears it and settles the orb at
+  // once instead of waiting for the audio.stop() round-trip.
+  const realDriven = timerPlaying && status.playing && status.durationMs > 0;
   return {
     playing: realDriven ? true : timerPlaying,
     positionMs: realDriven ? status.positionMs : undefined,
