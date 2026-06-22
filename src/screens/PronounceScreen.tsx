@@ -66,7 +66,7 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
       </View>
       {/* The "You" take has no precomputed envelope, so its bar honestly rests rather than faking
           motion (locked constraint: the soundbar moves with REAL amplitude only). */}
-      <LiveWaveform envelope={you ? undefined : item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={42} count={40} />
+      <LiveWaveform envelope={you ? undefined : item.audio?.envelope} playing={playing} frameMs={FRAME_MS} height={42} count={40} />
     </View>
   );
 

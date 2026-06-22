@@ -19,7 +19,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     gloss: 'house',
     pron: 'MAH-ya',
     wordClass: 'concrete',
-    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3' },
+    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3', envelope: [0.2, 0.6, 1] },
     media: { imageUrl: 'house.png' },
     ...overrides,
   };

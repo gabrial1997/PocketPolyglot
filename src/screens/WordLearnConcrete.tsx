@@ -13,7 +13,11 @@ export function WordLearnConcrete({ item, onPlay, onStop, onPreload, onComplete,
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  // Audio is a non-blocking backfill overlay: when the item has no envelope we hide the play orb
+  // + waveform + speed chip and keep image/word/gloss/Continue (Module B may introduce a word
+  // visually before audio backfills).
+  const hasAudio = !!item.audio?.envelope;
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio?.envelope); // reactive soundbar gate
   const tag = wordTagFor(item.wordClass);
   // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
   const replay = (): void => {
@@ -21,8 +25,9 @@ export function WordLearnConcrete({ item, onPlay, onStop, onPreload, onComplete,
     else play(() => onPlay('native', speed), speed);
   };
   // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
+  // Skip when audio-less so we never warm a non-existent clip.
   useEffect(() => {
-    onPreload?.('native');
+    if (hasAudio) onPreload?.('native');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
@@ -36,14 +41,16 @@ export function WordLearnConcrete({ item, onPlay, onStop, onPreload, onComplete,
         <WordHero size={52}>{item.target}</WordHero>
         <GlossLine gloss={item.gloss} pron={item.pron} size={17} />
         <LiteralNote literal={item.literal} usageNote={item.usageNote} />
-        <View style={styles.audio}>
-          <View style={styles.wave}>
-            <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={44} count={36} />
+        {hasAudio ? (
+          <View style={styles.audio}>
+            <View style={styles.wave}>
+              <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={44} count={36} />
+            </View>
+            <PlayOrb size={66} playing={playing} onPress={replay} />
+            <SpeedChip value={speed} onChange={changeSpeed} />
+            <Caption>Tap to hear</Caption>
           </View>
-          <PlayOrb size={66} playing={playing} onPress={replay} />
-          <SpeedChip value={speed} onChange={changeSpeed} />
-          <Caption>Tap to hear</Caption>
-        </View>
+        ) : null}
       </CardBody>
       <CardFooter>
         <FootNote>First review tomorrow.</FootNote>

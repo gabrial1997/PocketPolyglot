@@ -20,7 +20,11 @@ export function WordPicReview(props: Props): React.JSX.Element {
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  // Audio is a non-blocking backfill overlay: when the item has no envelope we hide the native
+  // play orb + waveform + speed chip (and the "Native" compare row), keeping the picture, word,
+  // grid, mic and the learner's own "You" compare row — the self-recording is independent of native audio.
+  const hasAudio = !!item.audio?.envelope;
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio?.envelope); // reactive soundbar gate
   // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
   const replay = (): void => {
     if (playing) { onStop?.(); stopGate(); }
@@ -28,7 +32,7 @@ export function WordPicReview(props: Props): React.JSX.Element {
   };
   // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
   useEffect(() => {
-    onPreload?.('native');
+    if (hasAudio) onPreload?.('native');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const recStarted = useRef(false);
@@ -47,13 +51,15 @@ export function WordPicReview(props: Props): React.JSX.Element {
           <CardBody>
             <Eyebrow>Review · picture</Eyebrow>
             <CardImage media={item.media} word={item.target} full height={168} />
-            <View style={styles.playRow}>
-              <PlayOrb size={44} filled={false} playing={playing} onPress={replay} />
-              <View style={{ flex: 1 }}>
-                <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={28} count={28} />
+            {hasAudio ? (
+              <View style={styles.playRow}>
+                <PlayOrb size={44} filled={false} playing={playing} onPress={replay} />
+                <View style={{ flex: 1 }}>
+                  <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={28} count={28} />
+                </View>
+                <SpeedChip value={speed} onChange={changeSpeed} />
               </View>
-              <SpeedChip value={speed} onChange={changeSpeed} />
-            </View>
+            ) : null}
             <PromptText>Which word names it?</PromptText>
             <View style={styles.grid}>
               {choices.map((c) => (
@@ -80,11 +86,15 @@ export function WordPicReview(props: Props): React.JSX.Element {
             <CardImage media={item.media} word={item.target} size={116} />
             <WordHero size={50}>{item.target}</WordHero>
             <GlossLine gloss={item.gloss} pron={item.pron} size={13.5} />
-            <View style={styles.wave}>
-              <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={34} count={30} />
-            </View>
-            <PlayOrb size={52} filled={false} playing={playing} onPress={replay} />
-            <SpeedChip value={speed} onChange={changeSpeed} />
+            {hasAudio ? (
+              <>
+                <View style={styles.wave}>
+                  <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={34} count={30} />
+                </View>
+                <PlayOrb size={52} filled={false} playing={playing} onPress={replay} />
+                <SpeedChip value={speed} onChange={changeSpeed} />
+              </>
+            ) : null}
             <View style={styles.mic}>
               <MicOrb rec={m.stage === 'rec'} onPress={() => { if (m.stage === 'rec') { onRecordStop(); m.finishRec(); } else { startRec(); } }} />
               <Caption>{m.stage === 'rec' ? 'Listening… tap to stop' : 'Now say it'}</Caption>
@@ -103,10 +113,12 @@ export function WordPicReview(props: Props): React.JSX.Element {
             <WordHero size={48}>{item.target}</WordHero>
             <GlossLine gloss={item.gloss} pron={item.pron} />
             <View style={styles.compare}>
-              <CompareRow label="Native" icon="speaker" envelope={item.audio.envelope} onPress={() => onPlayCompare?.('native')} />
+              {hasAudio ? (
+                <CompareRow label="Native" icon="speaker" envelope={item.audio?.envelope} onPress={() => onPlayCompare?.('native')} />
+              ) : null}
               <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
             </View>
-            <PlayBackToBack onPress={() => onPlayCompare?.('native')} />
+            {hasAudio ? <PlayBackToBack onPress={() => onPlayCompare?.('native')} /> : null}
             <ResultNote>{loopResultNote(m.missed, item.reviewPreview)}</ResultNote>
           </CardBody>
           <CardFooter>

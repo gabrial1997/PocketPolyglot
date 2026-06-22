@@ -19,7 +19,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     gloss: 'on / to',
     pron: 'OOZ',
     wordClass: 'function',
-    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3' },
+    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3', envelope: [0.2, 0.6, 1] },
     examples: [
       { pre: 'Grāmata ir', w: 'uz', post: 'galda.', en: 'The book is on the table.', audioUrl: 'ex0.mp3' },
       { pre: 'Es eju', w: 'uz', post: 'mājām.', en: 'I am going home.', audioUrl: 'ex1.mp3' },

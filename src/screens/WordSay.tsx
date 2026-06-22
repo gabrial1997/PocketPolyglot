@@ -20,7 +20,7 @@ export function WordSay(props: Props): React.JSX.Element {
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio?.envelope); // reactive soundbar gate
   // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
   const replay = (): void => {
     if (playing) { onStop?.(); stopGate(); }
@@ -74,7 +74,7 @@ export function WordSay(props: Props): React.JSX.Element {
             <WordHero size={52}>{item.target}</WordHero>
             {item.pron ? <GlossLine gloss={item.pron} size={13.5} /> : null}
             <View style={styles.wave}>
-              <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={36} count={32} />
+              <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={36} count={32} />
             </View>
             <PlayOrb size={58} filled={false} playing={playing} onPress={replay} />
             <SpeedChip value={speed} onChange={changeSpeed} />
@@ -95,7 +95,7 @@ export function WordSay(props: Props): React.JSX.Element {
             <WordHero size={52}>{item.target}</WordHero>
             <GlossLine gloss={item.gloss} pron={item.pron} />
             <View style={styles.compare}>
-              <CompareRow label="Native" icon="speaker" envelope={item.audio.envelope} onPress={() => onPlayCompare?.('native')} />
+              <CompareRow label="Native" icon="speaker" envelope={item.audio?.envelope} onPress={() => onPlayCompare?.('native')} />
               <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
             </View>
             <PlayBackToBack onPress={() => onPlayCompare?.('native')} />

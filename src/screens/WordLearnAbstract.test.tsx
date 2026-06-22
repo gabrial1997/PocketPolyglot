@@ -18,7 +18,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     gloss: 'free',
     pron: 'BREEVS',
     wordClass: 'abstract',
-    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3' },
+    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3', envelope: [0.2, 0.6, 1] },
     mnemonic: { soundsLike: 'breeze', note: 'a free breeze blows where it likes' },
     ...overrides,
   };

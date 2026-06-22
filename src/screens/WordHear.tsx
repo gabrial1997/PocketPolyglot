@@ -18,7 +18,7 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
   // prop seeds the initial value and an optional listener is notified for any external interest.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio?.envelope); // reactive soundbar gate
   const [wrongValue, setWrongValue] = useState<string | null>(null);
   const [missed, setMissed] = useState(false);
   const [correctValue, setCorrectValue] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
       <CardBody>
         <Eyebrow>Listen — which meaning?</Eyebrow>
         <View style={styles.wave}>
-          <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={48} count={42} />
+          <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={48} count={42} />
         </View>
         <PlayOrb size={64} playing={playing} onPress={replay} />
         <SpeedChip value={speed} onChange={changeSpeed} />

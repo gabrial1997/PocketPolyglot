@@ -53,7 +53,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
   const [phase, setPhase] = useState<Phase>('meet');
   const [picked, setPicked] = useState<Side | null>(null);
   const [say, setSay] = useState<Say>('idle');
-  const { playing, positionMs, rate, play, stop } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const { playing, positionMs, rate, play, stop } = usePlayClip(item.audio?.envelope); // reactive soundbar gate
   // The orbs are play/pause toggles (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
   const replayNative = (): void => {
     if (playing) { onStop?.(); stop(); }
@@ -177,7 +177,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
 
         <View style={styles.audio}>
           <View style={styles.wave}>
-            <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={52} count={34} />
+            <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={52} count={34} />
           </View>
           <PlayOrb size={72} playing={playing} onPress={replayNative} />
           <SpeedChip value={speed} onChange={changeSpeed} />

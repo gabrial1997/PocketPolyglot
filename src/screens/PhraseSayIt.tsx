@@ -60,7 +60,7 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
             <Text style={[styles.cueSub, { color: T.sub, marginTop: 10 }]}>{item.gloss}</Text>
 
             <View style={styles.compare}>
-              <CompareRow label="Native" icon="speaker" envelope={item.audio.envelope} onPress={() => onPlayCompare?.('native', speed)} />
+              <CompareRow label="Native" icon="speaker" envelope={item.audio?.envelope} onPress={() => onPlayCompare?.('native', speed)} />
               <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
             </View>
 

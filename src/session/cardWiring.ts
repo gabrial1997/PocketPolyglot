@@ -32,15 +32,15 @@ export const UNLOCK_CHIME_URL: string | null = SUPABASE_URL
 
 /** Resolve a card's onPlay(which) request to a concrete audio source. null = nothing to play. */
 export function resolvePlay(item: ReviewItem, which: PlayWhich): { url: string; rate?: number } | null {
-  if (which === 'native') return item.audio.nativeUrl ? { url: item.audio.nativeUrl } : null;
+  if (which === 'native') return item.audio?.nativeUrl ? { url: item.audio.nativeUrl } : null;
   if (which === 'slow') {
-    const url = item.audio.slowUrl ?? item.audio.nativeUrl;
+    const url = item.audio?.slowUrl ?? item.audio?.nativeUrl;
     return url ? { url, rate: SLOW_RATE } : null;
   }
   if (which === 'glide') {
     // The diphthong "meet the glide" step wants the isolated-glide clip; before that clip is
     // seeded it falls back to the stimulus (native) clip so the orb is never silent.
-    const url = item.glide?.audioUrl ?? item.audio.nativeUrl;
+    const url = item.glide?.audioUrl ?? item.audio?.nativeUrl;
     return url ? { url } : null;
   }
   // number = example index (function learn card).
@@ -120,7 +120,7 @@ export function createCardHandlers(deps: {
       });
     },
     onPlayCompare: (which, rate) => {
-      const url = which === 'you' ? store.current : item.audio.nativeUrl;
+      const url = which === 'you' ? store.current : item.audio?.nativeUrl;
       // A SpeedChip rate slows the native model only; the user's own take always plays natural.
       if (typeof url === 'string' && url) {
         void audio.play(url, which === 'native' && rate != null ? { rate } : undefined);

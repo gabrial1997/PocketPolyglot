@@ -22,7 +22,7 @@ type HearExtra = { newForm?: string; newLemma?: string };
 export function PhraseHear({ item, onPlay, onStop, onPreload, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
   const T = useTheme();
   const x = item as ReviewItem & HearExtra;
-  const env = item.audio.envelope;
+  const env = item.audio?.envelope;
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };

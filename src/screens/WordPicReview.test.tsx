@@ -22,7 +22,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     target: 'māja',
     gloss: 'house',
     pron: 'MAH-ya',
-    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3' },
+    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3', envelope: [0.2, 0.6, 1] },
     media: { imageUrl: 'house.png' },
     choices: [
       { value: 'māja', gloss: 'house', correct: true },

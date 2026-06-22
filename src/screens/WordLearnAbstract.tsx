@@ -11,7 +11,10 @@ export function WordLearnAbstract({ item, onPlay, onStop, onPreload, onComplete,
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  // Audio is a non-blocking backfill overlay: when the item has no envelope we hide the play orb
+  // + waveform + speed chip and keep word/gloss/mnemonic/Continue.
+  const hasAudio = !!item.audio?.envelope;
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio?.envelope); // reactive soundbar gate
   const tag = wordTagFor(item.wordClass) ?? { label: 'Abstract word', tone: 'good' as const };
   // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
   const replay = (): void => {
@@ -20,7 +23,7 @@ export function WordLearnAbstract({ item, onPlay, onStop, onPreload, onComplete,
   };
   // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
   useEffect(() => {
-    onPreload?.('native');
+    if (hasAudio) onPreload?.('native');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
@@ -37,14 +40,16 @@ export function WordLearnAbstract({ item, onPlay, onStop, onPreload, onComplete,
         {(item.examples ?? []).map((ex, i) => (
           <ExampleRow key={i} pre={ex.pre} w={ex.w} post={ex.post} en={ex.en} onPress={() => onPlay(i)} />
         ))}
-        <View style={styles.audio}>
-          <View style={styles.wave}>
-            <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={36} count={32} />
+        {hasAudio ? (
+          <View style={styles.audio}>
+            <View style={styles.wave}>
+              <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={36} count={32} />
+            </View>
+            <PlayOrb size={58} playing={playing} onPress={replay} />
+            <SpeedChip value={speed} onChange={changeSpeed} />
+            <Caption>Tap to hear</Caption>
           </View>
-          <PlayOrb size={58} playing={playing} onPress={replay} />
-          <SpeedChip value={speed} onChange={changeSpeed} />
-          <Caption>Tap to hear</Caption>
-        </View>
+        ) : null}
       </CardBody>
       <CardFooter>
         <FootNote>First review tomorrow.</FootNote>
