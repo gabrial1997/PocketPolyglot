@@ -12,6 +12,8 @@ const REST = 0.08; // resting flat-line height (8%)
 export function LiveWaveform({
   envelope,
   playing,
+  positionMs,
+  rate = 1,
   frameMs = 30,
   height = 54,
   count = 40,
@@ -21,6 +23,10 @@ export function LiveWaveform({
 }: {
   envelope?: number[];
   playing: boolean;
+  /** Real media-position anchor (ms). When set, the bar interpolates from it instead of a local clock. */
+  positionMs?: number;
+  /** Playback rate; scales the wall-clock advance so the bar matches a slowed voice (bug 5). */
+  rate?: number;
   frameMs?: number;
   height?: number;
   count?: number;
@@ -65,12 +71,17 @@ export function LiveWaveform({
       return cancel;
     }
 
+    // Anchor the bar to real playback position when the bridge supplies one; otherwise run a local
+    // clock. Either way advance by `rate` so a 0.7x clip scrolls ~0.7x as fast (bug 5).
     const startedAt = Date.now();
+    const anchorMs = positionMs;
     const loop = (): void => {
       if (env) {
         // Scrolling window of the amplitude envelope: newest frame on the right, so the bars
         // visibly travel with the voice. Out-of-range frames rest at the flat line.
-        const idx = Math.floor((Date.now() - startedAt) / frameMs);
+        const elapsed = Date.now() - startedAt;
+        const mediaMs = anchorMs != null ? anchorMs + elapsed * rate : elapsed * rate;
+        const idx = Math.floor(mediaMs / frameMs);
         for (let i = 0; i < count; i++) {
           const sampleIdx = idx - (count - 1) + i;
           const target = sampleIdx >= 0 && sampleIdx < env.length ? env[sampleIdx] ?? REST : REST;
@@ -91,7 +102,7 @@ export function LiveWaveform({
     };
     raf.current = requestAnimationFrame(loop);
     return cancel;
-  }, [playing, envelope, count, frameMs]);
+  }, [playing, envelope, count, frameMs, positionMs, rate]);
 
   return (
     <View style={[styles.row, { height, columnGap: gap }]} accessibilityRole="image" accessibilityLabel="Audio waveform">

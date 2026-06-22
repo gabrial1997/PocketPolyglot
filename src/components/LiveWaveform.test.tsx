@@ -32,4 +32,10 @@ describe('LiveWaveform', () => {
     const u = renderBars({ playing: true, envelope: [] });
     expect(u.getByLabelText('Audio waveform')).toBeTruthy();
   });
+
+  it('accepts a real-position anchor + rate without crashing', () => {
+    const env = [0.1, 0.5, 1, 0.8, 0.3, 0.05, 0.2, 0.6];
+    const u = renderBars({ playing: true, envelope: env, count: 16, positionMs: 120, rate: 0.7 });
+    expect(u.getByLabelText('Audio waveform').children).toHaveLength(16);
+  });
 });
