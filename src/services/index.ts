@@ -51,6 +51,16 @@ export interface PodcastService {
   getEpisode(): Promise<{ title: string; transcript: string; audioUrl: string }>;
 }
 
+/** Tier-B `settings` screen: GDPR recording consent + deletion (CLAUDE.md). NOT a card. */
+export interface ProfileService {
+  /** Current GDPR recording-consent flag for the signed-in user. */
+  getRecConsent(): Promise<boolean>;
+  /** Set the consent flag; stamps rec_consent_at when enabling, clears it when disabling. */
+  setRecConsent(value: boolean): Promise<void>;
+  /** Honor GDPR deletion: remove all of the user's recording rows. */
+  deleteRecordings(): Promise<void>;
+}
+
 /** Everything injected through ServiceProvider. */
 export interface ServiceBundle {
   audio: AudioService;
@@ -60,6 +70,8 @@ export interface ServiceBundle {
   /** Tier-B standalone-screen services (home reuses srs.getDueSummary). */
   progress: ProgressService;
   podcast: PodcastService;
+  /** Tier-B settings screen: GDPR consent + recording deletion. */
+  profile: ProfileService;
 }
 
 export * from './stubs';

@@ -9,6 +9,7 @@ import type {
   KnownWordsStore,
   ProgressService,
   PodcastService,
+  ProfileService,
   ServiceBundle,
 } from './index';
 import type { ReviewItem } from '../types/reviewItem';
@@ -99,6 +100,19 @@ export class StubPodcastService implements PodcastService {
   }
 }
 
+export class StubProfileService implements ProfileService {
+  private consent = false;
+  async getRecConsent(): Promise<boolean> {
+    return this.consent;
+  }
+  async setRecConsent(value: boolean): Promise<void> {
+    this.consent = value;
+  }
+  async deleteRecordings(): Promise<void> {
+    // real impl: delete recordings rows + storage objects for the user (schema §6)
+  }
+}
+
 /** Default bundle of stubs for local dev / tests. */
 export function createStubServices(): ServiceBundle {
   return {
@@ -108,5 +122,6 @@ export function createStubServices(): ServiceBundle {
     known: new StubKnownWordsStore(),
     progress: new StubProgressService(),
     podcast: new StubPodcastService(),
+    profile: new StubProfileService(),
   };
 }

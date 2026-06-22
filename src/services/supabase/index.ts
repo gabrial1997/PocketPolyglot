@@ -7,6 +7,7 @@ import { SupabaseSrsService } from './SupabaseSrsService';
 import { SupabaseKnownWordsStore } from './SupabaseKnownWordsStore';
 import { SupabaseProgressService } from './SupabaseProgressService';
 import { SupabasePodcastService } from './SupabasePodcastService';
+import { SupabaseProfileService } from './SupabaseProfileService';
 
 export * from './types';
 export * from './mappers';
@@ -14,6 +15,7 @@ export { SupabaseSrsService } from './SupabaseSrsService';
 export { SupabaseKnownWordsStore } from './SupabaseKnownWordsStore';
 export { SupabaseProgressService } from './SupabaseProgressService';
 export { SupabasePodcastService } from './SupabasePodcastService';
+export { SupabaseProfileService } from './SupabaseProfileService';
 
 /**
  * Build a ServiceBundle backed by Supabase for a given authenticated user.
@@ -33,5 +35,6 @@ export function createSupabaseServices(
     known: new SupabaseKnownWordsStore(client, userId),
     progress: new SupabaseProgressService(client, userId),
     podcast: new SupabasePodcastService(client),
+    profile: new SupabaseProfileService(client, userId),
   };
 }
