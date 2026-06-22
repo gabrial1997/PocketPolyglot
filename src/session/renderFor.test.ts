@@ -136,14 +136,16 @@ describe('renderFor', () => {
         ),
       ).toBe('drill');
     });
-    it('pair without audio -> drill (guard: pair should not be produced audio-less, but guard defensively)', () => {
-      // B2 should never produce an audio-less pair, but renderFor guards: only drill/diphthong when hasAudio.
-      // Without audio, should NOT be drill or diphthong — falls through to pron fallback.
+    it('pair without audio -> word/learn-concrete (guard: audio-less pair must not reach a gated kind)', () => {
+      // B2 should never produce an audio-less pair, but renderFor guards defensively.
+      // Must NOT route to drill, diphthong, or pron (all gated kinds requiring audio).
       const result = renderFor(
         noAudioItem({ type: 'pair', pair: { a: 'lapa', b: 'ļauj', correct: 'a', audioUrl: 'p.mp3' } }),
       );
+      expect(result).toBe('word/learn-concrete');
       expect(result).not.toBe('drill');
       expect(result).not.toBe('diphthong');
+      expect(result).not.toBe('pron');
     });
   });
 });

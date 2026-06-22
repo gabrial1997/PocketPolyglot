@@ -47,7 +47,10 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
   // B3 guard: drill/diphthong require audio (pair should not reach here audio-less, but guard
   // defensively per §10.2).
   if (item.type === 'pair' && hasAudio) return item.glide ? 'diphthong' : 'drill';
+  // audio-less pair is never selected (Module B gates pairs on audio); defensive non-gated fallback.
+  if (item.type === 'pair') return 'word/learn-concrete';
 
   // Fallback: pronunciation comparison.
+  // Only 'pron' items (type === 'pron') can reach here, and they always have audio (Module B gate).
   return 'pron';
 }
