@@ -60,6 +60,8 @@ export interface CardHandlers {
   onRecordStart: () => void;
   onRecordStop: (recording?: Blob | string) => void;
   onPlayCompare: (which: 'native' | 'you') => void;
+  /** Stop the currently-playing clip (backs the PlayOrb play/pause toggle). */
+  onStop: () => void;
   onComplete: (result: CardResult) => void;
   // --- Gate cards (phrase/locked, phrase/unlock): NOT reviews — they advance WITHOUT a CardResult.
   /** Advance to the next item without posting a review (phrase/locked's Continue). */
@@ -115,6 +117,9 @@ export function createCardHandlers(deps: {
     onPlayCompare: (which) => {
       const url = which === 'you' ? store.current : item.audio.nativeUrl;
       if (typeof url === 'string' && url) void audio.play(url);
+    },
+    onStop: () => {
+      void audio.stop();
     },
     onComplete: (result) => {
       // If a recorder.stop() is still in flight, wait for the take so it is never dropped. A

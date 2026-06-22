@@ -34,11 +34,14 @@ function item(overrides: Partial<ReviewItem> = {}): ReviewItem {
 // Hand-rolled fakes (real behavior, not jest.fn mocks of a module) that record their calls.
 function fakeAudio() {
   const calls: { url: string; opts?: { rate?: number } }[] = [];
+  let stops = 0;
   const audio: AudioService = {
     async play(url, opts) {
       calls.push({ url, opts });
     },
-    async stop() {},
+    async stop() {
+      stops += 1;
+    },
     isPlaying() {
       return false;
     },
@@ -46,7 +49,7 @@ function fakeAudio() {
       return () => {};
     },
   };
-  return { audio, calls };
+  return { audio, calls, stops: () => stops };
 }
 
 function fakeRecorder(blob: Blob | string = 'rec://abc') {
@@ -116,7 +119,7 @@ describe('withRecording', () => {
 
 describe('createCardHandlers — the core loop reaches every service', () => {
   function setup() {
-    const { audio, calls } = fakeAudio();
+    const { audio, calls, stops } = fakeAudio();
     const { recorder, events } = fakeRecorder('rec://take1');
     const store: RecordingStore = { current: null };
     const submitted: CardResult[] = [];
@@ -130,8 +133,14 @@ describe('createCardHandlers — the core loop reaches every service', () => {
       },
       advance: () => undefined,
     });
-    return { handlers, calls, events, store, submitted };
+    return { handlers, calls, stops, events, store, submitted };
   }
+
+  it('onStop stops the injected audio service', () => {
+    const { handlers, stops } = setup();
+    handlers.onStop();
+    expect(stops()).toBe(1);
+  });
 
   it('onPlay("native") plays the native audio', () => {
     const { handlers, calls } = setup();

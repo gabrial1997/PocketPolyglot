@@ -15,6 +15,7 @@ import { createSupabaseServices } from '../services/supabase';
 import { supabase } from '../services/supabaseClient';
 import { useSession } from '../session/sessionController';
 import { useReviewCardHandlers } from '../session/useReviewCardHandlers';
+import { PlaybackProvider } from '../session/PlaybackProvider';
 import { CARD_REGISTRY } from './registry';
 import { Screen, GlideViewport } from '../components';
 import { SessionTop } from '../components/cardChrome';
@@ -199,8 +200,13 @@ function Root(): React.JSX.Element {
   const name = displayName(user);
 
   if (route === 'session') {
-    // Session is a focused flow with no tab bar; exit returns to home.
-    return <SessionHost onExit={() => setRoute('home')} />;
+    // Session is a focused flow with no tab bar; exit returns to home. PlaybackProvider (inside
+    // ServiceProvider, via AuthGate) bridges live AudioService status to the cards' soundbar.
+    return (
+      <PlaybackProvider>
+        <SessionHost onExit={() => setRoute('home')} />
+      </PlaybackProvider>
+    );
   }
 
   return (

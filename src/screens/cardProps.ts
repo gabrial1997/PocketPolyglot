@@ -15,6 +15,8 @@ export type PlayWhich = 'native' | 'slow' | 'glide' | number;
 export interface BaseCardProps {
   item: ReviewItem;
   onPlay: (which: PlayWhich) => void;
+  /** Stop current playback — backs the PlayOrb play/pause toggle. */
+  onStop?: () => void;
   onComplete: (result: CardResult) => void;
   /** Optional: current slow-speed selection, surfaced by SpeedChip. */
   speed?: Speed;
