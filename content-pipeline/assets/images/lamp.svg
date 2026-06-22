@@ -1,0 +1,25 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a street lamp">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  
+  <circle cx="140" cy="86" r="30" fill="#E7B45A" opacity="0.85"></circle>
+
+  
+  <path d="M0 296 H860 V360 H0 Z" fill="#DED9CC"></path>
+  <ellipse cx="430" cy="300" rx="150" ry="18" fill="#D4CEBE"></ellipse>
+
+  
+  <rect x="422" y="150" width="16" height="146" fill="#2C5E8C" stroke="#26456A" stroke-width="3"></rect>
+  <rect x="404" y="288" width="52" height="12" rx="3" fill="#2C5E8C" stroke="#26456A" stroke-width="3"></rect>
+
+  
+  <path d="M398 152 L430 116 L462 152 Z" fill="#2C5E8C" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+  <circle cx="430" cy="108" r="6" fill="#2C5E8C" stroke="#26456A" stroke-width="3"></circle>
+
+  
+  <g stroke="#26456A" stroke-width="3" stroke-linejoin="round">
+    <rect x="406" y="150" width="48" height="46" rx="3" fill="#CFE0EE"></rect>
+    <line x1="430" y1="150" x2="430" y2="196"></line>
+    <line x1="406" y1="173" x2="454" y2="173"></line>
+  </g>
+</svg>

@@ -1,0 +1,65 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a car at night">
+  <rect width="860" height="360" fill="#101A26"></rect>
+  <defs>
+    <linearGradient id="ca-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16263A"></stop>
+      <stop offset="1" stop-color="#0E1722"></stop>
+    </linearGradient>
+    <linearGradient id="ca-beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F0C56E" stop-opacity="0.6"></stop>
+      <stop offset="1" stop-color="#F0C56E" stop-opacity="0"></stop>
+    </linearGradient>
+    <radialGradient id="ca-hl" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFE9A8" stop-opacity="0.95"></stop>
+      <stop offset="1" stop-color="#FFE9A8" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="860" height="296" fill="url(#ca-sky)"></rect>
+
+  
+  <g fill="#A7C4E0">
+    <circle cx="120" cy="70" r="1.6" opacity="0.9"></circle>
+    <circle cx="250" cy="120" r="1.2" opacity="0.7"></circle>
+    <circle cx="700" cy="90" r="1.4" opacity="0.7"></circle>
+    <circle cx="770" cy="70" r="1.6" opacity="0.9"></circle>
+  </g>
+
+  
+  <g>
+    <circle cx="150" cy="98" r="30" fill="#D6E2EF"></circle>
+    <circle cx="166" cy="90" r="26" fill="#16263A"></circle>
+  </g>
+
+  
+  <path d="M0 296 H860 V360 H0 Z" fill="#0C141D"></path>
+  <ellipse cx="430" cy="300" rx="230" ry="20" fill="#10202E"></ellipse>
+
+  
+  <path d="M612 226 L820 196 L820 286 L612 256 Z" fill="url(#ca-beam)"></path>
+
+  
+  <path d="M300 214 L344 166 L520 166 L572 214 Z" fill="#33506E" stroke="#5C84B0" stroke-width="3" stroke-linejoin="round"></path>
+  <g stroke="#5C84B0" stroke-width="3" stroke-linejoin="round">
+    <path d="M334 210 L360 178 L424 178 L424 210 Z" fill="#1B2C3D"></path>
+    <path d="M440 178 L508 178 L540 210 L440 210 Z" fill="#1B2C3D"></path>
+  </g>
+
+  
+  <rect x="256" y="208" width="360" height="74" rx="28" fill="#2A3D50" stroke="#5C84B0" stroke-width="3"></rect>
+
+  
+  <circle cx="606" cy="240" r="22" fill="url(#ca-hl)"></circle>
+  <ellipse cx="606" cy="240" rx="9" ry="12" fill="#FFE9A8" stroke="#5C84B0" stroke-width="3"></ellipse>
+  
+  <rect x="258" y="232" width="12" height="18" rx="4" fill="#E0556A"></rect>
+
+  
+  <g>
+    <circle cx="338" cy="286" r="36" fill="#1A222B" stroke="#5C84B0" stroke-width="3"></circle>
+    <circle cx="338" cy="286" r="14" fill="#3A4A57"></circle>
+  </g>
+  <g>
+    <circle cx="534" cy="286" r="36" fill="#1A222B" stroke="#5C84B0" stroke-width="3"></circle>
+    <circle cx="534" cy="286" r="14" fill="#3A4A57"></circle>
+  </g>
+</svg>

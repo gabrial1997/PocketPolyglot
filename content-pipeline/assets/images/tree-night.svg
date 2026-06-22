@@ -1,0 +1,70 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a tree at night">
+  <rect width="860" height="360" fill="#101A26"></rect>
+  <defs>
+    <linearGradient id="tr-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16263A"></stop>
+      <stop offset="1" stop-color="#0E1722"></stop>
+    </linearGradient>
+    <radialGradient id="tr-fly" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F0C56E" stop-opacity="0.9"></stop>
+      <stop offset="1" stop-color="#F0C56E" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="860" height="296" fill="url(#tr-sky)"></rect>
+
+  
+  <g fill="#A7C4E0">
+    <circle cx="120" cy="70" r="1.6" opacity="0.9"></circle>
+    <circle cx="250" cy="130" r="1.2" opacity="0.7"></circle>
+    <circle cx="620" cy="90" r="1.4" opacity="0.7"></circle>
+    <circle cx="710" cy="140" r="1.2" opacity="0.6"></circle>
+    <circle cx="770" cy="68" r="1.6" opacity="0.9"></circle>
+  </g>
+
+  
+  <g>
+    <circle cx="150" cy="98" r="30" fill="#D6E2EF"></circle>
+    <circle cx="166" cy="90" r="26" fill="#16263A"></circle>
+  </g>
+
+  
+  <path d="M0 296 H860 V360 H0 Z" fill="#0C141D"></path>
+  <ellipse cx="430" cy="300" rx="170" ry="20" fill="#10202E"></ellipse>
+
+  
+  <rect x="414" y="186" width="32" height="114" rx="6" fill="#2C3B47" stroke="#5C84B0" stroke-width="3"></rect>
+
+  
+  <g fill="#5C84B0">
+    <circle cx="430" cy="124" r="81"></circle>
+    <circle cx="358" cy="156" r="55"></circle>
+    <circle cx="502" cy="156" r="55"></circle>
+    <circle cx="388" cy="98" r="49"></circle>
+    <circle cx="472" cy="98" r="49"></circle>
+  </g>
+  <g fill="#26414F">
+    <circle cx="430" cy="124" r="78"></circle>
+    <circle cx="358" cy="156" r="52"></circle>
+    <circle cx="502" cy="156" r="52"></circle>
+    <circle cx="388" cy="98" r="46"></circle>
+    <circle cx="472" cy="98" r="46"></circle>
+  </g>
+  <g fill="#2C4856" opacity="0.8">
+    <circle cx="404" cy="104" r="30"></circle>
+    <circle cx="448" cy="138" r="26"></circle>
+  </g>
+
+  
+  <g>
+    <circle cx="372" cy="150" r="9" fill="url(#tr-fly)"></circle>
+    <circle cx="372" cy="150" r="2.4" fill="#FFE9A8"></circle>
+    <circle cx="486" cy="118" r="9" fill="url(#tr-fly)"></circle>
+    <circle cx="486" cy="118" r="2.4" fill="#FFE9A8"></circle>
+    <circle cx="430" cy="172" r="9" fill="url(#tr-fly)"></circle>
+    <circle cx="430" cy="172" r="2.4" fill="#FFE9A8"></circle>
+    <circle cx="540" cy="170" r="8" fill="url(#tr-fly)"></circle>
+    <circle cx="540" cy="170" r="2.2" fill="#FFE9A8"></circle>
+    <circle cx="322" cy="120" r="8" fill="url(#tr-fly)"></circle>
+    <circle cx="322" cy="120" r="2.2" fill="#FFE9A8"></circle>
+  </g>
+</svg>

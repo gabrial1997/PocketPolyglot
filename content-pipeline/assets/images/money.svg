@@ -1,0 +1,39 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of money">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  
+
+  <path d="M0 296 H860 V360 H0 Z" fill="#DED9CC"></path>
+  <ellipse cx="430" cy="304" rx="190" ry="18" fill="#D4CEBE"></ellipse>
+
+  
+  <g transform="rotate(-7 410 240)">
+    <rect x="296" y="190" width="230" height="104" rx="12" fill="#A8C3A0" stroke="#26456A" stroke-width="3"></rect>
+    <rect x="310" y="204" width="202" height="76" rx="7" fill="none" stroke="#6E9070" stroke-width="2"></rect>
+    <circle cx="411" cy="242" r="28" fill="#FBFAF6" stroke="#6E9070" stroke-width="2"></circle>
+    <line x1="411" y1="223" x2="411" y2="261" stroke="#3E6B45" stroke-width="3"></line>
+    <path d="M423 229 C423 221 399 221 399 234 C399 242 423 240 423 251 C423 262 399 262 399 253" fill="none" stroke="#3E6B45" stroke-width="3.4" stroke-linecap="round"></path>
+    <circle cx="476" cy="216" r="9" fill="none" stroke="#6E9070" stroke-width="2"></circle>
+    <circle cx="346" cy="268" r="9" fill="none" stroke="#6E9070" stroke-width="2"></circle>
+  </g>
+
+  
+  <g>
+    <ellipse cx="556" cy="302" rx="44" ry="14" fill="#D69A3A"></ellipse>
+    <rect x="512" y="280" width="88" height="22" fill="#D69A3A"></rect>
+    <ellipse cx="556" cy="280" rx="44" ry="14" fill="#E7B45A" stroke="#26456A" stroke-width="3"></ellipse>
+    <rect x="512" y="280" width="88" height="22" fill="none"></rect>
+    <line x1="512" y1="280" x2="512" y2="302" stroke="#26456A" stroke-width="3"></line>
+    <line x1="600" y1="280" x2="600" y2="302" stroke="#26456A" stroke-width="3"></line>
+    <path d="M512 302 a44 14 0 0 0 88 0" fill="none" stroke="#26456A" stroke-width="3"></path>
+    <ellipse cx="556" cy="280" rx="30" ry="9" fill="none" stroke="#C98F33" stroke-width="2"></ellipse>
+  </g>
+  <g>
+    <ellipse cx="624" cy="316" rx="32" ry="11" fill="#D69A3A"></ellipse>
+    <rect x="592" y="300" width="64" height="16" fill="#D69A3A"></rect>
+    <ellipse cx="624" cy="300" rx="32" ry="11" fill="#E7B45A" stroke="#26456A" stroke-width="3"></ellipse>
+    <line x1="592" y1="300" x2="592" y2="316" stroke="#26456A" stroke-width="3"></line>
+    <line x1="656" y1="300" x2="656" y2="316" stroke="#26456A" stroke-width="3"></line>
+    <path d="M592 316 a32 11 0 0 0 64 0" fill="none" stroke="#26456A" stroke-width="3"></path>
+  </g>
+</svg>

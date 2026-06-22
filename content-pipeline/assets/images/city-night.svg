@@ -1,0 +1,68 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a city skyline at night">
+  <rect width="860" height="360" fill="#101A26"></rect>
+  <defs>
+    <linearGradient id="ct-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16263A"></stop>
+      <stop offset="1" stop-color="#0E1722"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="860" height="296" fill="url(#ct-sky)"></rect>
+
+  <g fill="#A7C4E0">
+    <circle cx="120" cy="64" r="1.6" opacity="0.9"></circle>
+    <circle cx="210" cy="120" r="1.2" opacity="0.7"></circle>
+    <circle cx="690" cy="96" r="1.4" opacity="0.7"></circle>
+    <circle cx="760" cy="60" r="1.6" opacity="0.9"></circle>
+    <circle cx="800" cy="140" r="1.2" opacity="0.6"></circle>
+  </g>
+
+  <g>
+    <circle cx="148" cy="92" r="28" fill="#D6E2EF"></circle>
+    <circle cx="162" cy="84" r="24" fill="#16263A"></circle>
+  </g>
+
+  <path d="M0 296 H860 V360 H0 Z" fill="#0C141D"></path>
+  <ellipse cx="430" cy="300" rx="252" ry="20" fill="#10202E"></ellipse>
+
+  <g stroke="#5C84B0" stroke-width="3" stroke-linejoin="round">
+    <rect x="236" y="186" width="68" height="110" fill="#2A3D50"></rect>
+    <rect x="310" y="150" width="60" height="146" fill="#243646"></rect>
+    <rect x="380" y="108" width="96" height="188" fill="#2A3D50"></rect>
+    <rect x="484" y="158" width="62" height="138" fill="#243646"></rect>
+    <rect x="552" y="200" width="66" height="96" fill="#2A3D50"></rect>
+    <rect x="624" y="220" width="40" height="76" fill="#243646"></rect>
+  </g>
+  <line x1="428" y1="108" x2="428" y2="86" stroke="#5C84B0" stroke-width="3"></line>
+  <circle cx="428" cy="84" r="4" fill="#9E5563"></circle>
+
+  <g fill="#26414F">
+    <rect x="250" y="200" width="11" height="14"></rect><rect x="278" y="200" width="11" height="14"></rect>
+    <rect x="250" y="228" width="11" height="14"></rect><rect x="278" y="228" width="11" height="14"></rect>
+    <rect x="250" y="256" width="11" height="14"></rect><rect x="278" y="256" width="11" height="14"></rect>
+    <rect x="323" y="168" width="11" height="14"></rect><rect x="347" y="168" width="11" height="14"></rect>
+    <rect x="323" y="200" width="11" height="14"></rect><rect x="347" y="200" width="11" height="14"></rect>
+    <rect x="323" y="232" width="11" height="14"></rect><rect x="347" y="232" width="11" height="14"></rect>
+    <rect x="398" y="128" width="12" height="15"></rect><rect x="428" y="128" width="12" height="15"></rect><rect x="446" y="128" width="12" height="15"></rect>
+    <rect x="398" y="162" width="12" height="15"></rect><rect x="428" y="162" width="12" height="15"></rect><rect x="446" y="162" width="12" height="15"></rect>
+    <rect x="398" y="196" width="12" height="15"></rect><rect x="428" y="196" width="12" height="15"></rect><rect x="446" y="196" width="12" height="15"></rect>
+    <rect x="398" y="230" width="12" height="15"></rect><rect x="428" y="230" width="12" height="15"></rect><rect x="446" y="230" width="12" height="15"></rect>
+    <rect x="497" y="176" width="11" height="14"></rect><rect x="523" y="176" width="11" height="14"></rect>
+    <rect x="497" y="206" width="11" height="14"></rect><rect x="523" y="206" width="11" height="14"></rect>
+    <rect x="497" y="236" width="11" height="14"></rect><rect x="523" y="236" width="11" height="14"></rect>
+    <rect x="566" y="218" width="11" height="14"></rect><rect x="592" y="218" width="11" height="14"></rect>
+    <rect x="566" y="248" width="11" height="14"></rect><rect x="592" y="248" width="11" height="14"></rect>
+  </g>
+  <g fill="#F0C56E">
+    <rect x="278" y="200" width="11" height="14"></rect>
+    <rect x="250" y="256" width="11" height="14"></rect>
+    <rect x="323" y="200" width="11" height="14"></rect>
+    <rect x="347" y="232" width="11" height="14"></rect>
+    <rect x="428" y="162" width="12" height="15"></rect>
+    <rect x="398" y="196" width="12" height="15"></rect>
+    <rect x="446" y="196" width="12" height="15"></rect>
+    <rect x="428" y="230" width="12" height="15"></rect>
+    <rect x="523" y="206" width="11" height="14"></rect>
+    <rect x="497" y="236" width="11" height="14"></rect>
+    <rect x="566" y="248" width="11" height="14"></rect>
+  </g>
+</svg>

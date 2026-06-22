@@ -1,0 +1,60 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a glowing street lamp at night">
+  <rect width="860" height="360" fill="#101A26"></rect>
+  <defs>
+    <linearGradient id="lp-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16263A"></stop>
+      <stop offset="1" stop-color="#0E1722"></stop>
+    </linearGradient>
+    <radialGradient id="lp-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F0C56E" stop-opacity="0.65"></stop>
+      <stop offset="1" stop-color="#F0C56E" stop-opacity="0"></stop>
+    </radialGradient>
+    <radialGradient id="lp-pool" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F0C56E" stop-opacity="0.4"></stop>
+      <stop offset="1" stop-color="#F0C56E" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="860" height="296" fill="url(#lp-sky)"></rect>
+
+  
+  <g fill="#A7C4E0">
+    <circle cx="120" cy="70" r="1.6" opacity="0.9"></circle>
+    <circle cx="250" cy="120" r="1.2" opacity="0.7"></circle>
+    <circle cx="640" cy="100" r="1.4" opacity="0.7"></circle>
+    <circle cx="720" cy="60" r="1.2" opacity="0.6"></circle>
+    <circle cx="780" cy="130" r="1.6" opacity="0.9"></circle>
+  </g>
+
+  
+  <g>
+    <circle cx="700" cy="90" r="30" fill="#D6E2EF"></circle>
+    <circle cx="716" cy="82" r="26" fill="#16263A"></circle>
+  </g>
+
+  
+  <path d="M0 296 H860 V360 H0 Z" fill="#0C141D"></path>
+
+  
+  <ellipse cx="430" cy="300" rx="200" ry="34" fill="url(#lp-pool)"></ellipse>
+
+  
+  <path d="M414 196 L446 196 L520 296 L340 296 Z" fill="#F0C56E" opacity="0.12"></path>
+
+  
+  <circle cx="430" cy="173" r="92" fill="url(#lp-glow)"></circle>
+
+  
+  <rect x="422" y="150" width="16" height="146" fill="#2A3D50" stroke="#5C84B0" stroke-width="3"></rect>
+  <rect x="404" y="288" width="52" height="12" rx="3" fill="#2A3D50" stroke="#5C84B0" stroke-width="3"></rect>
+
+  
+  <path d="M398 152 L430 116 L462 152 Z" fill="#2A3D50" stroke="#5C84B0" stroke-width="3" stroke-linejoin="round"></path>
+  <circle cx="430" cy="108" r="6" fill="#2A3D50" stroke="#5C84B0" stroke-width="3"></circle>
+
+  
+  <g stroke="#5C84B0" stroke-width="3" stroke-linejoin="round">
+    <rect x="406" y="150" width="48" height="46" rx="3" fill="#F0C56E"></rect>
+    <line x1="430" y1="150" x2="430" y2="196"></line>
+    <line x1="406" y1="173" x2="454" y2="173"></line>
+  </g>
+</svg>

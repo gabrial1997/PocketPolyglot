@@ -1,0 +1,32 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of an open book">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  
+
+  <path d="M0 296 H860 V360 H0 Z" fill="#DED9CC"></path>
+  <ellipse cx="430" cy="306" rx="220" ry="18" fill="#D4CEBE"></ellipse>
+
+  
+  <path d="M430 236 L186 258 L196 316 L430 300 Z" fill="#2C5E8C" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+  <path d="M430 236 L674 258 L664 316 L430 300 Z" fill="#1F4E79" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+
+  
+  <path d="M430 226 L214 250 L222 304 L430 290 Z" fill="#FBFAF6" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+  <path d="M430 226 L646 250 L638 304 L430 290 Z" fill="#FBFAF6" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+
+  
+  <g stroke="#B9C6D2" stroke-width="3" stroke-linecap="round">
+    <line x1="256" y1="258" x2="392" y2="246"></line>
+    <line x1="258" y1="270" x2="394" y2="258"></line>
+    <line x1="260" y1="282" x2="396" y2="270"></line>
+    <line x1="468" y1="246" x2="604" y2="258"></line>
+    <line x1="466" y1="258" x2="602" y2="270"></line>
+    <line x1="464" y1="270" x2="600" y2="282"></line>
+  </g>
+
+  
+  <line x1="430" y1="226" x2="430" y2="300" stroke="#26456A" stroke-width="3"></line>
+
+  
+  <path d="M430 226 L420 326 L430 314 L440 326 Z" fill="#9E2B3A" stroke="#26456A" stroke-width="2.5" stroke-linejoin="round"></path>
+</svg>

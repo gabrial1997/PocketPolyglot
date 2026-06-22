@@ -1,0 +1,36 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a dog">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  
+
+  <path d="M0 296 H860 V360 H0 Z" fill="#DED9CC"></path>
+  <ellipse cx="430" cy="304" rx="130" ry="16" fill="#D4CEBE"></ellipse>
+
+  
+  <path d="M474 286 C522 290 532 244 502 226" fill="none" stroke="#26456A" stroke-width="18" stroke-linecap="round"></path>
+  <path d="M474 286 C522 290 532 244 502 226" fill="none" stroke="#C99A63" stroke-width="12" stroke-linecap="round"></path>
+
+  
+  <path d="M386 300 C374 244 396 210 430 210 C464 210 486 244 474 300 Z" fill="#C99A63" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+  
+  <ellipse cx="410" cy="298" rx="17" ry="10" fill="#C99A63" stroke="#26456A" stroke-width="3"></ellipse>
+  <ellipse cx="450" cy="298" rx="17" ry="10" fill="#C99A63" stroke="#26456A" stroke-width="3"></ellipse>
+
+  
+  <path d="M388 150 C360 150 350 206 380 214 C396 218 398 176 398 162 Z" fill="#B07F4E" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+  <path d="M472 150 C500 150 510 206 480 214 C464 218 462 176 462 162 Z" fill="#B07F4E" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+
+  
+  <circle cx="430" cy="172" r="46" fill="#C99A63" stroke="#26456A" stroke-width="3"></circle>
+
+  
+  <ellipse cx="430" cy="196" rx="26" ry="20" fill="#E0C39A" stroke="#26456A" stroke-width="3"></ellipse>
+  <ellipse cx="430" cy="186" rx="9" ry="7" fill="#1A2733"></ellipse>
+  <path d="M430 193 V204 M430 204 q-9 6 -16 2 M430 204 q9 6 16 2" fill="none" stroke="#26456A" stroke-width="2.5" stroke-linecap="round"></path>
+
+  
+  <circle cx="412" cy="160" r="6" fill="#1A2733"></circle>
+  <circle cx="448" cy="160" r="6" fill="#1A2733"></circle>
+  <circle cx="414" cy="158" r="2" fill="#FBFAF6"></circle>
+  <circle cx="450" cy="158" r="2" fill="#FBFAF6"></circle>
+</svg>

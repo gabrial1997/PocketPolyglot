@@ -1,0 +1,35 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a car">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  
+  <circle cx="140" cy="86" r="30" fill="#E7B45A" opacity="0.85"></circle>
+
+  
+  <path d="M0 296 H860 V360 H0 Z" fill="#DED9CC"></path>
+  <ellipse cx="430" cy="300" rx="230" ry="20" fill="#D4CEBE"></ellipse>
+
+  
+  <path d="M300 214 L344 166 L520 166 L572 214 Z" fill="#2C5E8C" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+  <g stroke="#26456A" stroke-width="3" stroke-linejoin="round">
+    <path d="M334 210 L360 178 L424 178 L424 210 Z" fill="#CFE0EE"></path>
+    <path d="M440 178 L508 178 L540 210 L440 210 Z" fill="#CFE0EE"></path>
+  </g>
+
+  
+  <rect x="256" y="208" width="360" height="74" rx="28" fill="#2C5E8C" stroke="#26456A" stroke-width="3"></rect>
+
+  
+  <ellipse cx="606" cy="240" rx="9" ry="12" fill="#F4ECC8" stroke="#26456A" stroke-width="3"></ellipse>
+  
+  <rect x="258" y="232" width="12" height="18" rx="4" fill="#9E2B3A" stroke="#26456A" stroke-width="2"></rect>
+
+  
+  <g>
+    <circle cx="338" cy="286" r="36" fill="#26303A" stroke="#26456A" stroke-width="3"></circle>
+    <circle cx="338" cy="286" r="14" fill="#B9C4CE"></circle>
+  </g>
+  <g>
+    <circle cx="534" cy="286" r="36" fill="#26303A" stroke="#26456A" stroke-width="3"></circle>
+    <circle cx="534" cy="286" r="14" fill="#B9C4CE"></circle>
+  </g>
+</svg>

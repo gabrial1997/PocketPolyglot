@@ -1,0 +1,58 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a house">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  
+  <circle cx="140" cy="86" r="30" fill="#E7B45A" opacity="0.85"></circle>
+
+  
+  <path d="M0 296 H860 V360 H0 Z" fill="#DED9CC"></path>
+  <ellipse cx="430" cy="300" rx="250" ry="22" fill="#D4CEBE"></ellipse>
+
+  
+  <g opacity="0.55">
+    <rect x="175" y="214" width="9" height="86" rx="3" fill="#5E6F66"></rect>
+    <circle cx="180" cy="196" r="40" fill="#8FA593"></circle>
+    <circle cx="154" cy="214" r="30" fill="#9DB1A2"></circle>
+    <circle cx="206" cy="214" r="30" fill="#9DB1A2"></circle>
+  </g>
+  <g opacity="0.55">
+    <rect x="676" y="214" width="9" height="86" rx="3" fill="#5E6F66"></rect>
+    <circle cx="680" cy="196" r="40" fill="#8FA593"></circle>
+    <circle cx="654" cy="214" r="30" fill="#9DB1A2"></circle>
+    <circle cx="706" cy="214" r="30" fill="#9DB1A2"></circle>
+  </g>
+
+  
+  <rect x="310" y="178" width="240" height="122" fill="#FBFAF6"></rect>
+  <rect x="310" y="178" width="240" height="122" stroke="#26456A" stroke-width="3"></rect>
+
+  
+  <path d="M296 182 L430 96 L564 182 Z" fill="#2C5E8C"></path>
+  <path d="M296 182 L430 96 L564 182" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+
+  
+  <rect x="402" y="222" width="56" height="78" rx="4" fill="#9E2B3A"></rect>
+  <circle cx="446" cy="262" r="4" fill="#F4F2ED"></circle>
+
+  
+  <g stroke="#26456A" stroke-width="3">
+    <rect x="334" y="212" width="46" height="46" rx="3" fill="#CFE0EE"></rect>
+    <line x1="357" y1="212" x2="357" y2="258"></line>
+    <line x1="334" y1="235" x2="380" y2="235"></line>
+  </g>
+  <g stroke="#26456A" stroke-width="3">
+    <rect x="480" y="212" width="46" height="46" rx="3" fill="#CFE0EE"></rect>
+    <line x1="503" y1="212" x2="503" y2="258"></line>
+    <line x1="480" y1="235" x2="526" y2="235"></line>
+  </g>
+
+  
+  <g>
+    <circle cx="276" cy="288" r="22" fill="#7D9684"></circle>
+    <circle cx="300" cy="292" r="16" fill="#8FA593"></circle>
+  </g>
+  <g>
+    <circle cx="584" cy="288" r="22" fill="#7D9684"></circle>
+    <circle cx="560" cy="292" r="16" fill="#8FA593"></circle>
+  </g>
+</svg>

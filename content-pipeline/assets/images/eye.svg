@@ -1,0 +1,47 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of an eye">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  
+
+  <ellipse cx="430" cy="320" rx="150" ry="14" fill="#DED9CC" opacity="0.7"></ellipse>
+
+  <defs>
+    <clipPath id="eyeclip">
+      <path d="M250 180 Q430 92 610 180 Q430 268 250 180 Z"></path>
+    </clipPath>
+  </defs>
+
+  
+  <path d="M250 180 Q430 92 610 180 Q430 268 250 180 Z" fill="#FBFAF6"></path>
+
+  
+  <g clip-path="url(#eyeclip)">
+    <circle cx="430" cy="180" r="62" fill="#2C5E8C"></circle>
+    <circle cx="430" cy="180" r="62" fill="none" stroke="#1F4E79" stroke-width="6"></circle>
+    <g stroke="#6EA8DA" stroke-width="2.5" opacity="0.8">
+      <line x1="430" y1="128" x2="430" y2="150"></line>
+      <line x1="430" y1="210" x2="430" y2="232"></line>
+      <line x1="378" y1="180" x2="400" y2="180"></line>
+      <line x1="460" y1="180" x2="482" y2="180"></line>
+      <line x1="393" y1="143" x2="408" y2="158"></line>
+      <line x1="467" y1="143" x2="452" y2="158"></line>
+      <line x1="393" y1="217" x2="408" y2="202"></line>
+      <line x1="467" y1="217" x2="452" y2="202"></line>
+    </g>
+    <circle cx="430" cy="180" r="26" fill="#142028"></circle>
+    <circle cx="416" cy="166" r="9" fill="#FBFAF6"></circle>
+    <circle cx="442" cy="192" r="4" fill="#FBFAF6" opacity="0.8"></circle>
+  </g>
+
+  
+  <path d="M250 180 Q430 92 610 180 Q430 268 250 180 Z" fill="none" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+
+  
+  <path d="M262 168 Q430 86 598 168" fill="none" stroke="#26456A" stroke-width="2.5" opacity="0.5"></path>
+  <g stroke="#26456A" stroke-width="3" stroke-linecap="round">
+    <line x1="318" y1="120" x2="310" y2="104"></line>
+    <line x1="376" y1="104" x2="372" y2="86"></line>
+    <line x1="484" y1="104" x2="488" y2="86"></line>
+    <line x1="542" y1="120" x2="550" y2="104"></line>
+  </g>
+</svg>

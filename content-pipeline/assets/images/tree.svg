@@ -1,0 +1,40 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a tree">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  
+  <circle cx="140" cy="86" r="30" fill="#E7B45A" opacity="0.85"></circle>
+
+  
+  <path d="M0 296 H860 V360 H0 Z" fill="#DED9CC"></path>
+  <ellipse cx="430" cy="300" rx="170" ry="20" fill="#D4CEBE"></ellipse>
+
+  
+  <rect x="414" y="186" width="32" height="114" rx="6" fill="#8A6A4F" stroke="#26456A" stroke-width="3"></rect>
+
+  
+  <g fill="#26456A">
+    <circle cx="430" cy="124" r="81"></circle>
+    <circle cx="358" cy="156" r="55"></circle>
+    <circle cx="502" cy="156" r="55"></circle>
+    <circle cx="388" cy="98" r="49"></circle>
+    <circle cx="472" cy="98" r="49"></circle>
+  </g>
+  <g fill="#8FA593">
+    <circle cx="430" cy="124" r="78"></circle>
+    <circle cx="358" cy="156" r="52"></circle>
+    <circle cx="502" cy="156" r="52"></circle>
+    <circle cx="388" cy="98" r="46"></circle>
+    <circle cx="472" cy="98" r="46"></circle>
+  </g>
+  <g fill="#9DB1A2" opacity="0.7">
+    <circle cx="404" cy="104" r="30"></circle>
+    <circle cx="448" cy="138" r="26"></circle>
+  </g>
+
+  
+  <g fill="#9E2B3A">
+    <circle cx="372" cy="150" r="7"></circle>
+    <circle cx="486" cy="120" r="7"></circle>
+    <circle cx="430" cy="170" r="7"></circle>
+  </g>
+</svg>

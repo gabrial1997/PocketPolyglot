@@ -1,0 +1,37 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a city skyline">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  <circle cx="140" cy="86" r="30" fill="#E7B45A" opacity="0.85"></circle>
+
+  <path d="M0 296 H860 V360 H0 Z" fill="#DED9CC"></path>
+  <ellipse cx="430" cy="300" rx="252" ry="20" fill="#D4CEBE"></ellipse>
+
+  <g stroke="#26456A" stroke-width="3" stroke-linejoin="round">
+    <rect x="236" y="186" width="68" height="110" fill="#CFE0EE"></rect>
+    <rect x="310" y="150" width="60" height="146" fill="#FBFAF6"></rect>
+    <rect x="380" y="108" width="96" height="188" fill="#FBFAF6"></rect>
+    <rect x="484" y="158" width="62" height="138" fill="#CFE0EE"></rect>
+    <rect x="552" y="200" width="66" height="96" fill="#FBFAF6"></rect>
+    <rect x="624" y="220" width="40" height="76" fill="#CFE0EE"></rect>
+  </g>
+  <line x1="428" y1="108" x2="428" y2="86" stroke="#26456A" stroke-width="3"></line>
+  <circle cx="428" cy="84" r="4" fill="#9E2B3A"></circle>
+
+  <g fill="#6EA8DA">
+    <rect x="250" y="200" width="11" height="14"></rect><rect x="278" y="200" width="11" height="14"></rect>
+    <rect x="250" y="228" width="11" height="14"></rect><rect x="278" y="228" width="11" height="14"></rect>
+    <rect x="250" y="256" width="11" height="14"></rect><rect x="278" y="256" width="11" height="14"></rect>
+    <rect x="323" y="168" width="11" height="14"></rect><rect x="347" y="168" width="11" height="14"></rect>
+    <rect x="323" y="200" width="11" height="14"></rect><rect x="347" y="200" width="11" height="14"></rect>
+    <rect x="323" y="232" width="11" height="14"></rect><rect x="347" y="232" width="11" height="14"></rect>
+    <rect x="398" y="128" width="12" height="15"></rect><rect x="428" y="128" width="12" height="15"></rect><rect x="446" y="128" width="12" height="15"></rect>
+    <rect x="398" y="162" width="12" height="15"></rect><rect x="428" y="162" width="12" height="15"></rect><rect x="446" y="162" width="12" height="15"></rect>
+    <rect x="398" y="196" width="12" height="15"></rect><rect x="428" y="196" width="12" height="15"></rect><rect x="446" y="196" width="12" height="15"></rect>
+    <rect x="398" y="230" width="12" height="15"></rect><rect x="428" y="230" width="12" height="15"></rect><rect x="446" y="230" width="12" height="15"></rect>
+    <rect x="497" y="176" width="11" height="14"></rect><rect x="523" y="176" width="11" height="14"></rect>
+    <rect x="497" y="206" width="11" height="14"></rect><rect x="523" y="206" width="11" height="14"></rect>
+    <rect x="497" y="236" width="11" height="14"></rect><rect x="523" y="236" width="11" height="14"></rect>
+    <rect x="566" y="218" width="11" height="14"></rect><rect x="592" y="218" width="11" height="14"></rect>
+    <rect x="566" y="248" width="11" height="14"></rect><rect x="592" y="248" width="11" height="14"></rect>
+  </g>
+</svg>

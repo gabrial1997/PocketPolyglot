@@ -1,0 +1,31 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a cup of coffee">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  
+  <circle cx="140" cy="86" r="30" fill="#E7B45A" opacity="0.85"></circle>
+
+  
+  <path d="M0 296 H860 V360 H0 Z" fill="#DED9CC"></path>
+  <ellipse cx="430" cy="300" rx="190" ry="20" fill="#D4CEBE"></ellipse>
+
+  
+  <g fill="none" stroke="#C2BBAB" stroke-width="5" stroke-linecap="round" opacity="0.85">
+    <path d="M404 184 C392 164 416 148 404 126 C394 108 412 96 406 82"></path>
+    <path d="M456 184 C468 164 444 148 456 126 C466 108 448 96 454 82"></path>
+  </g>
+
+  
+  <ellipse cx="430" cy="292" rx="132" ry="20" fill="#FBFAF6" stroke="#26456A" stroke-width="3"></ellipse>
+
+  
+  <path d="M508 214 C552 212 553 272 504 274" fill="none" stroke="#26456A" stroke-width="16" stroke-linecap="round"></path>
+  <path d="M508 214 C552 212 553 272 504 274" fill="none" stroke="#FBFAF6" stroke-width="10" stroke-linecap="round"></path>
+
+  
+  <path d="M350 202 L510 202 L494 276 Q430 294 366 276 Z" fill="#FBFAF6" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+  <rect x="404" y="226" width="52" height="40" rx="6" fill="#9E2B3A"></rect>
+
+  
+  <ellipse cx="430" cy="202" rx="82" ry="15" fill="#FBFAF6" stroke="#26456A" stroke-width="3"></ellipse>
+  <ellipse cx="430" cy="203" rx="66" ry="10" fill="#6B4A35"></ellipse>
+</svg>

@@ -1,0 +1,26 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a road">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  <circle cx="140" cy="86" r="30" fill="#E7B45A" opacity="0.85"></circle>
+
+  <path d="M0 200 Q215 172 430 196 Q645 172 860 196 V360 H0 Z" fill="#9DB1A2"></path>
+  <path d="M0 240 Q215 218 430 238 Q645 218 860 238 V360 H0 Z" fill="#8FA593"></path>
+  <path d="M0 300 H860 V360 H0 Z" fill="#7D9684"></path>
+
+  <g opacity="0.9">
+    <rect x="146" y="236" width="8" height="40" rx="3" fill="#5E6F66"></rect>
+    <circle cx="150" cy="226" r="26" fill="#728C77"></circle>
+  </g>
+  <g opacity="0.9">
+    <rect x="706" y="236" width="8" height="40" rx="3" fill="#5E6F66"></rect>
+    <circle cx="710" cy="226" r="26" fill="#728C77"></circle>
+  </g>
+
+  <path d="M396 200 L464 200 L636 360 L224 360 Z" fill="#717E88" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+
+  <g fill="#E7B45A">
+    <rect x="426" y="210" width="8" height="18" rx="2"></rect>
+    <rect x="424" y="250" width="12" height="26" rx="2"></rect>
+    <rect x="421" y="300" width="18" height="42" rx="3"></rect>
+  </g>
+</svg>

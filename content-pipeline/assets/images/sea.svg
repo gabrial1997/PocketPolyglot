@@ -1,0 +1,31 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of the sea">
+  <rect width="860" height="360" fill="#EAE6DC"></rect>
+
+  <circle cx="140" cy="86" r="30" fill="#E7B45A" opacity="0.85"></circle>
+
+  
+  <rect x="0" y="198" width="860" height="162" fill="#6EA8DA"></rect>
+  <rect x="0" y="198" width="860" height="7" fill="#2C5E8C" opacity="0.35"></rect>
+
+  
+  <g>
+    <path d="M430 198 L432 130 L478 188 Z" fill="#FBFAF6" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+    <path d="M428 188 L428 130 L392 188 Z" fill="#CFE0EE" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+    <line x1="430" y1="126" x2="430" y2="196" stroke="#26456A" stroke-width="3"></line>
+    <path d="M384 196 L476 196 L462 214 L398 214 Z" fill="#9E2B3A" stroke="#26456A" stroke-width="3" stroke-linejoin="round"></path>
+  </g>
+
+  
+  <g fill="none" stroke="#FBFAF6" stroke-width="3.5" stroke-linecap="round" opacity="0.75">
+    <path d="M120 244 q14 -10 28 0 t28 0"></path>
+    <path d="M600 240 q14 -10 28 0 t28 0"></path>
+    <path d="M250 300 q16 -11 32 0 t32 0"></path>
+    <path d="M540 312 q16 -11 32 0 t32 0"></path>
+  </g>
+  <g fill="none" stroke="#A9CDEA" stroke-width="3.5" stroke-linecap="round" opacity="0.9">
+    <path d="M330 262 q14 -10 28 0 t28 0"></path>
+    <path d="M680 290 q16 -11 32 0 t32 0"></path>
+    <path d="M150 330 q16 -11 32 0 t32 0"></path>
+    <path d="M430 286 q16 -11 32 0 t32 0"></path>
+  </g>
+</svg>

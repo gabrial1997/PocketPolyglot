@@ -1,0 +1,57 @@
+<svg width="860" height="360" viewBox="0 0 860 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of a cup of coffee at night">
+  <rect width="860" height="360" fill="#101A26"></rect>
+  <defs>
+    <linearGradient id="cf-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16263A"></stop>
+      <stop offset="1" stop-color="#0E1722"></stop>
+    </linearGradient>
+    <radialGradient id="cf-warm" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F0C56E" stop-opacity="0.55"></stop>
+      <stop offset="1" stop-color="#F0C56E" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="860" height="296" fill="url(#cf-sky)"></rect>
+
+  
+  <g fill="#A7C4E0">
+    <circle cx="120" cy="70" r="1.6" opacity="0.9"></circle>
+    <circle cx="240" cy="120" r="1.2" opacity="0.7"></circle>
+    <circle cx="640" cy="96" r="1.4" opacity="0.7"></circle>
+    <circle cx="720" cy="150" r="1.2" opacity="0.6"></circle>
+    <circle cx="760" cy="70" r="1.6" opacity="0.9"></circle>
+  </g>
+
+  
+  <g>
+    <circle cx="150" cy="98" r="30" fill="#D6E2EF"></circle>
+    <circle cx="166" cy="90" r="26" fill="#16263A"></circle>
+  </g>
+
+  
+  <path d="M0 296 H860 V360 H0 Z" fill="#0C141D"></path>
+  <ellipse cx="430" cy="300" rx="190" ry="20" fill="#10202E"></ellipse>
+
+  
+  <circle cx="430" cy="220" r="150" fill="url(#cf-warm)"></circle>
+
+  
+  <g fill="none" stroke="#F0C56E" stroke-width="5" stroke-linecap="round" opacity="0.6">
+    <path d="M404 184 C392 164 416 148 404 126 C394 108 412 96 406 82"></path>
+    <path d="M456 184 C468 164 444 148 456 126 C466 108 448 96 454 82"></path>
+  </g>
+
+  
+  <ellipse cx="430" cy="292" rx="132" ry="20" fill="#2A3D50" stroke="#5C84B0" stroke-width="3"></ellipse>
+
+  
+  <path d="M508 214 C552 212 553 272 504 274" fill="none" stroke="#5C84B0" stroke-width="16" stroke-linecap="round"></path>
+  <path d="M508 214 C552 212 553 272 504 274" fill="none" stroke="#2A3D50" stroke-width="10" stroke-linecap="round"></path>
+
+  
+  <path d="M350 202 L510 202 L494 276 Q430 294 366 276 Z" fill="#2A3D50" stroke="#5C84B0" stroke-width="3" stroke-linejoin="round"></path>
+  <rect x="404" y="226" width="52" height="40" rx="6" fill="#3A2530"></rect>
+
+  
+  <ellipse cx="430" cy="202" rx="82" ry="15" fill="#2A3D50" stroke="#5C84B0" stroke-width="3"></ellipse>
+  <ellipse cx="430" cy="203" rx="66" ry="10" fill="#F0C56E"></ellipse>
+</svg>
