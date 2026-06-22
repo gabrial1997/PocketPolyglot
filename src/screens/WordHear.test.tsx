@@ -30,6 +30,7 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
   const props: ChoiceCardProps = {
     item: fixtureItem(overrides),
     onPlay: jest.fn(),
+    onStop: jest.fn(),
     onAnswer: jest.fn(),
     onComplete: jest.fn(),
   };
@@ -51,6 +52,17 @@ describe('WordHear', () => {
     const u = renderCard();
     fireEvent.press(u.getByLabelText('Play'));
     expect(u.props.onPlay).toHaveBeenCalledWith('native', 1); // default speed 1× passed as the rate
+  });
+
+  it('the play orb is a play/pause toggle: tapping again while playing stops playback (bug 3)', () => {
+    const u = renderCard();
+    const orb = u.getByLabelText('Play');
+    fireEvent.press(orb); // start — timer-fallback gate now reports playing:true
+    expect(u.props.onPlay).toHaveBeenCalledWith('native', 1);
+    expect(u.props.onStop).not.toHaveBeenCalled();
+    fireEvent.press(orb); // tap mid-clip — toggles to stop instead of restarting
+    expect(u.props.onStop).toHaveBeenCalledTimes(1);
+    expect(u.props.onPlay).toHaveBeenCalledTimes(1); // did NOT re-fire playback
   });
 
   it('completes once as correct (first try) when the right gloss is picked', () => {

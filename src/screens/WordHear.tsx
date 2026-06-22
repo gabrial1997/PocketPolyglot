@@ -13,12 +13,12 @@ import type { ChoiceCardProps } from './cardProps';
 
 const ADVANCE_DELAY_MS = 500;
 
-export function WordHear({ item, onPlay, onAnswer, onComplete, speed: speedProp, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
+export function WordHear({ item, onPlay, onStop, onAnswer, onComplete, speed: speedProp, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
   // Playback speed is ephemeral card state (CLAUDE.md boundary). The chip drives it; an explicit
   // prop seeds the initial value and an optional listener is notified for any external interest.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const [wrongValue, setWrongValue] = useState<string | null>(null);
   const [missed, setMissed] = useState(false);
   const [correctValue, setCorrectValue] = useState<string | null>(null);
@@ -42,7 +42,12 @@ export function WordHear({ item, onPlay, onAnswer, onComplete, speed: speedProp,
     }
   };
 
-  const replay = (): void => play(() => onPlay('native', speed), speed);
+  // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice (stopGate clears the
+  // local fallback gate too, for the no-real-audio path); tapping at rest replays.
+  const replay = (): void => {
+    if (playing) { onStop?.(); stopGate(); }
+    else play(() => onPlay('native', speed), speed);
+  };
 
   return (
     <Screen>

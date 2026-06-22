@@ -7,13 +7,17 @@ import { Screen, PlayOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME
 import { Eyebrow, WordTag, WordHero, GlossLine, Caption, FootNote, CardBody, CardFooter, HeadRow, ExampleRow, LiteralNote, wordTagFor } from '../components/cardChrome';
 import type { BaseCardProps } from './cardProps';
 
-export function WordLearnFunction({ item, onPlay, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
+export function WordLearnFunction({ item, onPlay, onStop, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const tag = wordTagFor(item.wordClass) ?? { label: 'Function word', tone: 'neutral' as const };
-  const replay = (): void => play(() => onPlay('native', speed), speed);
+  // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
+  const replay = (): void => {
+    if (playing) { onStop?.(); stopGate(); }
+    else play(() => onPlay('native', speed), speed);
+  };
   return (
     <Screen>
       <CardBody>

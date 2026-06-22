@@ -16,12 +16,17 @@ import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import type { ChoiceCardProps } from './cardProps';
 
-export function PhraseMeaning({ item, onPlay, onAnswer, onComplete, speed: speedProp, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
+export function PhraseMeaning({ item, onPlay, onStop, onAnswer, onComplete, speed: speedProp, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
   const T = useTheme();
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
+  const replay = (): void => {
+    if (playing) { onStop?.(); stopGate(); }
+    else play(() => onPlay('native', speed), speed);
+  };
   const [wrongValue, setWrongValue] = useState<string | null>(null);
   const [correctValue, setCorrectValue] = useState<string | null>(null);
   const [missed, setMissed] = useState(false);
@@ -56,7 +61,7 @@ export function PhraseMeaning({ item, onPlay, onAnswer, onComplete, speed: speed
 
         {/* compact audio row */}
         <View style={styles.audioRow}>
-          <PlayOrb size={46} playing={playing} onPress={() => play(() => onPlay('native', speed), speed)} />
+          <PlayOrb size={46} playing={playing} onPress={replay} />
           <View style={{ flex: 1 }}>
             <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={34} count={36} />
           </View>

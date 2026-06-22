@@ -13,15 +13,19 @@ import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 type Props = RecordingCardProps & ChoiceCardProps;
 
 export function WordSay(props: Props): React.JSX.Element {
-  const { item, onPlay, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
   const T = useTheme();
   const m = useLoopStage();
   const choices = item.choices ?? [];
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
-  const replay = (): void => play(() => onPlay('native', speed), speed);
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
+  const replay = (): void => {
+    if (playing) { onStop?.(); stopGate(); }
+    else play(() => onPlay('native', speed), speed);
+  };
   const recStarted = useRef(false);
   const startRec = (): void => {
     if (recStarted.current) return;

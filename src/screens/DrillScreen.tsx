@@ -29,7 +29,7 @@ type Say = null | 'idle' | 'rec' | 'done';
 type PairHints = ReviewPair & { aHint?: string; bHint?: string };
 
 export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
-  const { item, onPlay, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
   const T = useTheme();
   const pair = item.pair as PairHints | undefined;
 
@@ -38,7 +38,11 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
   const [picked, setPicked] = useState<Side | null>(null);
   const { playing, positionMs, rate, play, stop } = usePlayClip(item.audio.envelope); // reactive soundbar gate
-  const replay = (): void => play(() => onPlay('native', speed), speed);
+  // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
+  const replay = (): void => {
+    if (playing) { onStop?.(); stop(); }
+    else play(() => onPlay('native', speed), speed);
+  };
   const [say, setSay] = useState<Say>(null);
   // `missed` is sticky across a Try-again reset so the first-try miss is remembered for honest SRS
   // correctness (locked rule + this card's header comment). `right` is the current selection state.

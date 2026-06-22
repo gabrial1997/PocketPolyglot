@@ -19,17 +19,23 @@ export const REPEAT_DELAY_MS = 700; // gap after the first clip finishes before 
 
 type HearExtra = { newForm?: string; newLemma?: string };
 
-export function PhraseHear({ item, onPlay, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
+export function PhraseHear({ item, onPlay, onStop, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
   const T = useTheme();
   const x = item as ReviewItem & HearExtra;
   const env = item.audio.envelope;
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play } = usePlayClip(env); // shared soundbar gate (real-amplitude, no loop)
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(env); // shared soundbar gate (real-amplitude, no loop)
   const [shown, setShown] = useState(false);
 
   const playClip = (): void => play(() => onPlay('native', speed), speed);
+  // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; at rest it replays.
+  // (The mount auto-play/repeat below always uses playClip directly, never this toggle.)
+  const toggleClip = (): void => {
+    if (playing) { onStop?.(); stopGate(); }
+    else playClip();
+  };
 
   // First exposure SAYS the phrase, then REPEATS it once (BACKEND_INTEGRATION §4 / 2026-06-19 spec).
   // The repeat waits out the first clip's length (+ a short gap) so it doesn't overlap playback.
@@ -68,7 +74,7 @@ export function PhraseHear({ item, onPlay, onComplete, speed: speedProp, onSpeed
           <View style={styles.wave}>
             <LiveWaveform envelope={env} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={58} count={44} />
           </View>
-          <PlayOrb size={78} playing={playing} onPress={playClip} />
+          <PlayOrb size={78} playing={playing} onPress={toggleClip} />
           <SpeedChip value={speed} onChange={changeSpeed} />
         </View>
 

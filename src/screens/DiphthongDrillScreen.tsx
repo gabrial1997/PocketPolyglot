@@ -42,7 +42,7 @@ function FlatMini({ color }: { color: string }): React.JSX.Element {
 }
 
 export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Element {
-  const { item, onPlay, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
   const T = useTheme();
   const glide = item.glide;
   const pair = item.pair as PairCopy | undefined;
@@ -54,8 +54,15 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
   const [picked, setPicked] = useState<Side | null>(null);
   const [say, setSay] = useState<Say>('idle');
   const { playing, positionMs, rate, play, stop } = usePlayClip(item.audio.envelope); // reactive soundbar gate
-  const replayNative = (): void => play(() => onPlay('native', speed), speed);
-  const replayGlide = (): void => play(() => onPlay('glide', speed), speed);
+  // The orbs are play/pause toggles (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
+  const replayNative = (): void => {
+    if (playing) { onStop?.(); stop(); }
+    else play(() => onPlay('native', speed), speed);
+  };
+  const replayGlide = (): void => {
+    if (playing) { onStop?.(); stop(); }
+    else play(() => onPlay('glide', speed), speed);
+  };
   const right = picked !== null && pair != null && picked === pair.correct;
   // `missed` is STICKY across a Try-again reset (which clears `picked`) so the first-try miss is
   // remembered for honest SRS correctness — matching DrillScreen and the locked wrong-answer rule.

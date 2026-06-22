@@ -9,13 +9,17 @@ import { Eyebrow, WordTag, WordHero, GlossLine, Caption, FootNote, CardBody, Car
 import { CardImage } from './CardImage';
 import type { BaseCardProps } from './cardProps';
 
-export function WordLearnConcrete({ item, onPlay, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
+export function WordLearnConcrete({ item, onPlay, onStop, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
-  const { playing, positionMs, rate, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const tag = wordTagFor(item.wordClass);
-  const replay = (): void => play(() => onPlay('native', speed), speed);
+  // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
+  const replay = (): void => {
+    if (playing) { onStop?.(); stopGate(); }
+    else play(() => onPlay('native', speed), speed);
+  };
   return (
     <Screen>
       <CardBody>
