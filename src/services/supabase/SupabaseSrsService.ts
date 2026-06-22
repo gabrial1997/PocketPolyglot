@@ -15,6 +15,7 @@ import type {
 } from './types';
 import {
   cardResultToRating,
+  evaluateRung,
   itemTypeToDbType,
   lemmaRowToReviewItem,
   nextReviewLabel,
@@ -647,7 +648,7 @@ export class SupabaseSrsService implements SrsService {
     return items;
   }
 
-  async submit(result: CardResult): Promise<{ nextReviewLabel: string }> {
+  async submit(result: CardResult): Promise<{ nextReviewLabel: string; rung: import('../../session/ladder').Rung }> {
     const now = new Date();
     const itemType = cardKindToDbType(result.cardKind);
     const rating = cardResultToRating(result);
@@ -698,7 +699,30 @@ export class SupabaseSrsService implements SrsService {
     });
     if (logErr) throw logErr;
 
-    return { nextReviewLabel: label };
+    // graduation floors evaluated AFTER the FSRS state write (spec §6 C2)
+    // Load cumulative correct counts from review_log (split by production card-kind set).
+    // The rung is DERIVED — no rung/ladder column is written; review_state.stage is untouched.
+    const { data: logData } = await this.client
+      .from('review_log')
+      .select('card_kind,correct')
+      .eq('user_id', this.userId)
+      .eq('item_id', result.itemId);
+
+    let receptiveReps = 0;
+    let productiveReps = 0;
+    if (logData) {
+      for (const row of logData as Array<{ card_kind: string; correct: boolean | null }>) {
+        if (row.correct !== true) continue;
+        if (PRODUCTION_CARD_KINDS.has(row.card_kind)) {
+          productiveReps += 1;
+        } else {
+          receptiveReps += 1;
+        }
+      }
+    }
+    const currentRung = evaluateRung(receptiveReps, productiveReps);
+
+    return { nextReviewLabel: label, rung: currentRung };
   }
 
   async getDueSummary(): Promise<{ newCount: number; reviewCount: number }> {

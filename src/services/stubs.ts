@@ -66,8 +66,8 @@ export class StubSrsService implements SrsService {
   async getDueBatch(): Promise<ReviewItem[]> {
     return []; // real impl: select from review_state where due_at <= now (schema §5)
   }
-  async submit(_result: CardResult): Promise<{ nextReviewLabel: string }> {
-    return { nextReviewLabel: 'First review tomorrow' };
+  async submit(_result: CardResult): Promise<{ nextReviewLabel: string; rung: import('../session/ladder').Rung }> {
+    return { nextReviewLabel: 'First review tomorrow', rung: 'recognition' };
   }
   async getDueSummary(): Promise<{ newCount: number; reviewCount: number }> {
     return { newCount: 0, reviewCount: 0 };

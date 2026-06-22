@@ -12,6 +12,8 @@ import type {
   PhraseRow,
   ReviewStateRow,
 } from './types';
+import { computeRung } from '../../session/ladder';
+import type { Rung } from '../../session/ladder';
 
 // ---------------------------------------------------------------------------
 // Row -> ReviewItem
@@ -332,4 +334,21 @@ export function projectReviewLabels(
 /** Contract ReviewItem.type -> DB review_state.item_type. */
 export function itemTypeToDbType(type: ReviewItem['type']): 'lemma' | 'phrase' | 'pair' {
   return type === 'word' ? 'lemma' : type;
+}
+
+// ---------------------------------------------------------------------------
+// Module C4 — graduation floor evaluation
+// ---------------------------------------------------------------------------
+
+/**
+ * Pure: given the cumulative receptive/productive correct counts INCLUDING this retrieval,
+ * return the derived rung. Thin wrapper over computeRung kept here so submit()'s post-write
+ * step reads as "evaluate floors", and is unit-testable without I/O.
+ *
+ * Not a re-implementation — delegates entirely to computeRung (session/ladder.ts).
+ * Kept in mappers.ts so the service layer can call it by name ("evaluateRung") and the
+ * floor-evaluation block in submit() is self-documenting.
+ */
+export function evaluateRung(receptiveReps: number, productiveReps: number): Rung {
+  return computeRung(receptiveReps, productiveReps);
 }

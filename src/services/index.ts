@@ -4,6 +4,7 @@
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardResult } from '../types/cardResult';
 import type { PlaybackStatus } from '../types/playback';
+import type { Rung } from '../session/ladder';
 
 export type { PlaybackStatus } from '../types/playback';
 
@@ -29,7 +30,8 @@ export interface RecorderService {
 /** SRS. Lives in the controller, NOT the card. */
 export interface SrsService {
   getDueBatch(): Promise<ReviewItem[]>;
-  submit(result: CardResult): Promise<{ nextReviewLabel: string }>;
+  /** Returns the next-review label and the derived post-retrieval rung (graduation floor, C4). */
+  submit(result: CardResult): Promise<{ nextReviewLabel: string; rung: Rung }>;
   /** Tier-B home summary (WIRING_MAP §3). */
   getDueSummary(): Promise<{ newCount: number; reviewCount: number }>;
 }

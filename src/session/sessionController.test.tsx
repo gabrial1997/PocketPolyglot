@@ -37,7 +37,7 @@ function fakeServices(batch: ReviewItem[], known: ReadonlySet<string>): ServiceB
     recorder: { start: async () => {}, stop: async () => 'rec://x', isRecording: () => false },
     srs: {
       getDueBatch: async () => batch,
-      submit: async () => ({ nextReviewLabel: 'Tomorrow' }),
+      submit: async () => ({ nextReviewLabel: 'Tomorrow', rung: 'recognition' as const }),
       getDueSummary: async () => ({ newCount: 0, reviewCount: 0 }),
     },
     known: { has: (id) => known.has(id), all: () => known, refresh: async () => {} },

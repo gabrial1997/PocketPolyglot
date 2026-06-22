@@ -60,7 +60,7 @@ function fakeServices(batch: ReviewItem[]): ServiceBundle {
     recorder: { start: async () => {}, stop: async () => 'rec://x', isRecording: () => false },
     srs: {
       getDueBatch: async () => batch,
-      submit: async () => ({ nextReviewLabel: 'Tomorrow' }),
+      submit: async () => ({ nextReviewLabel: 'Tomorrow', rung: 'recognition' as const }),
       getDueSummary: async () => ({ newCount: 0, reviewCount: 0 }),
     },
     known: { has: () => false, all: () => new Set<string>(), refresh: async () => {} },

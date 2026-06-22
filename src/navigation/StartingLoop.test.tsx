@@ -59,7 +59,7 @@ function fakeServices(
     recorder: { start: async () => {}, stop: async () => 'rec://x', isRecording: () => false },
     srs: {
       getDueBatch: async () => batch,
-      submit: async () => ({ nextReviewLabel: 'Tomorrow' }),
+      submit: async () => ({ nextReviewLabel: 'Tomorrow', rung: 'recognition' as const }),
       getDueSummary: async () => ({ newCount: 0, reviewCount: 0 }),
     },
     known: { has: (id: string) => knownIds.has(id), all: () => knownIds, refresh: async () => {} },

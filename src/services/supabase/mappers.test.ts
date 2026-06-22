@@ -3,6 +3,7 @@ import type { CardResult } from '../../types/cardResult';
 import type { LemmaRow, MinimalPairRow, PhraseRow, ReviewStateRow } from './types';
 import {
   cardResultToRating,
+  evaluateRung,
   itemTypeToDbType,
   lemmaRowToReviewItem,
   nextReviewLabel,
@@ -465,6 +466,29 @@ describe('rowToPrior', () => {
   it('defaults a missing row to a fresh new card', () => {
     const prior = rowToPrior(undefined);
     expect(prior).toEqual({ reps: 0, stage: 'new' });
+  });
+});
+
+// --- evaluateRung (C4) -------------------------------------------------------
+
+describe('evaluateRung', () => {
+  it('recognition when receptiveReps below graduation floor', () => {
+    expect(evaluateRung(2, 0)).toBe('recognition');
+  });
+
+  it('recall when receptiveReps meets graduation floor (3)', () => {
+    expect(evaluateRung(3, 0)).toBe('recall');
+  });
+
+  it('production when productiveReps meets graduation floor (6)', () => {
+    expect(evaluateRung(5, 6)).toBe('production');
+  });
+
+  it('delegates to computeRung — not a re-implementation', () => {
+    // Confirm floor boundary: 2 receptive = recognition, 3 = recall, 5+6 = production.
+    expect(evaluateRung(0, 0)).toBe('recognition');
+    expect(evaluateRung(3, 5)).toBe('recall');
+    expect(evaluateRung(10, 6)).toBe('production');
   });
 });
 
