@@ -43,6 +43,15 @@ export function LiveWaveform({
   const smooth = useRef<number[]>(new Array(count).fill(REST));
   const raf = useRef<number | null>(null);
 
+  // Latest real-position anchor + rate, read by the persistent loop. Kept in refs (not effect deps)
+  // so a continuously-ticking `positionMs` from the playback bridge re-anchors the SAME loop instead
+  // of tearing it down and rebuilding it every tick — the restart reset `startedAt` and snapped the
+  // scrolling window, which read on-device as a clipping/stuttering bar.
+  const posRef = useRef(positionMs);
+  posRef.current = positionMs;
+  const rateRef = useRef(rate);
+  rateRef.current = rate;
+
   useEffect(() => {
     const set = (i: number, v: number): void => {
       const clamped = Math.max(REST, Math.min(1, v));
@@ -71,16 +80,26 @@ export function LiveWaveform({
       return cancel;
     }
 
-    // Anchor the bar to real playback position when the bridge supplies one; otherwise run a local
-    // clock. Either way advance by `rate` so a 0.7x clip scrolls ~0.7x as fast (bug 5).
-    const startedAt = Date.now();
-    const anchorMs = positionMs;
+    // ONE persistent loop runs for the whole `playing` span. It anchors the bar to real playback
+    // position when the bridge supplies one; otherwise it runs a local clock. Either way it advances
+    // by `rate` so a 0.7x clip scrolls ~0.7x as fast (bug 5). A fresh `positionMs` re-anchors the
+    // running loop (soft, smoothed) — it does NOT restart it, so the window never snaps.
+    let anchorMs = posRef.current ?? 0;
+    let anchorWall = Date.now();
+    let lastSeenPos = posRef.current;
     const loop = (): void => {
       if (env) {
         // Scrolling window of the amplitude envelope: newest frame on the right, so the bars
         // visibly travel with the voice. Out-of-range frames rest at the flat line.
-        const elapsed = Date.now() - startedAt;
-        const mediaMs = anchorMs != null ? anchorMs + elapsed * rate : elapsed * rate;
+        if (posRef.current != null && posRef.current !== lastSeenPos) {
+          // The bridge reported a new real position — re-anchor to it and restart the local clock
+          // from this instant. Bar heights stay continuous (smooth.current persists); only the
+          // window's reference point updates, so the bar tracks the voice without a teardown.
+          lastSeenPos = posRef.current;
+          anchorMs = posRef.current;
+          anchorWall = Date.now();
+        }
+        const mediaMs = anchorMs + (Date.now() - anchorWall) * rateRef.current;
         const idx = Math.floor(mediaMs / frameMs);
         for (let i = 0; i < count; i++) {
           const sampleIdx = idx - (count - 1) + i;
@@ -102,7 +121,10 @@ export function LiveWaveform({
     };
     raf.current = requestAnimationFrame(loop);
     return cancel;
-  }, [playing, envelope, count, frameMs, positionMs, rate]);
+    // positionMs/rate are intentionally NOT deps — they flow through refs into the persistent loop
+    // so a ticking position re-anchors rather than restarts it (see posRef/rateRef above).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, envelope, count, frameMs]);
 
   return (
     <View style={[styles.row, { height, columnGap: gap }]} accessibilityRole="image" accessibilityLabel="Audio waveform">
