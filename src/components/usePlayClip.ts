@@ -1,9 +1,12 @@
 // usePlayClip — the shared "play a clip and gate the soundbar" hook. Every audio card runs the
-// same dance: fire playback, light the LiveWaveform for the clip's known length, then settle it
-// back to rest. The card can't observe playback end through the service boundary yet (soundbar.md),
-// so we time the gate off the precomputed envelope's length (real amplitudes; only the stop is
-// approximated). Extracted from PhraseHear so every card shares one timing source of truth.
+// same dance: fire playback, light the LiveWaveform, then settle it back to rest. When the
+// controller's PlaybackProvider is reporting a real clip (known duration), the hook trusts that
+// live stream for both `playing` and `positionMs` so the bar tracks the actual voice (bugs 2/5).
+// Otherwise — the stub (durationMs:0) or no provider (card gallery, tests) — it falls back to a
+// timer gated off the precomputed envelope length, scaled by 1/rate so a slowed clip lights the
+// bar proportionally longer. Extracted from PhraseHear so every card shares one timing source.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePlaybackStatus } from './PlaybackContext';
 
 export const FRAME_MS = 30; // must match content-pipeline/tts.mjs envelope frame size
 const TAIL_MS = 200; // small pad so the bar doesn't cut off on the final syllable
@@ -15,18 +18,26 @@ export function clipMs(envelope?: number[]): number {
 }
 
 /**
- * Drives a soundbar's `playing` flag for one clip at a time.
- * - `play(fire?)` fires the supplied playback callback (e.g. `() => onPlay('native')`), then holds
- *   `playing` true for `clipMs(envelope)`. Calling it again restarts the clip (tap-to-replay).
+ * Drives a soundbar's `playing` flag (and real `positionMs` when available) for one clip at a time.
+ * - `play(fire?, rate?)` fires the supplied playback callback (e.g. `() => onPlay('native')`),
+ *   records the rate, and holds `playing` true for `clipMs(envelope)/rate` in timer mode. Calling
+ *   it again restarts the clip (tap-to-replay).
+ * - `positionMs` is the real media position in "real mode"; `undefined` in timer mode (LiveWaveform
+ *   then runs its own rate-scaled clock).
+ * - `rate` is the rate the last `play()` ran at (default 1); LiveWaveform uses it to scale.
  * - `stop()` clears the gate immediately — call it when a card leaves the audio stage.
  * The timer is cleared on unmount so a card that glides away never flips state post-unmount.
  */
 export function usePlayClip(envelope?: number[]): {
   playing: boolean;
-  play: (fire?: () => void) => void;
+  positionMs?: number;
+  rate: number;
+  play: (fire?: () => void, rate?: number) => void;
   stop: () => void;
 } {
-  const [playing, setPlaying] = useState(false);
+  const status = usePlaybackStatus();
+  const [timerPlaying, setTimerPlaying] = useState(false);
+  const [rate, setRate] = useState(1);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clear = useCallback((): void => {
@@ -37,24 +48,36 @@ export function usePlayClip(envelope?: number[]): {
   }, []);
 
   const play = useCallback(
-    (fire?: () => void): void => {
+    (fire?: () => void, playRate = 1): void => {
       fire?.();
       clear();
-      setPlaying(true);
+      setRate(playRate);
+      setTimerPlaying(true);
+      // Fallback gate (timer mode). Scaled by 1/rate so a slowed clip lights the bar longer (bug 5).
+      // When real audio reports a known duration the render below ignores this flag.
       timer.current = setTimeout(() => {
-        setPlaying(false);
+        setTimerPlaying(false);
         timer.current = null;
-      }, clipMs(envelope));
+      }, clipMs(envelope) / playRate);
     },
     [envelope, clear],
   );
 
   const stop = useCallback((): void => {
     clear();
-    setPlaying(false);
+    setTimerPlaying(false);
   }, [clear]);
 
   useEffect(() => clear, [clear]);
 
-  return { playing, play, stop };
+  // Real mode: the controller's PlaybackProvider is reporting an actual clip (known duration).
+  // Trust the real stream for both playing and position. Otherwise hold the rate-scaled timer gate.
+  const realDriven = status.playing && status.durationMs > 0;
+  return {
+    playing: realDriven ? true : timerPlaying,
+    positionMs: realDriven ? status.positionMs : undefined,
+    rate,
+    play,
+    stop,
+  };
 }
