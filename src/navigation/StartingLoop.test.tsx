@@ -40,7 +40,9 @@ const phrase: ReviewItem = {
   reps: 0,
   target: 'Labdien, es esmu ___.',
   gloss: 'Hello, I am ___.',
-  audio: { nativeUrl: 'p1.mp3' },
+  // envelope required: B3 audio gate routes stage=new phrases to phrase/hear (shows "NEW PHRASE")
+  // only when audio.envelope is present; without it falls back to phrase/meaning.
+  audio: { nativeUrl: 'p1.mp3', envelope: [0.2, 0.6, 1] },
   componentLemmaIds: ['labdien', 'es', 'esmu'],
   receptiveReps: 0,
   productiveReps: 0,
@@ -137,7 +139,9 @@ it('seed walk: ph-kafija locked on one word -> learn ludzu -> unlock fires (sing
     reps: 0,
     target: 'Vienu kafiju, lūdzu.',
     gloss: 'One coffee, please.',
-    audio: { nativeUrl: 'ph-kafija.mp3' },
+    // envelope required: B3 audio gate routes stage=new phrases to phrase/hear ("NEW PHRASE")
+    // only when audio.envelope is present; without it falls back to phrase/meaning.
+    audio: { nativeUrl: 'ph-kafija.mp3', envelope: [0.2, 0.6, 1] },
     componentLemmaIds: ['viens', 'kafija', 'ludzu'], // viens + kafija pre-known; ludzu is the blocker
     receptiveReps: 0,
     productiveReps: 0,

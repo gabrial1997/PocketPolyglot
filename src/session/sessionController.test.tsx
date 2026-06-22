@@ -184,7 +184,9 @@ it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', as
     reps: 0,
     target: 'Labdien, es esmu ___.',
     gloss: 'Hello, I am ___.',
-    audio: { nativeUrl: 'p1.mp3' },
+    // envelope required: audio-gated renderFor routes stage=new phrases to phrase/hear only when
+    // audio.envelope is present (B3); without it the phrase falls to phrase/meaning.
+    audio: { nativeUrl: 'p1.mp3', envelope: [0.2, 0.6, 1] },
     componentLemmaIds: ['labdien', 'es', 'esmu'],
     receptiveReps: 0,
     productiveReps: 0,
