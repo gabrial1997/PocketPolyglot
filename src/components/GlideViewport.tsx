@@ -52,6 +52,11 @@ export function GlideViewport({
       setCurrent({ key: itemKey, node: children });
       return;
     }
+    // Stop any in-flight glide before re-seeding its values. Without this, a key change that lands
+    // mid-transition (a fast double Continue) left the previous animation running while we reset
+    // move/fade to 0 — the half-entered card teleported backwards and re-glided (the visible "jump").
+    move.stopAnimation();
+    fade.stopAnimation();
     setLeaving(current);
     setCurrent({ key: itemKey, node: children });
     move.setValue(0);

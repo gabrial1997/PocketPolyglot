@@ -3,7 +3,7 @@
 // changes the new stage body fades in (~200ms); within a stage, children render live (unanimated) so
 // the waveform/mic stay reactive. Reduced motion → instant swap. Pure RN Animated (mirrors the
 // AccessibilityInfo probe pattern from GlideViewport.tsx).
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Animated, AccessibilityInfo, Platform } from 'react-native';
 
 const DURATION = 200;
@@ -28,7 +28,10 @@ export function StageFade({
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect): apply opacity 0 + animating BEFORE the new stage paints. Under a
+  // plain effect the new stage rendered once at full opacity (animating still false) and only then
+  // dropped to 0 to fade in — a one-frame flash of the next stage's content (the "flicker").
+  useLayoutEffect(() => {
     if (!mounted.current) {
       mounted.current = true; // no fade on the card's first appearance (GlideViewport owns entry)
       return;

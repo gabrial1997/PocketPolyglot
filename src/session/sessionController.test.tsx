@@ -132,6 +132,25 @@ it('advance() steps to the next item WITHOUT posting a review to SRS', async () 
   expect(submit).not.toHaveBeenCalled();
 });
 
+it('advances the deck even when srs.submit rejects (no dead-Continue hang — bug 4)', async () => {
+  const { result, submit } = renderSessionHook([wordA, wordB], new Set());
+  // The SRS post fails (e.g. a network blip). The learner must still move on, not be stranded on a
+  // card whose Continue has already fired.
+  submit.mockRejectedValueOnce(new Error('network down'));
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+  await settleHook(() => expect(result.current.current?.item.id).toBe('a'));
+
+  await act(async () => {
+    await result.current.submit({ itemId: 'a', cardKind: 'word/learn-concrete', spoke: false });
+  });
+
+  // Deck advanced despite the rejected post.
+  await settleHook(() => expect(result.current.current?.item.id).toBe('b'));
+  expect(submit).toHaveBeenCalledTimes(1);
+  warn.mockRestore();
+});
+
 // --- the live unlock loop: locked -> learn the words -> unlock once -> hear ---
 // A word factory matching the requeue/decideKind expectation: lemma id === target so the learned
 // overlay (keyed by the word item's id) lines up with the phrase's componentLemmaIds.

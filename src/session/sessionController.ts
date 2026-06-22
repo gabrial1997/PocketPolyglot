@@ -96,9 +96,18 @@ export function useSession(): SessionState {
     async (result: CardResult) => {
       // A learned word immediately changes lock state for later phrases (optimistic overlay).
       if (item && item.type === 'word') learned.current.add(item.id);
-      const { nextReviewLabel } = await srs.submit(result);
-      setLastReviewLabel(nextReviewLabel);
+      // Advance the deck IMMEDIATELY, before awaiting the network. A slow or failing srs.submit must
+      // never strand the learner on a card whose Continue has already fired and now does nothing
+      // (bug 4 — the dead-CTA hang). Post in the background and reconcile the review label when it
+      // lands; a failed post is logged, not surfaced — the item just stays due and re-surfaces.
       setPos((p) => p + 1);
+      try {
+        const { nextReviewLabel } = await srs.submit(result);
+        setLastReviewLabel(nextReviewLabel);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[session] srs.submit failed; deck already advanced', err);
+      }
     },
     [srs, item],
   );
