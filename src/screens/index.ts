@@ -20,4 +20,5 @@ export { ProgressScreen } from './ProgressScreen';
 export { HomeHost } from './HomeHost';
 export { PodcastHost } from './PodcastHost';
 export { ProgressHost } from './ProgressHost';
+export { SettingsHost } from './SettingsHost';
 export * from './cardProps';
