@@ -50,11 +50,23 @@ describe('renderFor', () => {
         renderFor(audioItem({ stage: 'review', media: { imageUrl: 'house.png' } })),
       ).toBe('word/pic-review');
     });
-    it('non-picture word, reps < 3 -> word/hear (recognition)', () => {
-      expect(renderFor(audioItem({ stage: 'review', reps: 1 }))).toBe('word/hear');
+    // Rung-based routing: recognition rung (receptiveReps:0, productiveReps:0) -> word/hear
+    it('non-picture word, rung=recognition (receptiveReps:0, productiveReps:0) -> word/hear', () => {
+      expect(
+        renderFor(audioItem({ stage: 'review', receptiveReps: 0, productiveReps: 0 })),
+      ).toBe('word/hear');
     });
-    it('non-picture word, reps >= 3 -> word/say (production)', () => {
-      expect(renderFor(audioItem({ stage: 'mature', reps: 5 }))).toBe('word/say');
+    // Below production floor (productiveReps:5, floor=6) -> still word/hear
+    it('non-picture word, rung=recall (receptiveReps:5, productiveReps:5, not yet at production floor 6) -> word/hear', () => {
+      expect(
+        renderFor(audioItem({ stage: 'review', receptiveReps: 5, productiveReps: 5 })),
+      ).toBe('word/hear');
+    });
+    // At/above production floor (productiveReps:6) -> word/say
+    it('non-picture word, rung=production (receptiveReps:5, productiveReps:6) -> word/say', () => {
+      expect(
+        renderFor(audioItem({ stage: 'mature', receptiveReps: 5, productiveReps: 6 })),
+      ).toBe('word/say');
     });
     it('new picturable word still learns first (learn before pic-review)', () => {
       expect(
@@ -100,16 +112,27 @@ describe('renderFor', () => {
     it('new phrase (with audio) -> phrase/hear', () => {
       expect(renderFor(audioItem({ type: 'phrase', stage: 'new' }))).toBe('phrase/hear');
     });
-    it('non-new non-idiom phrase (with audio) -> phrase/sayit', () => {
-      expect(renderFor(audioItem({ type: 'phrase', stage: 'review', reps: 1 }))).toBe('phrase/sayit');
+    // Rung-based routing: non-idiom phrase, below production floor -> phrase/hear (receptive)
+    it('non-new non-idiom phrase (with audio, productiveReps:0, below production floor) -> phrase/hear', () => {
+      expect(
+        renderFor(audioItem({ type: 'phrase', stage: 'review', productiveReps: 0 })),
+      ).toBe('phrase/hear');
+    });
+    // Rung-based routing: non-idiom phrase, at production floor (productiveReps:6) -> phrase/sayit
+    it('non-new non-idiom phrase (with audio, productiveReps:6, at production floor) -> phrase/sayit', () => {
+      expect(
+        renderFor(audioItem({ type: 'phrase', stage: 'mature', productiveReps: 6 })),
+      ).toBe('phrase/sayit');
     });
     it('non-new idiom phrase (with audio) -> phrase/meaning (comprehension check)', () => {
       expect(
-        renderFor(audioItem({ type: 'phrase', stage: 'review', reps: 1, isIdiom: true })),
+        renderFor(audioItem({ type: 'phrase', stage: 'review', productiveReps: 0, isIdiom: true })),
       ).toBe('phrase/meaning');
     });
-    it('mature non-idiom phrase (with audio) -> phrase/sayit', () => {
-      expect(renderFor(audioItem({ type: 'phrase', stage: 'mature', reps: 4 }))).toBe('phrase/sayit');
+    it('idiom phrase at production rung (with audio) -> phrase/meaning (idioms always meaning check)', () => {
+      expect(
+        renderFor(audioItem({ type: 'phrase', stage: 'mature', productiveReps: 6, isIdiom: true })),
+      ).toBe('phrase/meaning');
     });
   });
 

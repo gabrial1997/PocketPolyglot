@@ -5,12 +5,16 @@
 // Routing notes (WIRING_MAP §2):
 //  - learn-* is shown once, only when stage === 'new'.
 //  - picture words run the full loop via 'word/pic-review'.
-//  - non-picture words: recognition ('hear') before reps 3, then production ('say').
+//  - non-picture words: receptive ('hear') until computeRung reaches 'production' (productiveReps
+//    >= PRODUCTION_GRADUATION_FLOOR); at/above that rung, production ('say').
+//  - non-idiom phrases: same rung check — 'phrase/hear' below production, 'phrase/sayit' at/above.
+//    Idioms always route to 'phrase/meaning'. New phrases (stage==='new') get 'phrase/hear' first.
 //  - phrase / drill / pron route by item.type.
 //  - 'phrase/locked' / 'phrase/unlock' are NOT returned here — the controller decides lock
 //    state from the known-word set (BACKEND_INTEGRATION §4); this returns the *review* kind.
 import type { ReviewItem } from '../types/reviewItem';
 import type { ReviewCardKind } from '../types/cardKind';
+import { computeRung } from './ladder';
 
 export function renderFor(item: ReviewItem): ReviewCardKind {
   // B3: audio gate — gated kinds (word/hear, word/say, phrase/hear, phrase/sayit, drill,
@@ -31,7 +35,10 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
     // B3 guard: audio-less words must not reach word/hear or word/say — re-show the learn
     // template (introduce-only; no audio review surface available).
     if (!hasAudio) return `word/learn-${item.wordClass ?? 'concrete'}` as ReviewCardKind;
-    return item.reps < 3 ? 'word/hear' : 'word/say'; // recognition → production
+    // Route by ladder rung: production ('say') only once productiveReps >= PRODUCTION_GRADUATION_FLOOR.
+    return computeRung(item.receptiveReps ?? 0, item.productiveReps ?? 0) === 'production'
+      ? 'word/say'
+      : 'word/hear';
   }
 
   // Phrase reviews. (locked/unlock handled by the controller, not here.)
@@ -39,8 +46,12 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
     // B3 guard: audio-less phrases must not reach phrase/hear or phrase/sayit.
     if (!hasAudio) return 'phrase/meaning';
     if (item.stage === 'new') return 'phrase/hear'; // first exposure
-    // idiom (literal != actual) → meaning check; non-idiom → say-it.
-    return item.isIdiom ? 'phrase/meaning' : 'phrase/sayit';
+    // idiom (literal != actual) → meaning check always.
+    if (item.isIdiom) return 'phrase/meaning';
+    // non-idiom: route by ladder rung — production ('sayit') only once at/above production floor.
+    return computeRung(item.receptiveReps ?? 0, item.productiveReps ?? 0) === 'production'
+      ? 'phrase/sayit'
+      : 'phrase/hear';
   }
 
   // Minimal-pair perception drill — a gliding combination (ie) gets the diphthong card.
