@@ -13,6 +13,11 @@ import type { ReviewItem } from '../types/reviewItem';
 import type { ReviewCardKind } from '../types/cardKind';
 
 export function renderFor(item: ReviewItem): ReviewCardKind {
+  // B3: audio gate — gated kinds (word/hear, word/say, phrase/hear, phrase/sayit, drill,
+  // diphthong) require a precomputed amplitude envelope. Text-only / envelope-less items
+  // are introduce-only and must route to a visual surface instead.
+  const hasAudio = !!item.audio?.envelope;
+
   // New words: first exposure → the learn template chosen by word class.
   if (item.stage === 'new' && item.type === 'word') {
     if (item.wordClass === 'concrete') return 'word/learn-concrete';
@@ -23,18 +28,25 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
   // Word reviews.
   if (item.type === 'word') {
     if (item.media?.imageUrl) return 'word/pic-review'; // full loop on picturable words
+    // B3 guard: audio-less words must not reach word/hear or word/say — re-show the learn
+    // template (introduce-only; no audio review surface available).
+    if (!hasAudio) return `word/learn-${item.wordClass ?? 'concrete'}` as ReviewCardKind;
     return item.reps < 3 ? 'word/hear' : 'word/say'; // recognition → production
   }
 
   // Phrase reviews. (locked/unlock handled by the controller, not here.)
   if (item.type === 'phrase') {
+    // B3 guard: audio-less phrases must not reach phrase/hear or phrase/sayit.
+    if (!hasAudio) return 'phrase/meaning';
     if (item.stage === 'new') return 'phrase/hear'; // first exposure
     // idiom (literal != actual) → meaning check; non-idiom → say-it.
     return item.isIdiom ? 'phrase/meaning' : 'phrase/sayit';
   }
 
   // Minimal-pair perception drill — a gliding combination (ie) gets the diphthong card.
-  if (item.type === 'pair') return item.glide ? 'diphthong' : 'drill';
+  // B3 guard: drill/diphthong require audio (pair should not reach here audio-less, but guard
+  // defensively per §10.2).
+  if (item.type === 'pair' && hasAudio) return item.glide ? 'diphthong' : 'drill';
 
   // Fallback: pronunciation comparison.
   return 'pron';
