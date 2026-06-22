@@ -27,6 +27,7 @@ function lemma(overrides: Partial<LemmaRow> = {}): LemmaRow {
     freq_rank: 5,
     freq_count: 100,
     freq_band: 1,
+    utility_rank: null,
     cefr: 'A1',
     native_url: 'https://cdn/native.mp3',
     slow_url: 'https://cdn/slow.mp3',

@@ -24,6 +24,9 @@ export interface LemmaRow {
   freq_rank: number | null;
   freq_count: number | null;
   freq_band: number | null;
+  // Phrase-utility ordering rank 1..1000 (0009). The scheduler orders new
+  // candidates by this; null for rows the importer hasn't ranked.
+  utility_rank: number | null;
   cefr: string | null;
   native_url: string | null;
   slow_url: string | null;
