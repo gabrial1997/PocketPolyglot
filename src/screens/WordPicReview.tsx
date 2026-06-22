@@ -3,23 +3,32 @@
 // Out: { correct, spoke:true, recording }. LOCKED wrong-answer rule lives in useLoopStage.
 // Visual: matches mockup pic-review (full image + 2×2 word grid -> word hero + mic -> compare).
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, StageFade, type Speed } from '../components';
+import { useTheme } from '../theme/ThemeProvider';
 import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, GridChoiceButton, CompareRow, PlayBackToBack, ResultNote, loopResultNote } from '../components/cardChrome';
 import { TryAgainNote } from '../components';
 import { CardImage } from './CardImage';
 import { useLoopStage } from './useLoopStage';
+import { shouldShowGloss } from './glossVisibility';
 import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 
 type Props = RecordingCardProps & ChoiceCardProps;
 
 export function WordPicReview(props: Props): React.JSX.Element {
   const { item, onPlay, onStop, onPreload, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
+  const T = useTheme();
   const m = useLoopStage();
   const choices = item.choices ?? [];
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
+  // translationVisibility gating (Module C5): ephemeral reveal state lives here.
+  const [tappedReveal, setTappedReveal] = useState(false);
+  const mode = item.translationVisibility ?? 'auto';
+  // showGloss: whether the GlossLine (English meaning) is visible on speak/result stages.
+  // auto = always; hint = after a miss; on-demand = after explicit tap.
+  const showGloss = shouldShowGloss(mode, m.missed, tappedReveal);
   // Audio is a non-blocking backfill overlay: when the item has no envelope we hide the native
   // play orb + waveform + speed chip (and the "Native" compare row), keeping the picture, word,
   // grid, mic and the learner's own "You" compare row — the self-recording is independent of native audio.
@@ -85,7 +94,17 @@ export function WordPicReview(props: Props): React.JSX.Element {
           <CardBody>
             <CardImage media={item.media} word={item.target} size={116} />
             <WordHero size={50}>{item.target}</WordHero>
-            <GlossLine gloss={item.gloss} pron={item.pron} size={13.5} />
+            {showGloss ? (
+              <GlossLine gloss={item.gloss} pron={item.pron} size={13.5} />
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setTappedReveal(true)}
+                style={[styles.revealBtn, { borderColor: T.hair }]}
+              >
+                <Text style={[styles.revealText, { color: T.sub }]}>Show meaning</Text>
+              </Pressable>
+            )}
             {hasAudio ? (
               <>
                 <View style={styles.wave}>
@@ -137,4 +156,6 @@ const styles = StyleSheet.create({
   grid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 10, marginTop: 6 },
   mic: { alignItems: 'center', rowGap: 12, marginTop: 8 },
   compare: { width: '100%', rowGap: 10, marginTop: 8 },
+  revealBtn: { paddingVertical: 11, paddingHorizontal: 28, borderRadius: 99, borderWidth: 1.5, alignSelf: 'center' },
+  revealText: { fontSize: 14, fontWeight: '600' },
 });

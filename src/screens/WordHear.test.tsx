@@ -170,4 +170,76 @@ describe('WordHear', () => {
       jest.useRealTimers();
     }
   });
+
+  // ── translationVisibility gating (Module C5) ──────────────────────────────
+  // WordHear choices render `c.gloss ?? c.value`; so "house" and "bread" ARE the gloss labels.
+  // The choices must always be visible for gameplay (you can't pick if they're hidden).
+  // So: auto + hint both show choices immediately. on-demand hides them behind "Show meaning".
+  // The missed-reveal for hint applies to any supplementary gloss text (none in this card).
+
+  it("auto mode: gloss choices are shown immediately (no Show meaning affordance)", () => {
+    const u = renderCard({ translationVisibility: 'auto' });
+    // The gloss choices are rendered immediately (house, bread).
+    expect(u.getByText('house')).toBeTruthy();
+    expect(u.getByText('bread')).toBeTruthy();
+    // No "Show meaning" affordance in auto mode.
+    expect(u.queryByText('Show meaning')).toBeNull();
+  });
+
+  it("hint mode: gloss choices are shown immediately (choices required for gameplay; hint = auto for WordHear)", () => {
+    const u = renderCard({ translationVisibility: 'hint' });
+    // Choices are always visible in recognition — they are the game mechanic.
+    expect(u.getByText('house')).toBeTruthy();
+    expect(u.getByText('bread')).toBeTruthy();
+    // No "Show meaning" affordance (hint mode shows choices same as auto in this card).
+    expect(u.queryByText('Show meaning')).toBeNull();
+  });
+
+  it("hint mode: wrong-answer does NOT advance (locked rule preserved)", () => {
+    const u = renderCard({ translationVisibility: 'hint' });
+    fireEvent.press(u.getByText('bread')); // wrong
+    expect(u.props.onComplete).not.toHaveBeenCalled();
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+  });
+
+  it("on-demand mode: choices are hidden until Show meaning is tapped", () => {
+    const u = renderCard({ translationVisibility: 'on-demand' });
+    // Before tap, choices are hidden.
+    expect(u.queryByText('house')).toBeNull();
+    expect(u.queryByText('bread')).toBeNull();
+    expect(u.getByText('Show meaning')).toBeTruthy();
+    // Tap the affordance.
+    fireEvent.press(u.getByText('Show meaning'));
+    // After tap, choices are visible.
+    expect(u.getByText('house')).toBeTruthy();
+    expect(u.getByText('bread')).toBeTruthy();
+    // Show meaning affordance is gone once revealed.
+    expect(u.queryByText('Show meaning')).toBeNull();
+  });
+
+  it("on-demand mode: wrong-answer after reveal does NOT advance (locked rule preserved)", () => {
+    const u = renderCard({ translationVisibility: 'on-demand' });
+    fireEvent.press(u.getByText('Show meaning'));
+    fireEvent.press(u.getByText('bread')); // wrong
+    expect(u.props.onComplete).not.toHaveBeenCalled();
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+  });
+
+  it("on-demand mode: correct pick after reveal completes normally", () => {
+    jest.useFakeTimers();
+    try {
+      const u = renderCard({ translationVisibility: 'on-demand' });
+      fireEvent.press(u.getByText('Show meaning'));
+      fireEvent.press(u.getByText('house')); // correct
+      act(() => { jest.runAllTimers(); });
+      expect(u.props.onComplete).toHaveBeenCalledWith({
+        itemId: 'maja',
+        cardKind: 'word/hear',
+        correct: true,
+        spoke: false,
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

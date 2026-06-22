@@ -3,11 +3,12 @@
 // LOCKED wrong-answer rule lives in useLoopStage (no advance / redden chosen / never reveal / remember).
 // Visual: matches mockup word/say (gloss cue + word list -> say it -> native/you compare).
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, MicOrb, ChoiceButton, CtaButton, SpeedChip, TryAgainNote, LiveWaveform, usePlayClip, FRAME_MS, StageFade, type Speed } from '../components';
 import { useTheme } from '../theme/ThemeProvider';
 import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, CompareRow, PlayBackToBack, ResultNote, loopResultNote } from '../components/cardChrome';
 import { useLoopStage } from './useLoopStage';
+import { shouldShowGloss } from './glossVisibility';
 import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 
 type Props = RecordingCardProps & ChoiceCardProps;
@@ -20,6 +21,12 @@ export function WordSay(props: Props): React.JSX.Element {
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
+  // translationVisibility gating (Module C5): ephemeral reveal state lives here.
+  const [tappedReveal, setTappedReveal] = useState(false);
+  const mode = item.translationVisibility ?? 'auto';
+  // showGlossCue: whether the English gloss cue on the choose stage is visible.
+  // auto = always; hint = after a miss (m.missed); on-demand = after explicit tap.
+  const showGlossCue = shouldShowGloss(mode, m.missed, tappedReveal);
   const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio?.envelope); // reactive soundbar gate
   // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
   const replay = (): void => {
@@ -46,7 +53,17 @@ export function WordSay(props: Props): React.JSX.Element {
         <>
           <CardBody>
             <Eyebrow>Review · say it</Eyebrow>
-            <Text style={[styles.cue, { color: T.ink }]}>{item.gloss}</Text>
+            {showGlossCue ? (
+              <Text style={[styles.cue, { color: T.ink }]}>{item.gloss}</Text>
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setTappedReveal(true)}
+                style={[styles.revealBtn, { borderColor: T.hair }]}
+              >
+                <Text style={[styles.revealText, { color: T.sub }]}>Show meaning</Text>
+              </Pressable>
+            )}
             <PromptText>Which word says it?</PromptText>
             <View style={styles.choices}>
               {choices.map((c) => (
@@ -118,4 +135,6 @@ const styles = StyleSheet.create({
   wave: { width: '70%', marginTop: 4 },
   mic: { alignItems: 'center', rowGap: 12, marginTop: 8 },
   compare: { width: '100%', rowGap: 10, marginTop: 8 },
+  revealBtn: { paddingVertical: 11, paddingHorizontal: 28, borderRadius: 99, borderWidth: 1.5, alignSelf: 'center' },
+  revealText: { fontSize: 14, fontWeight: '600' },
 });

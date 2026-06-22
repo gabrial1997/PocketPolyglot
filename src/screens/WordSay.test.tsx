@@ -183,4 +183,53 @@ describe('WordSay', () => {
     toResult(u);
     expect(u.getByText('Nice work. Your next review is scheduled.')).toBeTruthy();
   });
+
+  // ── translationVisibility gating (Module C5) ──────────────────────────────
+  // WordSay: item.gloss is the CUE on the choose stage (English meaning → pick the Latvian word).
+  // auto: cue shown always. hint: cue hidden until missed. on-demand: cue hidden until tapped.
+
+  it("auto mode: gloss cue is shown immediately on choose stage", () => {
+    const u = renderCard({ translationVisibility: 'auto' });
+    expect(u.getByText('house')).toBeTruthy(); // item.gloss
+    expect(u.queryByText('Show meaning')).toBeNull();
+  });
+
+  it("hint mode: gloss cue is hidden on choose stage, revealed after a wrong pick", () => {
+    const u = renderCard({ translationVisibility: 'hint' });
+    // Gloss cue is hidden; Show meaning affordance shown.
+    // Note: 'house' could appear in the gloss cue OR in choice labels (choices have no gloss here).
+    // Choices are Latvian words ('māja', 'maize') so they won't match 'house'.
+    expect(u.queryByText('house')).toBeNull();
+    expect(u.getByText('Show meaning')).toBeTruthy();
+    // Wrong pick: missed=true -> gloss reveals.
+    fireEvent.press(u.getByText('maize')); // wrong
+    expect(u.props.onComplete).not.toHaveBeenCalled(); // wrong-answer no-advance preserved
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+    expect(u.getByText('house')).toBeTruthy(); // gloss now revealed after miss
+  });
+
+  it("hint mode: gloss cue revealed after miss but card does NOT advance (wrong-answer rule preserved)", () => {
+    const u = renderCard({ translationVisibility: 'hint' });
+    fireEvent.press(u.getByText('maize')); // wrong
+    // Gloss revealed but still on choose stage (card did not advance).
+    expect(u.queryByText('Now say it')).toBeNull();
+    expect(u.props.onComplete).not.toHaveBeenCalled();
+  });
+
+  it("on-demand mode: gloss cue hidden until Show meaning tapped", () => {
+    const u = renderCard({ translationVisibility: 'on-demand' });
+    expect(u.queryByText('house')).toBeNull();
+    expect(u.getByText('Show meaning')).toBeTruthy();
+    fireEvent.press(u.getByText('Show meaning'));
+    expect(u.getByText('house')).toBeTruthy();
+    expect(u.queryByText('Show meaning')).toBeNull();
+  });
+
+  it("on-demand mode: wrong pick after reveal does NOT advance (locked rule preserved)", () => {
+    const u = renderCard({ translationVisibility: 'on-demand' });
+    fireEvent.press(u.getByText('Show meaning'));
+    fireEvent.press(u.getByText('maize')); // wrong
+    expect(u.props.onComplete).not.toHaveBeenCalled();
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+  });
 });

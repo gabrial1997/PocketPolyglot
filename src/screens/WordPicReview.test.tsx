@@ -211,4 +211,64 @@ describe('WordPicReview', () => {
     toResult(u);
     expect(u.getByText('Nice work. Your next review is scheduled.')).toBeTruthy();
   });
+
+  // ── translationVisibility gating (Module C5) ──────────────────────────────
+  // WordPicReview: the picture is the cue; choices are Latvian WORDS (not glosses).
+  // The gloss (English meaning) appears on the speak/rec stage as a GlossLine.
+  // Gating applies there: auto = always shown; hint = after miss on choose; on-demand = tap.
+
+  it("auto mode: gloss is shown on the speak stage without any tap", () => {
+    const u = renderCard({ translationVisibility: 'auto' });
+    // Navigate to speak stage.
+    fireEvent.press(u.getByText('māja')); // correct
+    advanceConfirm();
+    // 'house' (item.gloss) should be visible on the speak stage in auto mode.
+    // GlossLine renders gloss + pron in nested Text, so query with partial match.
+    expect(u.queryByText(/house/)).toBeTruthy();
+    expect(u.queryByText('Show meaning')).toBeNull();
+  });
+
+  it("hint mode: gloss hidden on speak stage until miss occurred on choose", () => {
+    const u = renderCard({ translationVisibility: 'hint' });
+    // First try correct (no miss).
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm();
+    // No miss -> gloss hidden on speak stage.
+    expect(u.queryByText(/house/)).toBeNull();
+    expect(u.getByText('Show meaning')).toBeTruthy();
+  });
+
+  it("hint mode: gloss revealed on speak stage after a miss on choose (wrong-answer rule preserved)", () => {
+    const u = renderCard({ translationVisibility: 'hint' });
+    // Miss first.
+    fireEvent.press(u.getByText('maize')); // wrong
+    expect(u.props.onComplete).not.toHaveBeenCalled(); // no advance on wrong
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+    // Now correct.
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm();
+    // Miss happened -> gloss visible on speak stage.
+    expect(u.queryByText(/house/)).toBeTruthy();
+    expect(u.queryByText('Show meaning')).toBeNull();
+  });
+
+  it("on-demand mode: gloss hidden on speak stage, revealed by Show meaning tap", () => {
+    const u = renderCard({ translationVisibility: 'on-demand' });
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm();
+    // Gloss hidden initially.
+    expect(u.queryByText(/house/)).toBeNull();
+    expect(u.getByText('Show meaning')).toBeTruthy();
+    // Tap to reveal.
+    fireEvent.press(u.getByText('Show meaning'));
+    expect(u.queryByText(/house/)).toBeTruthy();
+    expect(u.queryByText('Show meaning')).toBeNull();
+  });
+
+  it("on-demand mode: wrong pick on choose does NOT advance (locked rule preserved)", () => {
+    const u = renderCard({ translationVisibility: 'on-demand' });
+    fireEvent.press(u.getByText('maize')); // wrong
+    expect(u.props.onComplete).not.toHaveBeenCalled();
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+  });
 });

@@ -6,9 +6,11 @@
 // honest SRS correctness. A correct pick turns green, then completes after a short readable beat.
 // Visual: matches mockup word/hear choose stage (eyebrow, audio hero, choice list).
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, ChoiceButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, TryAgainNote, type Speed } from '../components';
 import { Eyebrow, Caption, CardBody } from '../components/cardChrome';
+import { useTheme } from '../theme/ThemeProvider';
+import { shouldShowGloss } from './glossVisibility';
 import type { ChoiceCardProps } from './cardProps';
 
 const ADVANCE_DELAY_MS = 500;
@@ -22,7 +24,13 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
   const [wrongValue, setWrongValue] = useState<string | null>(null);
   const [missed, setMissed] = useState(false);
   const [correctValue, setCorrectValue] = useState<string | null>(null);
+  const [tappedReveal, setTappedReveal] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const T = useTheme();
+  const mode = item.translationVisibility ?? 'auto';
+  // For WordHear, choices ARE glosses. auto + hint always show choices (needed for gameplay).
+  // on-demand hides choices behind "Show meaning" until the learner explicitly taps.
+  const showChoices = mode !== 'on-demand' || shouldShowGloss(mode, missed, tappedReveal);
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
@@ -64,17 +72,27 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
         <PlayOrb size={64} playing={playing} onPress={replay} />
         <SpeedChip value={speed} onChange={changeSpeed} />
         <Caption>Tap to replay</Caption>
-        <View style={styles.choices}>
-          {(item.choices ?? []).map((c) => (
-            <ChoiceButton
-              key={c.value}
-              label={c.gloss ?? c.value}
-              state={c.value === correctValue ? 'correct' : c.value === wrongValue ? 'wrong' : 'idle'}
-              disabled={correctValue !== null}
-              onPress={() => pick(c.value, c.correct)}
-            />
-          ))}
-        </View>
+        {showChoices ? (
+          <View style={styles.choices}>
+            {(item.choices ?? []).map((c) => (
+              <ChoiceButton
+                key={c.value}
+                label={c.gloss ?? c.value}
+                state={c.value === correctValue ? 'correct' : c.value === wrongValue ? 'wrong' : 'idle'}
+                disabled={correctValue !== null}
+                onPress={() => pick(c.value, c.correct)}
+              />
+            ))}
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setTappedReveal(true)}
+            style={[styles.revealBtn, { borderColor: T.hair }]}
+          >
+            <Text style={[styles.revealText, { color: T.sub }]}>Show meaning</Text>
+          </Pressable>
+        )}
         {wrongValue ? <TryAgainNote onRetry={() => setWrongValue(null)} /> : null}
       </CardBody>
     </Screen>
@@ -84,4 +102,6 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
 const styles = StyleSheet.create({
   wave: { width: '78%', marginTop: 4 },
   choices: { width: '100%', rowGap: 10, marginTop: 10 },
+  revealBtn: { paddingVertical: 11, paddingHorizontal: 28, borderRadius: 99, borderWidth: 1.5, alignSelf: 'center', marginTop: 10 },
+  revealText: { fontSize: 14, fontWeight: '600' },
 });
