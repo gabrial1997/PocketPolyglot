@@ -29,6 +29,23 @@ function stageAndReps(reviewState?: Pick<ReviewStateRow, 'stage' | 'reps'>): {
 }
 
 /**
+ * Build ReviewItem.audio ONLY when the row actually carries audio. Returns undefined when
+ * there is no nativeUrl/audioUrl/slowUrl/envelope, so cards render audio-less (hide the play
+ * orb + waveform). Empty-string urls are treated as absent (legacy seed used '').
+ */
+function buildAudio(parts: {
+  nativeUrl?: string | null;
+  slowUrl?: string | null;
+  envelope?: number[] | null;
+}): ReviewItem['audio'] {
+  const audio: NonNullable<ReviewItem['audio']> = {};
+  if (parts.nativeUrl) audio.nativeUrl = parts.nativeUrl;
+  if (parts.slowUrl) audio.slowUrl = parts.slowUrl;
+  if (parts.envelope && parts.envelope.length) audio.envelope = parts.envelope;
+  return Object.keys(audio).length ? audio : undefined;
+}
+
+/**
  * lemma row -> ReviewItem (type:'word').
  * choices are NOT stored on the lemma — distractors are fetched separately at runtime
  * (get_distractors), so `choices` is intentionally left undefined here.
@@ -38,6 +55,7 @@ export function lemmaRowToReviewItem(
   reviewState?: Pick<ReviewStateRow, 'stage' | 'reps'>,
 ): ReviewItem {
   const { stage, reps } = stageAndReps(reviewState);
+  const audio = buildAudio({ nativeUrl: row.native_url, slowUrl: row.slow_url, envelope: row.envelope });
   const item: ReviewItem = {
     id: row.id,
     type: 'word',
@@ -45,11 +63,7 @@ export function lemmaRowToReviewItem(
     reps,
     target: row.lemma,
     gloss: row.gloss_en,
-    audio: {
-      nativeUrl: row.native_url ?? '',
-      ...(row.slow_url ? { slowUrl: row.slow_url } : {}),
-      ...(row.envelope ? { envelope: row.envelope } : {}),
-    },
+    ...(audio ? { audio } : {}),
   };
   if (row.pron) item.pron = row.pron;
   item.wordClass = row.word_class;
@@ -67,6 +81,7 @@ export function phraseRowToReviewItem(
   reviewState?: Pick<ReviewStateRow, 'stage' | 'reps'>,
 ): ReviewItem {
   const { stage, reps } = stageAndReps(reviewState);
+  const audio = buildAudio({ nativeUrl: row.audio_url, envelope: row.envelope });
   const item: ReviewItem = {
     id: row.id,
     type: 'phrase',
@@ -75,10 +90,7 @@ export function phraseRowToReviewItem(
     target: row.target,
     gloss: row.gloss_en,
     isIdiom: row.is_idiom,
-    audio: {
-      nativeUrl: row.audio_url ?? '',
-      ...(row.envelope ? { envelope: row.envelope } : {}),
-    },
+    ...(audio ? { audio } : {}),
   };
   if (row.literal_gloss) item.literal = row.literal_gloss;
   if (row.usage_note) item.usageNote = row.usage_note;
@@ -96,6 +108,7 @@ export function pairRowToReviewItem(
   // word — never arbitrarily side `a` — or the learner sees one word and hears another (the
   // see == hear rule). gloss stays empty (the drill UI reads from `pair`, not target/gloss).
   const stimulusWord = row.correct === 'a' ? row.a : row.b;
+  const audio = buildAudio({ nativeUrl: row.audio_url, envelope: row.envelope });
   const item: ReviewItem = {
     id: row.id,
     type: 'pair',
@@ -103,10 +116,7 @@ export function pairRowToReviewItem(
     reps,
     target: stimulusWord,
     gloss: '',
-    audio: {
-      nativeUrl: row.audio_url,
-      ...(row.envelope ? { envelope: row.envelope } : {}),
-    },
+    ...(audio ? { audio } : {}),
     pair: {
       a: row.a,
       b: row.b,

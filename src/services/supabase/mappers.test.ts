@@ -140,19 +140,32 @@ describe('lemmaRowToReviewItem', () => {
 
   it('maps the RMS envelope onto audio.envelope when present', () => {
     const item = lemmaRowToReviewItem(lemma({ envelope: [0.1, 0.5, 0.9] }));
-    expect(item.audio.envelope).toEqual([0.1, 0.5, 0.9]);
+    expect(item.audio?.envelope).toEqual([0.1, 0.5, 0.9]);
   });
 
   it('leaves audio.envelope undefined when the row has none', () => {
-    expect(lemmaRowToReviewItem(lemma({ envelope: null })).audio.envelope).toBeUndefined();
+    expect(lemmaRowToReviewItem(lemma({ envelope: null })).audio?.envelope).toBeUndefined();
+  });
+
+  it('omits audio entirely when no url/envelope', () => {
+    const item = lemmaRowToReviewItem(
+      lemma({ native_url: null, slow_url: null, envelope: null }),
+    );
+    expect(item.audio).toBeUndefined();
+  });
+
+  it('includes audio with only present fields', () => {
+    const item = lemmaRowToReviewItem(
+      lemma({ native_url: 'n.mp3', slow_url: null, envelope: [0.5, 1] }),
+    );
+    expect(item.audio).toEqual({ nativeUrl: 'n.mp3', envelope: [0.5, 1] });
   });
 
   it('omits slowUrl / pron / optional payloads when null', () => {
     const item = lemmaRowToReviewItem(
       lemma({ slow_url: null, pron: null, media: null, mnemonic: null, examples: null, native_url: null }),
     );
-    expect(item.audio).toEqual({ nativeUrl: '' });
-    expect(item.audio.slowUrl).toBeUndefined();
+    expect(item.audio).toBeUndefined();
     expect(item.pron).toBeUndefined();
     expect(item.media).toBeUndefined();
     expect(item.mnemonic).toBeUndefined();
@@ -186,15 +199,15 @@ describe('phraseRowToReviewItem', () => {
     expect(item.reps).toBe(0);
   });
 
-  it('falls back to empty nativeUrl when audio_url is null', () => {
-    expect(phraseRowToReviewItem(phrase({ audio_url: null })).audio.nativeUrl).toBe('');
+  it('omits audio when no audio_url/envelope', () => {
+    expect(phraseRowToReviewItem(phrase({ audio_url: null, envelope: null })).audio).toBeUndefined();
   });
 
   it('maps the RMS envelope onto audio.envelope when present, undefined when absent', () => {
-    expect(phraseRowToReviewItem(phrase({ envelope: [0.1, 0.5, 0.9] })).audio.envelope).toEqual([
+    expect(phraseRowToReviewItem(phrase({ envelope: [0.1, 0.5, 0.9] })).audio?.envelope).toEqual([
       0.1, 0.5, 0.9,
     ]);
-    expect(phraseRowToReviewItem(phrase({ envelope: null })).audio.envelope).toBeUndefined();
+    expect(phraseRowToReviewItem(phrase({ envelope: null })).audio?.envelope).toBeUndefined();
   });
 
   it('honors review state stage/reps', () => {
@@ -284,10 +297,10 @@ describe('pairRowToReviewItem', () => {
   });
 
   it('maps the RMS envelope onto audio.envelope when present, undefined when absent', () => {
-    expect(pairRowToReviewItem(pair({ envelope: [0.1, 0.5, 0.9] })).audio.envelope).toEqual([
+    expect(pairRowToReviewItem(pair({ envelope: [0.1, 0.5, 0.9] })).audio?.envelope).toEqual([
       0.1, 0.5, 0.9,
     ]);
-    expect(pairRowToReviewItem(pair({ envelope: null })).audio.envelope).toBeUndefined();
+    expect(pairRowToReviewItem(pair({ envelope: null })).audio?.envelope).toBeUndefined();
   });
 });
 

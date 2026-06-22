@@ -57,7 +57,10 @@ export interface ReviewItem {
 
   // `envelope`: precomputed RMS amplitude (0..1 per ~30ms frame) for the live soundbar
   // (LiveWaveform). Produced by content-pipeline/tts.mjs alongside the clip; optional.
-  audio: { nativeUrl: string; slowUrl?: string; envelope?: number[] };
+  // Audio is a NON-BLOCKING backfill overlay: optional. No envelope -> cards hide the
+  // play orb + waveform but keep image/word/gloss/Continue. hasAudio semantics:
+  // `!!item.audio?.envelope`. nativeUrl is optional too (an item can exist text-only).
+  audio?: { nativeUrl?: string; slowUrl?: string; envelope?: number[] };
   media?: { imageUrl?: string; imageUrlDark?: string };
 
   mnemonic?: ReviewMnemonic; // abstract learn card
