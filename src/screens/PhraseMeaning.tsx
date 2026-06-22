@@ -8,7 +8,7 @@
 // 2026-06-19 VISUAL SYNC: rebuilt to the mockup (screens-phrase.jsx `PhraseMeaning`). Eyebrow
 // "NEW PHRASE · IDIOM"; PhraseLine; a compact audio row (PlayOrb 46 + waveform) + SpeedChip; serif
 // "What does it mean?"; the 3-option choice list; the carmine/green feedback line; footer Continue.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, ChoiceButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, CtaButton, type Speed } from '../components';
 import { PromptText, LiteralNote } from '../components/cardChrome';
@@ -16,7 +16,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import type { ChoiceCardProps } from './cardProps';
 
-export function PhraseMeaning({ item, onPlay, onStop, onAnswer, onComplete, speed: speedProp, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
+export function PhraseMeaning({ item, onPlay, onStop, onPreload, onAnswer, onComplete, speed: speedProp, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
   const T = useTheme();
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
@@ -27,6 +27,11 @@ export function PhraseMeaning({ item, onPlay, onStop, onAnswer, onComplete, spee
     if (playing) { onStop?.(); stopGate(); }
     else play(() => onPlay('native', speed), speed);
   };
+  // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
+  useEffect(() => {
+    onPreload?.('native');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [wrongValue, setWrongValue] = useState<string | null>(null);
   const [correctValue, setCorrectValue] = useState<string | null>(null);
   const [missed, setMissed] = useState(false);

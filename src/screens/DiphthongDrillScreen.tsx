@@ -15,7 +15,7 @@
 //
 // Per-side contrast copy is optional/additive on ReviewPair (handoff PATCH): aKind/bKind ('glide' |
 // 'flat'), aNote/bNote (the vowel, e.g. "ie" / "ē"), aEn/bEn (the gloss). All degrade gracefully.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Screen, PlayOrb, MicOrb, LiveWaveform, usePlayClip, FRAME_MS, SpeedChip, type Speed } from '../components';
@@ -42,7 +42,7 @@ function FlatMini({ color }: { color: string }): React.JSX.Element {
 }
 
 export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Element {
-  const { item, onPlay, onStop, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onPreload, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
   const T = useTheme();
   const glide = item.glide;
   const pair = item.pair as PairCopy | undefined;
@@ -63,6 +63,11 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
     if (playing) { onStop?.(); stop(); }
     else play(() => onPlay('glide', speed), speed);
   };
+  // Warm the stimulus (native) clip on mount so the first orb tap starts without a load stall (bug 1).
+  useEffect(() => {
+    onPreload?.('native');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const right = picked !== null && pair != null && picked === pair.correct;
   // `missed` is STICKY across a Try-again reset (which clears `picked`) so the first-try miss is
   // remembered for honest SRS correctness — matching DrillScreen and the locked wrong-answer rule.

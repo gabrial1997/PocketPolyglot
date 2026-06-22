@@ -12,6 +12,8 @@ export interface AudioService {
   play(url: string, opts?: { rate?: number }): Promise<void>;
   stop(): Promise<void>;
   isPlaying(): boolean;
+  /** Warm a player for `url` so the next play(url) starts without a load/decode stall. Idempotent. */
+  preload(url: string): void;
   /** Subscribe to live playback status (position/duration/playing). Returns an unsubscribe fn.
    *  Used by the controller-side PlaybackProvider to feed the soundbar — cards never call this. */
   subscribe(listener: (status: PlaybackStatus) => void): () => void;

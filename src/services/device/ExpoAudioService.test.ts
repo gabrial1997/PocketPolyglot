@@ -90,6 +90,24 @@ describe('ExpoAudioService', () => {
   });
 });
 
+describe('ExpoAudioService.preload', () => {
+  it('preload warms a player so play(sameUrl) does not create a second one', async () => {
+    const svc = new ExpoAudioService();
+    svc.preload('a.mp3');
+    expect(createdPlayers()).toHaveLength(1); // warmed
+    await svc.play('a.mp3');
+    expect(createdPlayers()).toHaveLength(1); // reused, not recreated
+    expect(svc.isPlaying()).toBe(true);
+  });
+
+  it('play(differentUrl) after preload creates a fresh player', async () => {
+    const svc = new ExpoAudioService();
+    svc.preload('a.mp3');
+    await svc.play('b.mp3');
+    expect(createdPlayers().length).toBeGreaterThanOrEqual(2);
+  });
+});
+
 describe('ExpoAudioService.subscribe', () => {
   it('emits playing + ms-converted position/duration from expo-audio status (seconds → ms)', async () => {
     const svc = new ExpoAudioService();

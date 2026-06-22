@@ -2,7 +2,7 @@
 // Stages: choose -> speak -> rec -> result. Picture+audio in -> pick word -> say it -> compare.
 // Out: { correct, spoke:true, recording }. LOCKED wrong-answer rule lives in useLoopStage.
 // Visual: matches mockup pic-review (full image + 2×2 word grid -> word hero + mic -> compare).
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, StageFade, type Speed } from '../components';
 import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, GridChoiceButton, CompareRow, PlayBackToBack, ResultNote, loopResultNote } from '../components/cardChrome';
@@ -14,7 +14,7 @@ import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 type Props = RecordingCardProps & ChoiceCardProps;
 
 export function WordPicReview(props: Props): React.JSX.Element {
-  const { item, onPlay, onStop, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onPreload, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
   const m = useLoopStage();
   const choices = item.choices ?? [];
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
@@ -26,6 +26,11 @@ export function WordPicReview(props: Props): React.JSX.Element {
     if (playing) { onStop?.(); stopGate(); }
     else play(() => onPlay('native', speed), speed);
   };
+  // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
+  useEffect(() => {
+    onPreload?.('native');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const recStarted = useRef(false);
   const startRec = (): void => {
     if (recStarted.current) return;

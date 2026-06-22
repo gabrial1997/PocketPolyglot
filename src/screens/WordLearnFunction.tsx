@@ -1,13 +1,13 @@
 // word/learn-function — grammatical-word first-exposure card: meaning via example sentences,
 // each independently playable (onPlay(exampleIndex)). Out: onComplete({ spoke:false }).
 // Visual: matches mockup learn-function (word hero, gloss, three playable example rows, audio hero).
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, type Speed } from '../components';
 import { Eyebrow, WordTag, WordHero, GlossLine, Caption, FootNote, CardBody, CardFooter, HeadRow, ExampleRow, LiteralNote, wordTagFor } from '../components/cardChrome';
 import type { BaseCardProps } from './cardProps';
 
-export function WordLearnFunction({ item, onPlay, onStop, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
+export function WordLearnFunction({ item, onPlay, onStop, onPreload, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
@@ -18,6 +18,11 @@ export function WordLearnFunction({ item, onPlay, onStop, onComplete, speed: spe
     if (playing) { onStop?.(); stopGate(); }
     else play(() => onPlay('native', speed), speed);
   };
+  // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
+  useEffect(() => {
+    onPreload?.('native');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <Screen>
       <CardBody>

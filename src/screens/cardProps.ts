@@ -18,6 +18,8 @@ export interface BaseCardProps {
   onPlay: (which: PlayWhich, rate?: number) => void;
   /** Stop current playback — backs the PlayOrb play/pause toggle. */
   onStop?: () => void;
+  /** Warm a clip on mount so its first tap starts without a load stall (bug 1). */
+  onPreload?: (which: PlayWhich) => void;
   onComplete: (result: CardResult) => void;
   /** Optional: current slow-speed selection, surfaced by SpeedChip. */
   speed?: Speed;

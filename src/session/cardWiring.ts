@@ -63,6 +63,8 @@ export interface CardHandlers {
   onPlayCompare: (which: 'native' | 'you', rate?: number) => void;
   /** Stop the currently-playing clip (backs the PlayOrb play/pause toggle). */
   onStop: () => void;
+  /** Warm the clip for `which` so its first tap starts without a load stall (bug 1). */
+  onPreload: (which: PlayWhich) => void;
   onComplete: (result: CardResult) => void;
   // --- Gate cards (phrase/locked, phrase/unlock): NOT reviews — they advance WITHOUT a CardResult.
   /** Advance to the next item without posting a review (phrase/locked's Continue). */
@@ -126,6 +128,10 @@ export function createCardHandlers(deps: {
     },
     onStop: () => {
       void audio.stop();
+    },
+    onPreload: (which) => {
+      const p = resolvePlay(item, which);
+      if (p) audio.preload(p.url);
     },
     onComplete: (result) => {
       // If a recorder.stop() is still in flight, wait for the take so it is never dropped. A

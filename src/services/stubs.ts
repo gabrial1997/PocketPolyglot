@@ -28,6 +28,9 @@ export class StubAudioService implements AudioService {
   isPlaying(): boolean {
     return this.playing;
   }
+  preload(_url: string): void {
+    /* no-op: nothing to warm in the stub (web preview / tests) */
+  }
   subscribe(listener: (s: PlaybackStatus) => void): () => void {
     this.listeners.add(listener);
     return () => {

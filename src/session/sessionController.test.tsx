@@ -30,7 +30,7 @@ const lockedPhrase: ReviewItem = {
 
 function fakeServices(batch: ReviewItem[], known: ReadonlySet<string>): ServiceBundle {
   return {
-    audio: { play: async () => {}, stop: async () => {}, isPlaying: () => false, subscribe: () => () => {} },
+    audio: { play: async () => {}, stop: async () => {}, isPlaying: () => false, preload: () => {}, subscribe: () => () => {} },
     recorder: { start: async () => {}, stop: async () => 'rec://x', isRecording: () => false },
     srs: {
       getDueBatch: async () => batch,

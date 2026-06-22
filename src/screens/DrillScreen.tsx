@@ -15,7 +15,7 @@
 //
 // Per-side copy (hints) are optional/additive on ReviewPair (front-end-sync handoff PATCH): aHint,
 // bHint. They degrade gracefully — absent, the idle card just shows its glyph.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, MicOrb, LiveWaveform, usePlayClip, FRAME_MS, SpeedChip, type Speed } from '../components';
 import { CardIcon, ResultNote } from '../components/cardChrome';
@@ -29,7 +29,7 @@ type Say = null | 'idle' | 'rec' | 'done';
 type PairHints = ReviewPair & { aHint?: string; bHint?: string };
 
 export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
-  const { item, onPlay, onStop, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onPreload, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
   const T = useTheme();
   const pair = item.pair as PairHints | undefined;
 
@@ -43,6 +43,11 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
     if (playing) { onStop?.(); stop(); }
     else play(() => onPlay('native', speed), speed);
   };
+  // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
+  useEffect(() => {
+    onPreload?.('native');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [say, setSay] = useState<Say>(null);
   // `missed` is sticky across a Try-again reset so the first-try miss is remembered for honest SRS
   // correctness (locked rule + this card's header comment). `right` is the current selection state.

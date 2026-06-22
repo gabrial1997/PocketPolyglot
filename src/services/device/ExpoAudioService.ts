@@ -24,6 +24,9 @@ export class ExpoAudioService implements AudioService {
   // "multiple voices" bug) can never both create a live player. See ExpoAudioService.test.ts.
   private gen = 0;
   private listeners = new Set<(s: PlaybackStatus) => void>();
+  // A single pre-decoded "warm" player kept ready for the next play() of the same URL, so the first
+  // tap of a card's audio doesn't pay the network/decode stall (bug 1). play() consumes it.
+  private warm: { url: string; player: AudioPlayer } | null = null;
 
   subscribe(listener: (s: PlaybackStatus) => void): () => void {
     this.listeners.add(listener);
@@ -44,7 +47,23 @@ export class ExpoAudioService implements AudioService {
     await ensureAudioMode();
     if (this.gen !== myGen) return; // a newer tap won the race while we awaited
     const rate = opts?.rate ?? 1.0;
-    const player = createAudioPlayer({ uri: url });
+    // Reuse the warm player when its URL matches; otherwise discard a stale warm one (so it can't
+    // leak) and decode fresh.
+    let player: AudioPlayer;
+    if (this.warm && this.warm.url === url) {
+      player = this.warm.player;
+      this.warm = null;
+    } else {
+      if (this.warm) {
+        try {
+          this.warm.player.remove();
+        } catch {
+          /* already removed */
+        }
+        this.warm = null;
+      }
+      player = createAudioPlayer({ uri: url });
+    }
     // Pitch-corrected rate: "slow" = native clip at e.g. 0.7× with pitch preserved.
     player.shouldCorrectPitch = true;
     player.setPlaybackRate(rate, 'high');
@@ -77,6 +96,16 @@ export class ExpoAudioService implements AudioService {
 
   isPlaying(): boolean {
     return this.playing;
+  }
+
+  preload(url: string): void {
+    if (this.warm?.url === url || this.player) return; // already warm, or actively playing
+    try {
+      const player = createAudioPlayer({ uri: url });
+      this.warm = { url, player };
+    } catch {
+      this.warm = null;
+    }
   }
 
   private teardown(): void {

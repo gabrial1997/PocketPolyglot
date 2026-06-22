@@ -13,7 +13,7 @@ import type { ChoiceCardProps } from './cardProps';
 
 const ADVANCE_DELAY_MS = 500;
 
-export function WordHear({ item, onPlay, onStop, onAnswer, onComplete, speed: speedProp, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
+export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete, speed: speedProp, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
   // Playback speed is ephemeral card state (CLAUDE.md boundary). The chip drives it; an explicit
   // prop seeds the initial value and an optional listener is notified for any external interest.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
@@ -25,6 +25,11 @@ export function WordHear({ item, onPlay, onStop, onAnswer, onComplete, speed: sp
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
+  useEffect(() => {
+    onPreload?.('native');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const pick = (value: string, correct: boolean): void => {
     if (correctValue !== null) return;

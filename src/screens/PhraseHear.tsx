@@ -19,7 +19,7 @@ export const REPEAT_DELAY_MS = 700; // gap after the first clip finishes before 
 
 type HearExtra = { newForm?: string; newLemma?: string };
 
-export function PhraseHear({ item, onPlay, onStop, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
+export function PhraseHear({ item, onPlay, onStop, onPreload, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
   const T = useTheme();
   const x = item as ReviewItem & HearExtra;
   const env = item.audio.envelope;
@@ -41,6 +41,7 @@ export function PhraseHear({ item, onPlay, onStop, onComplete, speed: speedProp,
   // The repeat waits out the first clip's length (+ a short gap) so it doesn't overlap playback.
   // Runs once on mount — GlideViewport remounts the card per item, so each new phrase replays.
   useEffect(() => {
+    onPreload?.('native'); // warm the clip so the first auto-play starts without a load stall (bug 1)
     playClip(); // say it
     const t = setTimeout(() => playClip(), clipMs(env) + REPEAT_DELAY_MS); // repeat it once
     return () => clearTimeout(t);

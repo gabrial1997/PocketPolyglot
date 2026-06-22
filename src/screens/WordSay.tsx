@@ -2,7 +2,7 @@
 // WORDS. Stages choose -> speak -> rec -> result. Out: { correct, spoke:true, recording }.
 // LOCKED wrong-answer rule lives in useLoopStage (no advance / redden chosen / never reveal / remember).
 // Visual: matches mockup word/say (gloss cue + word list -> say it -> native/you compare).
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, MicOrb, ChoiceButton, CtaButton, SpeedChip, TryAgainNote, LiveWaveform, usePlayClip, FRAME_MS, StageFade, type Speed } from '../components';
 import { useTheme } from '../theme/ThemeProvider';
@@ -13,7 +13,7 @@ import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 type Props = RecordingCardProps & ChoiceCardProps;
 
 export function WordSay(props: Props): React.JSX.Element {
-  const { item, onPlay, onStop, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onPreload, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
   const T = useTheme();
   const m = useLoopStage();
   const choices = item.choices ?? [];
@@ -26,6 +26,11 @@ export function WordSay(props: Props): React.JSX.Element {
     if (playing) { onStop?.(); stopGate(); }
     else play(() => onPlay('native', speed), speed);
   };
+  // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
+  useEffect(() => {
+    onPreload?.('native');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const recStarted = useRef(false);
   const startRec = (): void => {
     if (recStarted.current) return;

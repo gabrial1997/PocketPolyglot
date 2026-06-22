@@ -34,6 +34,7 @@ function item(overrides: Partial<ReviewItem> = {}): ReviewItem {
 // Hand-rolled fakes (real behavior, not jest.fn mocks of a module) that record their calls.
 function fakeAudio() {
   const calls: { url: string; opts?: { rate?: number } }[] = [];
+  const preloads: string[] = [];
   let stops = 0;
   const audio: AudioService = {
     async play(url, opts) {
@@ -45,11 +46,14 @@ function fakeAudio() {
     isPlaying() {
       return false;
     },
+    preload(url) {
+      preloads.push(url);
+    },
     subscribe() {
       return () => {};
     },
   };
-  return { audio, calls, stops: () => stops };
+  return { audio, calls, preloads, stops: () => stops };
 }
 
 function fakeRecorder(blob: Blob | string = 'rec://abc') {
@@ -119,7 +123,7 @@ describe('withRecording', () => {
 
 describe('createCardHandlers — the core loop reaches every service', () => {
   function setup() {
-    const { audio, calls, stops } = fakeAudio();
+    const { audio, calls, preloads, stops } = fakeAudio();
     const { recorder, events } = fakeRecorder('rec://take1');
     const store: RecordingStore = { current: null };
     const submitted: CardResult[] = [];
@@ -133,7 +137,7 @@ describe('createCardHandlers — the core loop reaches every service', () => {
       },
       advance: () => undefined,
     });
-    return { handlers, calls, stops, events, store, submitted };
+    return { handlers, calls, preloads, stops, events, store, submitted };
   }
 
   it('onStop stops the injected audio service', () => {
@@ -158,6 +162,13 @@ describe('createCardHandlers — the core loop reaches every service', () => {
     const { handlers, calls } = setup();
     handlers.onPlay('slow');
     expect(calls).toEqual([{ url: 'slow.mp3', opts: { rate: SLOW_RATE } }]);
+  });
+
+  it('onPreload("native") warms the native clip without playing it (bug 1)', () => {
+    const { handlers, preloads, calls } = setup();
+    handlers.onPreload('native');
+    expect(preloads).toEqual(['native.mp3']);
+    expect(calls).toEqual([]); // preload must not start playback
   });
 
   it('onRecordStart starts the recorder and clears any prior take', () => {
