@@ -169,19 +169,25 @@ export function selectBatch(input: {
   // Sort defensively (spec says pre-sorted, but defend anyway)
   const sorted = [...candidates].sort((a, b) => a.utilityRank - b.utilityRank);
 
+  // Count of admitted non-pair candidates (words/phrases = the budgeted "units").
+  // Pairs are part of a lemma's mini-set and do NOT consume a newAllowance slot.
+  let admittedNonPairCount = 0;
+
+  // Track admitted non-pair ids so we can sweep for associated pairs afterward.
+  const admittedNonPairIds = new Set<string>();
+
   for (const candidate of sorted) {
-    if (admittedNew.length >= newAllowance) break;
+    if (candidate.kind === 'pair') {
+      // Pairs are handled in a second pass below — skip during the main loop.
+      continue;
+    }
+
+    if (admittedNonPairCount >= newAllowance) break;
 
     // ------------------------------------------------------------------
-    // Gate (a): Audio gate
-    // word → always eligible (audio-less OK)
-    // phrase → require hasAudioEnvelope
-    // pair  → require hasAudioEnvelope
+    // Gate (a): Audio gate (phrases only — words always eligible)
     // ------------------------------------------------------------------
-    if (
-      (candidate.kind === 'phrase' || candidate.kind === 'pair') &&
-      !candidate.hasAudioEnvelope
-    ) {
+    if (candidate.kind === 'phrase' && !candidate.hasAudioEnvelope) {
       continue;
     }
 
@@ -213,58 +219,105 @@ export function selectBatch(input: {
     }
 
     // ------------------------------------------------------------------
-    // Admit the candidate
+    // Admit the word/phrase
     // ------------------------------------------------------------------
     admittedNew.push(candidate);
+    admittedNonPairIds.add(candidate.id);
     if (candidate.semanticField) {
       admittedFields.add(candidate.semanticField);
     }
+    admittedNonPairCount++;
   }
+
+  // Second pass: admit pairs whose blocksLemmaId is among the admitted non-pairs
+  // (or among due refs — orphaned pairs). Pairs go through the audio gate only.
+  // They are inserted into admittedNew after their blocked lemma (if present),
+  // or appended. We collect them in a separate list first and splice in order.
+  //
+  // Strategy: iterate sorted in order; for each pair, if it passes the audio gate
+  // and its blocksLemmaId is in admittedNonPairIds, admit it. We also admit
+  // "orphaned" pairs — pairs whose blocksLemmaId is NOT in admittedNonPairIds
+  // (e.g. the blocked lemma is a review item). Orphaned pairs still require audio
+  // and still count as admittedNew (but not against newAllowance).
+  const pairsToEmbed: Candidate[] = [];
+  const orphanedPairs: Candidate[] = [];
+
+  for (const candidate of sorted) {
+    if (candidate.kind !== 'pair') continue;
+    // Audio gate for pairs
+    if (!candidate.hasAudioEnvelope) continue;
+
+    if (candidate.blocksLemmaId && admittedNonPairIds.has(candidate.blocksLemmaId)) {
+      pairsToEmbed.push(candidate);
+    }
+    // Orphaned pairs (blocksLemmaId not in admittedNonPairIds) are admitted only
+    // if they were explicitly passed as a candidate — they are part of the lesson
+    // design (e.g. the drilled lemma is a review item). We admit them standalone.
+    // NOTE: We do NOT auto-admit pairs for review items by default; pairs reach
+    // the candidate list because the caller explicitly included them.
+    // Since the caller passed them, we admit them:
+    else {
+      orphanedPairs.push(candidate);
+    }
+  }
+
+  // Insert embedded pairs right after their blocked lemma in admittedNew
+  // (maintains the original utility order of non-pairs).
+  const pairsByBlockedLemmaForEmbed = new Map<string, Candidate[]>();
+  for (const p of pairsToEmbed) {
+    const key = p.blocksLemmaId as string;
+    const arr = pairsByBlockedLemmaForEmbed.get(key) ?? [];
+    arr.push(p);
+    pairsByBlockedLemmaForEmbed.set(key, arr);
+  }
+
+  // Rebuild admittedNew with embedded pairs inserted after their blocked lemma,
+  // followed by orphaned pairs appended at the end.
+  const admittedNewWithPairs: Candidate[] = [];
+  for (const c of admittedNew) {
+    admittedNewWithPairs.push(c);
+    const embeddablePairs = pairsByBlockedLemmaForEmbed.get(c.id);
+    if (embeddablePairs) {
+      admittedNewWithPairs.push(...embeddablePairs);
+    }
+  }
+  admittedNewWithPairs.push(...orphanedPairs);
+
+  // Replace admittedNew contents
+  admittedNew.length = 0;
+  admittedNew.push(...admittedNewWithPairs);
 
   // -------------------------------------------------------------------------
   // Step 7: Assemble final order via interleave, keeping phoneme-block
   // mini-sets (pair + its blocked lemma) contiguous.
   //
-  // Strategy:
-  //   - Build a map: blocksLemmaId → admitted pair(s) that block it.
-  //   - Walk admittedNew in order. When we encounter a lemma that is blocked
-  //     by an admitted pair, emit [lemma, ...pairs] as a contiguous mini-set.
-  //   - Skip pairs when encountered standalone (they've already been emitted
-  //     as part of their lemma's mini-set).
+  // After Step 6, admittedNew already has pairs inserted immediately after their
+  // blocked lemma (or appended as orphans). We just need to group each lemma with
+  // its immediately following pair(s) into a NewUnit array for interleave.
   // -------------------------------------------------------------------------
 
-  // Build: lemmaId → pairs that block it (in admission order)
-  const pairsByBlockedLemma = new Map<string, Candidate[]>();
-  for (const c of admittedNew) {
-    if (c.kind === 'pair' && c.blocksLemmaId) {
-      const existing = pairsByBlockedLemma.get(c.blocksLemmaId) ?? [];
-      existing.push(c);
-      pairsByBlockedLemma.set(c.blocksLemmaId, existing);
-    }
-  }
-
-  // Set of pair ids that have been embedded into a mini-set (to skip standalone)
-  const embeddedPairIds = new Set<string>();
-  if (pairsByBlockedLemma.size > 0) {
-    for (const pairs of pairsByBlockedLemma.values()) {
-      for (const p of pairs) {
-        embeddedPairIds.add(p.id);
-      }
-    }
-  }
-
   const newUnits: NewUnit[] = [];
-  for (const candidate of admittedNew) {
-    if (embeddedPairIds.has(candidate.id)) {
-      // This pair is emitted as part of its blocked lemma's mini-set — skip here
-      continue;
-    }
-    const blockedByPairs = pairsByBlockedLemma.get(candidate.id);
-    if (blockedByPairs && blockedByPairs.length > 0) {
-      // Emit lemma + its pairs as a contiguous mini-set
-      newUnits.push([candidate, ...blockedByPairs]);
+  let i = 0;
+  while (i < admittedNew.length) {
+    const candidate = admittedNew[i] as Candidate;
+    if (candidate.kind !== 'pair') {
+      // Collect any immediately following pairs that block this lemma
+      const miniSet: Candidate[] = [candidate];
+      let j = i + 1;
+      while (
+        j < admittedNew.length &&
+        (admittedNew[j] as Candidate).kind === 'pair' &&
+        (admittedNew[j] as Candidate).blocksLemmaId === candidate.id
+      ) {
+        miniSet.push(admittedNew[j] as Candidate);
+        j++;
+      }
+      newUnits.push(miniSet.length === 1 ? miniSet[0] as Candidate : miniSet);
+      i = j;
     } else {
+      // Orphaned pair (or pair whose blocked lemma is not adjacent): emit standalone
       newUnits.push(candidate);
+      i++;
     }
   }
 

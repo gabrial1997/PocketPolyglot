@@ -218,7 +218,8 @@ describe('selectBatch', () => {
       // DAY_ONE_NEW_CAP = 20 → floor(20/2) = 10
       const expectedCap = Math.floor(DAY_ONE_NEW_CAP / 2);
       expect(result.newAllowance).toBe(expectedCap);
-      expect(result.admittedNew.length).toBeLessThanOrEqual(expectedCap);
+      // Exact: with 30 gate-passing candidates the function must fill the whole cap
+      expect(result.admittedNew.length).toBe(expectedCap);
     });
 
     it('uses exact Math.floor when halving (e.g. odd cap)', () => {
@@ -534,15 +535,80 @@ describe('selectBatch', () => {
 
       const result = selectBatch({ due, candidates, ctx });
 
-      // With 2 due + 3 admitted (but cap is 5, so all 3 new admitted), order
-      // should alternate: due, new, due, new, new (due exhausted)
-      const kinds = result.order.map(o => {
-        const isDue = result.due.some(d => d.id === o.id);
-        return isDue ? 'due' : 'new';
+      // With 2 due + 3 new (cap is 5, so all 3 new admitted), order is:
+      // due, new, due, new, new  (due exhausted after 2)
+      const dueIds = new Set(result.due.map(d => d.id));
+      const kinds = result.order.map(o => (dueIds.has(o.id) ? 'due' : 'new'));
+
+      expect(kinds).toEqual(['due', 'new', 'due', 'new', 'new']);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 14. Orphaned pair (blocksLemmaId not in admittedNew) must appear in order
+  // -------------------------------------------------------------------------
+  describe('orphaned pair still appears in order', () => {
+    it('includes an orphaned pair in order even when its blocksLemmaId is not a new candidate', () => {
+      // The pair's target lemma is a review item (in due), not a new candidate.
+      // The pair must still appear in order — standalone — and not be silently dropped.
+      const ctx = baseCtx({ accountAgeDays: 1, introducedToday: 0 });
+
+      const orphanPair = makePair('pair-orphan', 1, {
+        hasAudioEnvelope: true,
+        blocksLemmaId: 'review-lemma', // this id is only in due, not in candidates
+      });
+      const due: DueRef[] = [makeDueRef('review-lemma')];
+      const candidates: Candidate[] = [orphanPair];
+
+      const result = selectBatch({ due, candidates, ctx });
+
+      const orderIds = result.order.map(o => o.id);
+      // Pair must appear in order
+      expect(orderIds).toContain('pair-orphan');
+
+      // Set-equality invariant: order ids == eligible-due ids + admittedNew ids (no drop, no dupe)
+      const eligibleDueIds = result.due.map(d => d.id);
+      const admittedNewIds = result.admittedNew.map(c => c.id);
+      const expectedIds = new Set([...eligibleDueIds, ...admittedNewIds]);
+      expect(new Set(orderIds)).toEqual(expectedIds);
+      // No duplicates
+      expect(orderIds.length).toBe(expectedIds.size);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 15. Pair does NOT consume a newAllowance slot
+  // -------------------------------------------------------------------------
+  describe('pair does not consume a newAllowance slot', () => {
+    it('admits lemma X + its pair when newAllowance is effectively 1, pair contiguous in order', () => {
+      // newAllowance = 1 (steady-state cap 5, but 4 already introduced today)
+      const ctx = baseCtx({
+        accountAgeDays: 1, // steady-state cap = 5
+        introducedToday: 4, // leaves newAllowance = 1
       });
 
-      // First item should be from due list
-      expect(kinds[0]).toBe('due');
+      const lemmaX = makeWord('lemma-x', 1);
+      const pairForX = makePair('pair-for-x', 2, {
+        hasAudioEnvelope: true,
+        blocksLemmaId: 'lemma-x',
+      });
+      const candidates: Candidate[] = [lemmaX, pairForX];
+
+      const result = selectBatch({ due: [], candidates, ctx });
+
+      expect(result.newAllowance).toBe(1);
+      // Both must be admitted: the pair does not consume the 1 available slot
+      const admittedIds = result.admittedNew.map(c => c.id);
+      expect(admittedIds).toContain('lemma-x');
+      expect(admittedIds).toContain('pair-for-x');
+
+      // They must appear contiguous in order
+      const orderIds = result.order.map(o => o.id);
+      const lemmaIdx = orderIds.indexOf('lemma-x');
+      const pairIdx = orderIds.indexOf('pair-for-x');
+      expect(lemmaIdx).toBeGreaterThanOrEqual(0);
+      expect(pairIdx).toBeGreaterThanOrEqual(0);
+      expect(Math.abs(lemmaIdx - pairIdx)).toBe(1);
     });
   });
 });
