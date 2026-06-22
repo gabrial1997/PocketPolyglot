@@ -162,6 +162,9 @@ async function run({ dryRun }) {
     if (error) throw error;
     for (const r of data) lemmaIdByLemma.set(r.lemma, r.id);
   }
+  if (lemmaIdByLemma.size < lemmaRows.length) {
+    console.warn(`  ⚠ lemma id resolution incomplete: resolved ${lemmaIdByLemma.size} of ${lemmaRows.length} — phrase_components for affected lemmas will be skipped`);
+  }
   console.log(`  ✓ lemmas upserted: ${lemmaUpserted} (ids resolved: ${lemmaIdByLemma.size})`);
 
   // -- PHRASES: upsert on `target`. Capture target -> id.
@@ -188,6 +191,9 @@ async function run({ dryRun }) {
     const { data, error } = await db.from('phrases').select('id,target').in('target', slice);
     if (error) throw error;
     for (const r of data) phraseIdByTarget.set(r.target, r.id);
+  }
+  if (phraseIdByTarget.size < phraseInsert.length) {
+    console.warn(`  ⚠ phrase id resolution incomplete: resolved ${phraseIdByTarget.size} of ${phraseInsert.length} — components for affected phrases will be skipped`);
   }
   console.log(`  ✓ phrases upserted: ${phraseInsert.length}`);
 
