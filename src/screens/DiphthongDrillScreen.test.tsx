@@ -55,7 +55,7 @@ describe('DiphthongDrillScreen', () => {
   it('plays the isolated glide (not the whole word) when the orb is tapped on the meet stage', () => {
     const u = renderCard();
     fireEvent.press(u.getByLabelText('Play'));
-    expect(u.props.onPlay).toHaveBeenCalledWith('glide');
+    expect(u.props.onPlay).toHaveBeenCalledWith('glide', 1); // default speed 1x passed as the rate
   });
 
   it('plays the whole word (native) on the say-it stage, not the glide', () => {
@@ -64,7 +64,7 @@ describe('DiphthongDrillScreen', () => {
     fireEvent.press(u.getByText('lieta')); // correct side -> advance
     fireEvent.press(u.getByText('Say it back'));
     fireEvent.press(u.getByLabelText('Play'));
-    expect(u.props.onPlay).toHaveBeenCalledWith('native');
+    expect(u.props.onPlay).toHaveBeenCalledWith('native', 1); // default speed 1x passed as the rate
   });
 
   it('shows the minimal-pair contrast options after the meet step', () => {

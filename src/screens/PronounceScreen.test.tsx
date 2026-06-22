@@ -69,7 +69,7 @@ describe('PronounceScreen', () => {
       fireEvent.press(u.getByText('Record'));
       fireEvent.press(u.getByText('Recording…'));
       fireEvent.press(u.getByText('Compare'));
-      expect(u.props.onPlayCompare).toHaveBeenCalledWith('native');
+      expect(u.props.onPlayCompare).toHaveBeenCalledWith('native', 1); // native model slowed by the co-located SpeedChip (default 1x)
       act(() => {
         jest.advanceTimersByTime(2000); // past COMPARE_MS; bounded so the soundbar rAF loop can't hang
       });

@@ -67,7 +67,7 @@ describe('WordLearnConcrete', () => {
   it('plays the native audio when the play orb is tapped', () => {
     const u = renderCard();
     fireEvent.press(u.getByLabelText('Play'));
-    expect(u.props.onPlay).toHaveBeenCalledWith('native');
+    expect(u.props.onPlay).toHaveBeenCalledWith('native', 1); // default speed 1x passed as the rate
   });
 
   it('completes as exposure-only (spoke:false, no correct) on continue', () => {

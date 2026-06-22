@@ -14,7 +14,8 @@ export type PlayWhich = 'native' | 'slow' | 'glide' | number;
 /** Base props common to every Tier-A card. */
 export interface BaseCardProps {
   item: ReviewItem;
-  onPlay: (which: PlayWhich) => void;
+  /** Play a clip. An explicit `rate` (the SpeedChip selection) overrides the default. */
+  onPlay: (which: PlayWhich, rate?: number) => void;
   /** Stop current playback — backs the PlayOrb play/pause toggle. */
   onStop?: () => void;
   onComplete: (result: CardResult) => void;
@@ -34,7 +35,8 @@ export interface RecordingCardProps extends BaseCardProps {
    * recording and merges it into the CardResult (see session/cardWiring.ts).
    */
   onRecordStop: (recording?: Blob | string) => void;
-  onPlayCompare?: (which: 'native' | 'you') => void;
+  /** Play a compare clip. An explicit `rate` (the SpeedChip) slows the native model only. */
+  onPlayCompare?: (which: 'native' | 'you', rate?: number) => void;
 }
 
 /** Multiple-choice cards (pic-review, hear, say, phrase/meaning). */

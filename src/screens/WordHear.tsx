@@ -7,14 +7,18 @@
 // Visual: matches mockup word/hear choose stage (eyebrow, audio hero, choice list).
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, ChoiceButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, TryAgainNote } from '../components';
+import { Screen, PlayOrb, ChoiceButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, TryAgainNote, type Speed } from '../components';
 import { Eyebrow, Caption, CardBody } from '../components/cardChrome';
 import type { ChoiceCardProps } from './cardProps';
 
 const ADVANCE_DELAY_MS = 500;
 
-export function WordHear({ item, onPlay, onAnswer, onComplete, speed, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
-  const { playing, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+export function WordHear({ item, onPlay, onAnswer, onComplete, speed: speedProp, onSpeedChange }: ChoiceCardProps): React.JSX.Element {
+  // Playback speed is ephemeral card state (CLAUDE.md boundary). The chip drives it; an explicit
+  // prop seeds the initial value and an optional listener is notified for any external interest.
+  const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
+  const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
+  const { playing, positionMs, rate, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const [wrongValue, setWrongValue] = useState<string | null>(null);
   const [missed, setMissed] = useState(false);
   const [correctValue, setCorrectValue] = useState<string | null>(null);
@@ -38,17 +42,17 @@ export function WordHear({ item, onPlay, onAnswer, onComplete, speed, onSpeedCha
     }
   };
 
-  const replay = (): void => play(() => onPlay('native'));
+  const replay = (): void => play(() => onPlay('native', speed), speed);
 
   return (
     <Screen>
       <CardBody>
         <Eyebrow>Listen — which meaning?</Eyebrow>
         <View style={styles.wave}>
-          <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={48} count={42} />
+          <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={48} count={42} />
         </View>
         <PlayOrb size={64} playing={playing} onPress={replay} />
-        <SpeedChip value={speed} onChange={onSpeedChange} />
+        <SpeedChip value={speed} onChange={changeSpeed} />
         <Caption>Tap to replay</Caption>
         <View style={styles.choices}>
           {(item.choices ?? []).map((c) => (

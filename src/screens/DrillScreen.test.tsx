@@ -63,7 +63,7 @@ describe('DrillScreen', () => {
   it('plays the pair audio when the play orb is tapped', () => {
     const u = renderCard();
     fireEvent.press(u.getByLabelText('Play'));
-    expect(u.props.onPlay).toHaveBeenCalledWith('native');
+    expect(u.props.onPlay).toHaveBeenCalledWith('native', 1); // default speed 1x passed as the rate
   });
 
   it('reports correct:true when the right side is picked, then completes spoke', () => {

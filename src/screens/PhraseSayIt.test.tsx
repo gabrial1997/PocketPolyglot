@@ -63,7 +63,7 @@ describe('PhraseSayIt', () => {
     fireEvent.press(u.getByLabelText('Stop recording')); // rec -> compare
     // Visual-sync: compare is via the Native / You rows (CompareRow), not "Play original/yours".
     fireEvent.press(u.getByText('Native'));
-    expect(u.props.onPlayCompare).toHaveBeenCalledWith('native');
+    expect(u.props.onPlayCompare).toHaveBeenCalledWith('native', 1); // native model slowed by the co-located SpeedChip (default 1x)
     fireEvent.press(u.getByText('You'));
     expect(u.props.onPlayCompare).toHaveBeenCalledWith('you');
   });

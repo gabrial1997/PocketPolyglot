@@ -18,7 +18,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { Screen, PlayOrb, MicOrb, LiveWaveform, usePlayClip, FRAME_MS, SpeedChip } from '../components';
+import { Screen, PlayOrb, MicOrb, LiveWaveform, usePlayClip, FRAME_MS, SpeedChip, type Speed } from '../components';
 import { GlideTrack } from '../components/GlideTrack';
 import { CardIcon, ResultNote, WordTag } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
@@ -42,15 +42,20 @@ function FlatMini({ color }: { color: string }): React.JSX.Element {
 }
 
 export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Element {
-  const { item, onPlay, onRecordStart, onRecordStop, onComplete, speed, onSpeedChange } = props;
+  const { item, onPlay, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
   const T = useTheme();
   const glide = item.glide;
   const pair = item.pair as PairCopy | undefined;
 
+  // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
+  const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
+  const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
   const [phase, setPhase] = useState<Phase>('meet');
   const [picked, setPicked] = useState<Side | null>(null);
   const [say, setSay] = useState<Say>('idle');
-  const { playing, play, stop } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const { playing, positionMs, rate, play, stop } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const replayNative = (): void => play(() => onPlay('native', speed), speed);
+  const replayGlide = (): void => play(() => onPlay('glide', speed), speed);
   const right = picked !== null && pair != null && picked === pair.correct;
   // `missed` is STICKY across a Try-again reset (which clears `picked`) so the first-try miss is
   // remembered for honest SRS correctness — matching DrillScreen and the locked wrong-answer rule.
@@ -73,8 +78,8 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
           <View style={styles.glideWrap}>
             <GlideTrack from={glide?.from} to={glide?.to} playing={playing} color={T.primary} />
           </View>
-          <PlayOrb size={66} playing={playing} onPress={() => play(() => onPlay('glide'))} />
-          <SpeedChip value={speed} onChange={onSpeedChange} />
+          <PlayOrb size={66} playing={playing} onPress={replayGlide} />
+          <SpeedChip value={speed} onChange={changeSpeed} />
           <Text style={[styles.tapHint, { color: T.faint }]}>Tap to hear the glide</Text>
         </View>
         <View style={styles.footer}>
@@ -109,8 +114,8 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
             <GlideTrack from={glide?.from} to={glide?.to} playing={playing} color={T.primary} width={230} />
           </View>
           <View style={styles.sayControls}>
-            <PlayOrb size={50} filled={false} playing={playing} onPress={() => play(() => onPlay('native'))} />
-            <SpeedChip value={speed} onChange={onSpeedChange} />
+            <PlayOrb size={50} filled={false} playing={playing} onPress={replayNative} />
+            <SpeedChip value={speed} onChange={changeSpeed} />
           </View>
           <View style={styles.sayMic}>
             {say === 'done' ? (
@@ -160,10 +165,10 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
 
         <View style={styles.audio}>
           <View style={styles.wave}>
-            <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={52} count={34} />
+            <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={52} count={34} />
           </View>
-          <PlayOrb size={72} playing={playing} onPress={() => play(() => onPlay('native'))} />
-          <SpeedChip value={speed} onChange={onSpeedChange} />
+          <PlayOrb size={72} playing={playing} onPress={replayNative} />
+          <SpeedChip value={speed} onChange={changeSpeed} />
         </View>
 
         <View style={styles.cards}>
@@ -219,7 +224,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
             <Text style={[styles.ctaText, { color: '#fff' }]}>Try again</Text>
           </Pressable>
         ) : (
-          <Pressable accessibilityRole="button" onPress={() => play(() => onPlay('native'))} style={[styles.ctaOutline, { borderColor: T.hair }]}>
+          <Pressable accessibilityRole="button" onPress={replayNative} style={[styles.ctaOutline, { borderColor: T.hair }]}>
             <CardIcon name="replay" size={18} color={T.sub} />
             <Text style={[styles.ctaText, { color: T.sub }]}>Play again</Text>
           </Pressable>

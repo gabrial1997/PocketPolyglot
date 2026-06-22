@@ -16,7 +16,7 @@
 // terminal beat of this practice card (the old standalone "Continue" is folded into Compare).
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Screen, LiveWaveform, FRAME_MS, SpeedChip } from '../components';
+import { Screen, LiveWaveform, FRAME_MS, SpeedChip, type Speed } from '../components';
 import { CardIcon } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { hexA, fonts } from '../theme/tokens';
@@ -25,8 +25,11 @@ import type { RecordingCardProps } from './cardProps';
 const COMPARE_MS = 1700; // play native+you back-to-back, then complete
 
 export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
-  const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed, onSpeedChange } = props;
+  const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
   const T = useTheme();
+  // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip slows the native model.
+  const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
+  const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
   const [rec, setRec] = useState(false);
   const [recorded, setRecorded] = useState(false);
   const [comparing, setComparing] = useState(false);
@@ -43,9 +46,13 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
     if (!recorded || comparing) return;
     setComparing(true);
     setPlayingSide('native');
-    onPlayCompare?.('native');
-    timers.current.push(setTimeout(() => { setPlayingSide('you'); onPlayCompare?.('you'); }, COMPARE_MS / 2));
-    timers.current.push(setTimeout(() => { setPlayingSide(null); onComplete({ itemId: item.id, cardKind: 'pron', spoke: true }); }, COMPARE_MS));
+    onPlayCompare?.('native', speed);
+    // The native model plays at `speed`, so it lasts ~1/speed longer; stretch its segment to match
+    // so a slowed take is heard in full before the (always natural-rate) "You" take follows.
+    const half = COMPARE_MS / 2;
+    const nativeDur = half / speed;
+    timers.current.push(setTimeout(() => { setPlayingSide('you'); onPlayCompare?.('you'); }, nativeDur));
+    timers.current.push(setTimeout(() => { setPlayingSide(null); onComplete({ itemId: item.id, cardKind: 'pron', spoke: true }); }, nativeDur + half));
   };
 
   const Row = ({ icon, label, you, playing }: { icon: 'speaker' | 'mic'; label: string; you?: boolean; playing: boolean }): React.JSX.Element => (
@@ -86,7 +93,7 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
         </View>
 
         <View style={{ alignItems: 'center', marginTop: 12 }}>
-          <SpeedChip value={speed} onChange={onSpeedChange} />
+          <SpeedChip value={speed} onChange={changeSpeed} />
         </View>
 
         <View style={{ flex: 1 }} />

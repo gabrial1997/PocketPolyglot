@@ -1,16 +1,19 @@
 // word/learn-function — grammatical-word first-exposure card: meaning via example sentences,
 // each independently playable (onPlay(exampleIndex)). Out: onComplete({ spoke:false }).
 // Visual: matches mockup learn-function (word hero, gloss, three playable example rows, audio hero).
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS } from '../components';
+import { Screen, PlayOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, type Speed } from '../components';
 import { Eyebrow, WordTag, WordHero, GlossLine, Caption, FootNote, CardBody, CardFooter, HeadRow, ExampleRow, LiteralNote, wordTagFor } from '../components/cardChrome';
 import type { BaseCardProps } from './cardProps';
 
-export function WordLearnFunction({ item, onPlay, onComplete, speed, onSpeedChange }: BaseCardProps): React.JSX.Element {
-  const { playing, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+export function WordLearnFunction({ item, onPlay, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
+  // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
+  const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
+  const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
+  const { playing, positionMs, rate, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
   const tag = wordTagFor(item.wordClass) ?? { label: 'Function word', tone: 'neutral' as const };
-  const replay = (): void => play(() => onPlay('native'));
+  const replay = (): void => play(() => onPlay('native', speed), speed);
   return (
     <Screen>
       <CardBody>
@@ -28,10 +31,10 @@ export function WordLearnFunction({ item, onPlay, onComplete, speed, onSpeedChan
         </View>
         <View style={styles.audio}>
           <View style={styles.wave}>
-            <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={36} count={32} />
+            <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={36} count={32} />
           </View>
           <PlayOrb size={58} playing={playing} onPress={replay} />
-          <SpeedChip value={speed} onChange={onSpeedChange} />
+          <SpeedChip value={speed} onChange={changeSpeed} />
           <Caption>Tap to hear</Caption>
         </View>
       </CardBody>

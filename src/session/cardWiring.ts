@@ -55,11 +55,12 @@ export function withRecording(result: CardResult, recording: Blob | string | nul
 
 /** The callback bundle a Tier-A card receives. Cards never see the services behind it. */
 export interface CardHandlers {
-  onPlay: (which: PlayWhich) => void;
+  /** Play a clip. An explicit `rate` (the SpeedChip selection) overrides resolvePlay's default. */
+  onPlay: (which: PlayWhich, rate?: number) => void;
   onAnswer: (value: string, correct: boolean) => void;
   onRecordStart: () => void;
   onRecordStop: (recording?: Blob | string) => void;
-  onPlayCompare: (which: 'native' | 'you') => void;
+  onPlayCompare: (which: 'native' | 'you', rate?: number) => void;
   /** Stop the currently-playing clip (backs the PlayOrb play/pause toggle). */
   onStop: () => void;
   onComplete: (result: CardResult) => void;
@@ -96,9 +97,11 @@ export function createCardHandlers(deps: {
 }): CardHandlers {
   const { item, audio, recorder, store, submit, advance } = deps;
   return {
-    onPlay: (which) => {
+    onPlay: (which, rate) => {
       const p = resolvePlay(item, which);
-      if (p) void audio.play(p.url, p.rate != null ? { rate: p.rate } : undefined);
+      if (!p) return;
+      const r = rate ?? p.rate; // an explicit rate (SpeedChip) overrides resolvePlay's default
+      void audio.play(p.url, r != null ? { rate: r } : undefined);
     },
     onAnswer: () => {
       // Distractors are pre-supplied in item.choices, so an answer needs no service call here;
@@ -114,9 +117,12 @@ export function createCardHandlers(deps: {
         store.current = take;
       });
     },
-    onPlayCompare: (which) => {
+    onPlayCompare: (which, rate) => {
       const url = which === 'you' ? store.current : item.audio.nativeUrl;
-      if (typeof url === 'string' && url) void audio.play(url);
+      // A SpeedChip rate slows the native model only; the user's own take always plays natural.
+      if (typeof url === 'string' && url) {
+        void audio.play(url, which === 'native' && rate != null ? { rate } : undefined);
+      }
     },
     onStop: () => {
       void audio.stop();

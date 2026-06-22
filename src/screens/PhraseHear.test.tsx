@@ -59,7 +59,7 @@ describe('PhraseHear', () => {
   it('plays the native audio when the play orb is tapped', () => {
     const u = renderCard();
     fireEvent.press(u.getByLabelText('Play'));
-    expect(u.props.onPlay).toHaveBeenCalledWith('native');
+    expect(u.props.onPlay).toHaveBeenCalledWith('native', 1); // default speed 1x passed as the rate
   });
 
   it('completes as first exposure (spoke:false) on continue', () => {
@@ -74,7 +74,7 @@ describe('PhraseHear', () => {
 
   it('says the phrase then repeats it once on first show', () => {
     const u = renderCard(); // mount auto-plays once
-    expect(u.props.onPlay).toHaveBeenCalledWith('native');
+    expect(u.props.onPlay).toHaveBeenCalledWith('native', 1); // default speed 1x passed as the rate
     expect(u.props.onPlay).toHaveBeenCalledTimes(1);
     act(() => {
       jest.advanceTimersByTime(FALLBACK_MS + REPEAT_DELAY_MS + 50);

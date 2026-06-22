@@ -82,7 +82,7 @@ describe('WordSay', () => {
     fireEvent.press(u.getByText('māja')); // correct: green confirm beat
     advanceConfirm(); // choose -> speak (the play orb lives on the speak stage)
     fireEvent.press(u.getByLabelText('Play'));
-    expect(u.props.onPlay).toHaveBeenCalledWith('native');
+    expect(u.props.onPlay).toHaveBeenCalledWith('native', 1); // default speed 1x passed as the rate
   });
 
   it('reports each answer via onAnswer with its correctness', () => {

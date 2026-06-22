@@ -17,7 +17,7 @@
 // bHint. They degrade gracefully — absent, the idle card just shows its glyph.
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, MicOrb, LiveWaveform, usePlayClip, FRAME_MS, SpeedChip } from '../components';
+import { Screen, PlayOrb, MicOrb, LiveWaveform, usePlayClip, FRAME_MS, SpeedChip, type Speed } from '../components';
 import { CardIcon, ResultNote } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { hexA, fonts } from '../theme/tokens';
@@ -29,12 +29,16 @@ type Say = null | 'idle' | 'rec' | 'done';
 type PairHints = ReviewPair & { aHint?: string; bHint?: string };
 
 export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
-  const { item, onPlay, onRecordStart, onRecordStop, onComplete, speed, onSpeedChange } = props;
+  const { item, onPlay, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
   const T = useTheme();
   const pair = item.pair as PairHints | undefined;
 
+  // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
+  const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
+  const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
   const [picked, setPicked] = useState<Side | null>(null);
-  const { playing, play, stop } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const { playing, positionMs, rate, play, stop } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const replay = (): void => play(() => onPlay('native', speed), speed);
   const [say, setSay] = useState<Say>(null);
   // `missed` is sticky across a Try-again reset so the first-try miss is remembered for honest SRS
   // correctness (locked rule + this card's header comment). `right` is the current selection state.
@@ -93,8 +97,8 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
             {item.gloss}{item.pron ? <Text style={{ color: T.faint }}> · {item.pron}</Text> : null}
           </Text>
           <View style={styles.sayControls}>
-            <PlayOrb size={54} filled={false} playing={playing} onPress={() => play(() => onPlay('native'))} />
-            <SpeedChip value={speed} onChange={onSpeedChange} />
+            <PlayOrb size={54} filled={false} playing={playing} onPress={replay} />
+            <SpeedChip value={speed} onChange={changeSpeed} />
           </View>
           <View style={styles.sayMic}>
             {say === 'done' ? (
@@ -136,10 +140,10 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
 
         <View style={styles.audio}>
           <View style={styles.wave}>
-            <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={52} count={34} />
+            <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={52} count={34} />
           </View>
-          <PlayOrb size={72} playing={playing} onPress={() => play(() => onPlay('native'))} />
-          <SpeedChip value={speed} onChange={onSpeedChange} />
+          <PlayOrb size={72} playing={playing} onPress={replay} />
+          <SpeedChip value={speed} onChange={changeSpeed} />
         </View>
 
         <View style={styles.cards}>
@@ -170,7 +174,7 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
             <Text style={[styles.ctaText, { color: '#fff' }]}>Try again</Text>
           </Pressable>
         ) : (
-          <Pressable accessibilityRole="button" onPress={() => play(() => onPlay('native'))} style={[styles.ctaOutline, { borderColor: T.hair }]}>
+          <Pressable accessibilityRole="button" onPress={replay} style={[styles.ctaOutline, { borderColor: T.hair }]}>
             <CardIcon name="replay" size={18} color={T.sub} />
             <Text style={[styles.ctaText, { color: T.sub }]}>Play again</Text>
           </Pressable>

@@ -8,7 +8,7 @@
 // "First review tomorrow." + Continue. Soundbar gate timing preserved from the prior card.
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, SpeedChip, LiveWaveform, CtaButton, usePlayClip, clipMs, FRAME_MS } from '../components';
+import { Screen, PlayOrb, SpeedChip, LiveWaveform, CtaButton, usePlayClip, clipMs, FRAME_MS, type Speed } from '../components';
 import { CardIcon, Eyebrow, PhraseLine, LiteralNote } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
@@ -19,14 +19,17 @@ export const REPEAT_DELAY_MS = 700; // gap after the first clip finishes before 
 
 type HearExtra = { newForm?: string; newLemma?: string };
 
-export function PhraseHear({ item, onPlay, onComplete, speed, onSpeedChange }: BaseCardProps): React.JSX.Element {
+export function PhraseHear({ item, onPlay, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
   const T = useTheme();
   const x = item as ReviewItem & HearExtra;
   const env = item.audio.envelope;
-  const { playing, play } = usePlayClip(env); // shared soundbar gate (real-amplitude, no loop)
+  // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
+  const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
+  const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
+  const { playing, positionMs, rate, play } = usePlayClip(env); // shared soundbar gate (real-amplitude, no loop)
   const [shown, setShown] = useState(false);
 
-  const playClip = (): void => play(() => onPlay('native'));
+  const playClip = (): void => play(() => onPlay('native', speed), speed);
 
   // First exposure SAYS the phrase, then REPEATS it once (BACKEND_INTEGRATION §4 / 2026-06-19 spec).
   // The repeat waits out the first clip's length (+ a short gap) so it doesn't overlap playback.
@@ -63,10 +66,10 @@ export function PhraseHear({ item, onPlay, onComplete, speed, onSpeedChange }: B
         {/* audio hero */}
         <View style={styles.audio}>
           <View style={styles.wave}>
-            <LiveWaveform envelope={env} playing={playing} frameMs={FRAME_MS} height={58} count={44} />
+            <LiveWaveform envelope={env} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={58} count={44} />
           </View>
           <PlayOrb size={78} playing={playing} onPress={playClip} />
-          <SpeedChip value={speed} onChange={onSpeedChange} />
+          <SpeedChip value={speed} onChange={changeSpeed} />
         </View>
 
         {/* meaning — demoted behind a tap */}

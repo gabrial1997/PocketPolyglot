@@ -9,15 +9,18 @@
 // "10 minutes" time claim (locked product rule).
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Screen, MicOrb, SpeedChip } from '../components';
+import { Screen, MicOrb, SpeedChip, type Speed } from '../components';
 import { Eyebrow, PhraseLine, CompareRow, PlayBackToBack } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import type { RecordingCardProps } from './cardProps';
 type Stage = 'cue' | 'rec' | 'compare';
 
 export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
-  const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed, onSpeedChange } = props;
+  const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
   const T = useTheme();
+  // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip slows the native model.
+  const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
+  const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
   const [stage, setStage] = useState<Stage>('cue');
   const [rated, setRated] = useState<'good' | 'again' | null>(null);
 
@@ -57,15 +60,15 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
             <Text style={[styles.cueSub, { color: T.sub, marginTop: 10 }]}>{item.gloss}</Text>
 
             <View style={styles.compare}>
-              <CompareRow label="Native" icon="speaker" envelope={item.audio.envelope} onPress={() => onPlayCompare?.('native')} />
+              <CompareRow label="Native" icon="speaker" envelope={item.audio.envelope} onPress={() => onPlayCompare?.('native', speed)} />
               <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
             </View>
 
             <View style={{ marginTop: 18 }}>
-              <PlayBackToBack onPress={() => onPlayCompare?.('native')} />
+              <PlayBackToBack onPress={() => onPlayCompare?.('native', speed)} />
             </View>
             <View style={{ marginTop: 12 }}>
-              <SpeedChip value={speed} onChange={onSpeedChange} />
+              <SpeedChip value={speed} onChange={changeSpeed} />
             </View>
             <Text style={[styles.note, { color: rated === 'good' ? T.good : T.sub }]}>
               {rated === 'good'

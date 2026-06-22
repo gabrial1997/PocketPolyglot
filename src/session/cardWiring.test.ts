@@ -142,6 +142,12 @@ describe('createCardHandlers — the core loop reaches every service', () => {
     expect(stops()).toBe(1);
   });
 
+  it('onPlay passes a rate override through to audio.play (SpeedChip slow)', () => {
+    const { handlers, calls } = setup();
+    handlers.onPlay('native', 0.7);
+    expect(calls).toEqual([{ url: 'native.mp3', opts: { rate: 0.7 } }]);
+  });
+
   it('onPlay("native") plays the native audio', () => {
     const { handlers, calls } = setup();
     handlers.onPlay('native');

@@ -80,7 +80,7 @@ describe('WordPicReview', () => {
   it('plays the native audio when the play orb is tapped', () => {
     const u = renderCard();
     fireEvent.press(u.getByLabelText('Play'));
-    expect(u.props.onPlay).toHaveBeenCalledWith('native');
+    expect(u.props.onPlay).toHaveBeenCalledWith('native', 1); // default speed 1x passed as the rate
   });
 
   it('renders an <Image> from media.imageUrl when a real url is seeded', () => {

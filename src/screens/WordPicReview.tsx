@@ -2,9 +2,9 @@
 // Stages: choose -> speak -> rec -> result. Picture+audio in -> pick word -> say it -> compare.
 // Out: { correct, spoke:true, recording }. LOCKED wrong-answer rule lives in useLoopStage.
 // Visual: matches mockup pic-review (full image + 2×2 word grid -> word hero + mic -> compare).
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, StageFade } from '../components';
+import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, StageFade, type Speed } from '../components';
 import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, GridChoiceButton, CompareRow, PlayBackToBack, ResultNote, loopResultNote } from '../components/cardChrome';
 import { TryAgainNote } from '../components';
 import { CardImage } from './CardImage';
@@ -14,11 +14,14 @@ import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 type Props = RecordingCardProps & ChoiceCardProps;
 
 export function WordPicReview(props: Props): React.JSX.Element {
-  const { item, onPlay, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed, onSpeedChange } = props;
+  const { item, onPlay, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
   const m = useLoopStage();
   const choices = item.choices ?? [];
-  const { playing, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
-  const replay = (): void => play(() => onPlay('native'));
+  // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
+  const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
+  const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
+  const { playing, positionMs, rate, play } = usePlayClip(item.audio.envelope); // reactive soundbar gate
+  const replay = (): void => play(() => onPlay('native', speed), speed);
   const recStarted = useRef(false);
   const startRec = (): void => {
     if (recStarted.current) return;
@@ -38,9 +41,9 @@ export function WordPicReview(props: Props): React.JSX.Element {
             <View style={styles.playRow}>
               <PlayOrb size={44} filled={false} playing={playing} onPress={replay} />
               <View style={{ flex: 1 }}>
-                <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={28} count={28} />
+                <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={28} count={28} />
               </View>
-              <SpeedChip value={speed} onChange={onSpeedChange} />
+              <SpeedChip value={speed} onChange={changeSpeed} />
             </View>
             <PromptText>Which word names it?</PromptText>
             <View style={styles.grid}>
@@ -69,10 +72,10 @@ export function WordPicReview(props: Props): React.JSX.Element {
             <WordHero size={50}>{item.target}</WordHero>
             <GlossLine gloss={item.gloss} pron={item.pron} size={13.5} />
             <View style={styles.wave}>
-              <LiveWaveform envelope={item.audio.envelope} playing={playing} frameMs={FRAME_MS} height={34} count={30} />
+              <LiveWaveform envelope={item.audio.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={34} count={30} />
             </View>
             <PlayOrb size={52} filled={false} playing={playing} onPress={replay} />
-            <SpeedChip value={speed} onChange={onSpeedChange} />
+            <SpeedChip value={speed} onChange={changeSpeed} />
             <View style={styles.mic}>
               <MicOrb rec={m.stage === 'rec'} onPress={() => { if (m.stage === 'rec') { onRecordStop(); m.finishRec(); } else { startRec(); } }} />
               <Caption>{m.stage === 'rec' ? 'Listening… tap to stop' : 'Now say it'}</Caption>
