@@ -19,8 +19,8 @@ import { PlaybackProvider } from '../session/PlaybackProvider';
 import { CARD_REGISTRY } from './registry';
 import { Screen, GlideViewport } from '../components';
 import { SessionTop } from '../components/cardChrome';
-import { CalendarIcon, SoundIcon, BarsIcon, type IconProps } from '../components/icons';
-import { HomeHost, PodcastHost, ProgressHost } from '../screens';
+import { CalendarIcon, SoundIcon, BarsIcon, SettingsIcon, type IconProps } from '../components/icons';
+import { HomeHost, PodcastHost, ProgressHost, SettingsHost } from '../screens';
 import { type } from '../theme/tokens';
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardKind } from '../types/cardKind';
@@ -32,13 +32,14 @@ import type { CardResult } from '../types/cardResult';
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
 const SpectralMedium = require('@expo-google-fonts/spectral/500Medium/Spectral_500Medium.ttf') as number;
 
-type Route = 'home' | 'pod' | 'prog' | 'session';
+type Route = 'home' | 'pod' | 'prog' | 'settings' | 'session';
 
 /** The Tier-B tabs (session is a focused flow, not a tab). Labels/icons match the mockup. */
-const TABS: { route: Route; label: string; Icon: React.ComponentType<IconProps> }[] = [
+export const TABS: { route: Route; label: string; Icon: React.ComponentType<IconProps> }[] = [
   { route: 'home', label: 'Today', Icon: CalendarIcon },
   { route: 'pod', label: 'Listen', Icon: SoundIcon },
   { route: 'prog', label: 'Progress', Icon: BarsIcon },
+  { route: 'settings', label: 'Settings', Icon: SettingsIcon },
 ];
 
 /** Derive a first-name greeting from the signed-in user — never hard-coded. Falls back to the
@@ -221,6 +222,7 @@ function Root(): React.JSX.Element {
         ) : null}
         {route === 'pod' ? <PodcastHost /> : null}
         {route === 'prog' ? <ProgressHost /> : null}
+        {route === 'settings' ? <SettingsHost /> : null}
       </View>
       <TabBar route={route} onNavigate={setRoute} />
     </View>
