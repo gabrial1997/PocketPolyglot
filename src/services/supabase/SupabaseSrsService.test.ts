@@ -6,6 +6,10 @@
 //
 // The Supabase client is faked at the query-builder level: each `.from(table)` returns a chainable,
 // awaitable builder that resolves canned rows. We assert on the ORDER of the final ReviewItem array.
+//
+// B2 tests: verify that getDueBatch now sources NEW items from content tables (no review_state row),
+// that due items are always present + uncapped, that the new cap is respected, and that audio-less
+// + image-less due items are NOT re-surfaced.
 import { SupabaseSrsService } from './SupabaseSrsService';
 import type { ReviewStateRow } from './types';
 
@@ -32,35 +36,132 @@ function applyOrder(rows: Row[], orderBys: OrderBy[]): Row[] {
 // A chainable, thenable query builder. Query methods return `this`; awaiting resolves the canned
 // `{ data, error }`. `.order()` actually sorts (so the due_at + item_id tiebreak is exercised, as
 // Postgres would); `.in()` filters the canned rows to the requested ids.
-function makeBuilder(table: string, tables: Record<string, Row[]>) {
-  let rows: Row[] = tables[table] ?? [];
+function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: null }>) {
+  let rows: Row[] = [...(tables[table] ?? [])];
   const orderBys: OrderBy[] = [];
-  const resolved = () => ({ data: applyOrder(rows, orderBys), error: null });
+  let countMode = false;
+  let orFilter: string | null = null;
+  let eqFilters: Record<string, unknown> = {};
+  let notFilters: Record<string, unknown> = {};
+  let lteFilters: Record<string, unknown> = {};
+  let limitVal: number | null = null;
+
+  const applyFilters = (source: Row[]) => {
+    let r = [...source];
+    // eq filters
+    for (const [k, v] of Object.entries(eqFilters)) {
+      r = r.filter(row => row[k] === v);
+    }
+    // neq filters
+    for (const [k, v] of Object.entries(notFilters)) {
+      r = r.filter(row => row[k] !== v);
+    }
+    // lte filters
+    for (const [k, v] of Object.entries(lteFilters)) {
+      r = r.filter(row => {
+        const rv = row[k] as string | null | undefined;
+        if (rv == null) return false;
+        return rv <= (v as string);
+      });
+    }
+    // or filter: simulate 'due_at.lte.X,stage.eq.new'
+    if (orFilter) {
+      const parts = orFilter.split(',');
+      r = r.filter(row => parts.some(part => {
+        const m = part.match(/^(\w+)\.(lte|eq|neq)\.(.+)$/);
+        if (!m) return false;
+        const [, col, op, val] = m as [string, string, string, string];
+        const rv = row[col] as string | null | undefined;
+        if (op === 'lte') return rv != null && rv <= val;
+        if (op === 'eq') return rv === val;
+        if (op === 'neq') return rv !== val;
+        return false;
+      }));
+    }
+    return r;
+  };
+
+  const resolved = () => {
+    const filtered = applyFilters(tables[table] ?? []);
+    const sorted = applyOrder(filtered, orderBys);
+    const limited = limitVal !== null ? sorted.slice(0, limitVal) : sorted;
+    if (countMode) {
+      return { data: null, count: limited.length, error: null };
+    }
+    return { data: limited, error: null, count: null };
+  };
+
   const builder: Record<string, unknown> = {
-    select: () => builder,
-    eq: () => builder,
-    or: () => builder,
-    limit: () => builder,
-    lte: () => builder,
+    select: (_cols?: string, opts?: Record<string, unknown>) => {
+      if (opts?.count === 'exact') countMode = true;
+      return builder;
+    },
+    eq: (col: string, val: unknown) => {
+      eqFilters = { ...eqFilters, [col]: val };
+      return builder;
+    },
+    neq: (col: string, val: unknown) => {
+      notFilters = { ...notFilters, [col]: val };
+      return builder;
+    },
+    or: (filter: string) => {
+      orFilter = filter;
+      return builder;
+    },
+    lte: (col: string, val: unknown) => {
+      lteFilters = { ...lteFilters, [col]: val };
+      return builder;
+    },
+    limit: (n: number) => {
+      limitVal = n;
+      return builder;
+    },
     order: (col: string, opts?: { ascending?: boolean; nullsFirst?: boolean }) => {
       orderBys.push({ col, ascending: opts?.ascending !== false, nullsFirst: opts?.nullsFirst === true });
       return builder;
     },
     in: (_col: string, ids: string[]) => {
       rows = (tables[table] ?? []).filter((r) => ids.includes(r.id as string));
-      return builder;
+      // reset rows reference so resolved() uses this filtered set
+      tables[`__in_filtered_${table}`] = rows;
+      // Override resolved for the .in() case: return filtered rows
+      const inResolved = () => ({ data: applyOrder(rows, orderBys), error: null, count: null });
+      const inBuilder: Record<string, unknown> = {
+        ...builder,
+        then: (resolve: (v: { data: Row[]; error: null }) => unknown) => resolve(inResolved()),
+        maybeSingle: async () => ({ data: applyOrder(rows, orderBys)[0] ?? null, error: null }),
+      };
+      return inBuilder;
     },
-    maybeSingle: async () => ({ data: applyOrder(rows, orderBys)[0] ?? null, error: null }),
-    then: (resolve: (v: { data: Row[]; error: null }) => unknown) => resolve(resolved()),
+    maybeSingle: async () => {
+      const filtered = applyFilters(tables[table] ?? []);
+      const sorted = applyOrder(filtered, orderBys);
+      return { data: sorted[0] ?? null, error: null };
+    },
+    then: (resolve: (v: { data: Row[] | null; error: null; count: number | null }) => unknown) =>
+      resolve(resolved()),
   };
+
+  void rpcFn; // suppress unused warning
   return builder;
 }
 
-function fakeClient(tables: Record<string, Row[]>) {
+function fakeClient(
+  tables: Record<string, Row[]>,
+  rpcResults?: Record<string, unknown[]>,
+  now?: Date,
+) {
   return {
     from: (table: string) => makeBuilder(table, tables),
-    // get_distractors returns nothing here — choices degrade gracefully (not under test).
-    rpc: async () => ({ data: [], error: null }),
+    rpc: async (name: string, args?: Record<string, unknown>) => {
+      if (rpcResults && name in rpcResults) {
+        return { data: rpcResults[name], error: null };
+      }
+      // get_distractors returns nothing here — choices degrade gracefully (not under test).
+      void args;
+      return { data: [], error: null };
+    },
+    _now: now,
   } as never;
 }
 
@@ -90,20 +191,36 @@ function contentRow(id: string, extra: Row = {}): Row {
 describe('SupabaseSrsService.getDueBatch ordering', () => {
   it('returns items in due_at order, interleaving phrases and words — not grouped by type', async () => {
     // Scrambled on input; intended order by due_at is: p-lock(0), w-a(60), w-b(120), p-after(180).
+    const pastTime = new Date(1_900_000_000_000 - 10_000).toISOString();
     const states = [
-      stateRow('lemma', 'w-b', 120),
-      stateRow('phrase', 'p-after', 180),
-      stateRow('lemma', 'w-a', 60),
-      stateRow('phrase', 'p-lock', 0),
+      { ...stateRow('lemma', 'w-b', null), stage: 'review', due_at: new Date(1_900_000_000_000 + 120 * 1000).toISOString() },
+      { ...stateRow('phrase', 'p-after', null), stage: 'review', due_at: new Date(1_900_000_000_000 + 180 * 1000).toISOString() },
+      { ...stateRow('lemma', 'w-a', null), stage: 'review', due_at: new Date(1_900_000_000_000 + 60 * 1000).toISOString() },
+      { ...stateRow('phrase', 'p-lock', null), stage: 'review', due_at: new Date(1_900_000_000_000 + 0 * 1000).toISOString() },
     ];
+
+    // All due_at are well in the past relative to real now, so they should be included.
+    // Use a far-future "now" to make all items due.
+    void pastTime;
+
     const tables: Record<string, Row[]> = {
       review_state: states as unknown as Row[],
-      lemmas: [contentRow('w-a'), contentRow('w-b')],
-      phrases: [contentRow('p-lock'), contentRow('p-after')],
+      lemmas: [
+        contentRow('w-a', { envelope: [0.5], native_url: 'w-a.mp3' }),
+        contentRow('w-b', { envelope: [0.5], native_url: 'w-b.mp3' }),
+      ],
+      phrases: [
+        contentRow('p-lock', { envelope: [0.5] }),
+        contentRow('p-after', { envelope: [0.5] }),
+      ],
       phrase_components: [],
       minimal_pairs: [],
+      // Empty candidate tables — no new items
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables), 'u1');
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date(1_900_000_000_000 + 1_000_000_000)), 'u1');
 
     const batch = await svc.getDueBatch();
 
@@ -117,15 +234,248 @@ describe('SupabaseSrsService.getDueBatch ordering', () => {
     const states = [stateRow('lemma', 'w-y', null), stateRow('lemma', 'w-x', null)];
     const tables: Record<string, Row[]> = {
       review_state: states as unknown as Row[],
-      lemmas: [contentRow('w-y'), contentRow('w-x')],
+      lemmas: [
+        contentRow('w-y', { envelope: [0.5], native_url: 'w-y.mp3' }),
+        contentRow('w-x', { envelope: [0.5], native_url: 'w-x.mp3' }),
+      ],
       phrases: [],
       phrase_components: [],
       minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables), 'u1');
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date(1_900_000_000_000 + 1_000_000_000)), 'u1');
 
     const batch = await svc.getDueBatch();
 
     expect(batch.map((i) => i.id)).toEqual(['w-x', 'w-y']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// B2: New tests for the rewritten getDueBatch that sources candidates from
+//     content tables (no review_state row needed to surface new items).
+// ---------------------------------------------------------------------------
+
+describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
+  // A far-future "now" so no content rows are accidentally treated as due.
+  // We use a fixed timestamp far enough in the past that due review_state rows are all due.
+  const FAR_FUTURE = new Date('2099-01-01T00:00:00.000Z');
+
+  it('surfaces never-introduced lemmas as new without a pre-engineered stage=new row', async () => {
+    // No review_state rows at all — everything is brand new.
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [
+        contentRow('lemma-1', { utility_rank: 1, envelope: [0.5], native_url: 'l1.mp3', word_class: 'concrete' }),
+        contentRow('lemma-2', { utility_rank: 2, envelope: [0.5], native_url: 'l2.mp3', word_class: 'concrete' }),
+        contentRow('lemma-3', { utility_rank: 3, envelope: [0.5], native_url: 'l3.mp3', word_class: 'concrete' }),
+      ],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, FAR_FUTURE), 'u1');
+    const batch = await svc.getDueBatch();
+
+    // Should include new candidates (no review_state required)
+    expect(batch.length).toBeGreaterThan(0);
+    // All should be type 'word'
+    expect(batch.every(i => i.type === 'word')).toBe(true);
+  });
+
+  it('due items are always present and uncapped (all due items appear regardless of new cap)', async () => {
+    // Create many due review_state rows (more than STEADY_STATE_NEW_CAP=5)
+    const dueStates: Row[] = Array.from({ length: 15 }, (_, k) => ({
+      user_id: 'u1',
+      item_type: 'lemma',
+      item_id: `due-lemma-${k}`,
+      stage: 'review',
+      due_at: new Date(Date.now() - 1000 * (k + 1)).toISOString(), // all in the past
+      stability: 10,
+      difficulty: 5,
+      reps: 3,
+      lapses: 0,
+      last_review: null,
+    }));
+
+    const lemmaRows: Row[] = Array.from({ length: 15 }, (_, k) => ({
+      id: `due-lemma-${k}`,
+      lemma: `due-lemma-${k}`,
+      gloss_en: `gloss-${k}`,
+      audio_url: `due-lemma-${k}.mp3`,
+      native_url: `due-lemma-${k}.mp3`,
+      envelope: [0.5],
+      word_class: 'concrete',
+      media: { imageUrl: `img-${k}.jpg` },
+      utility_rank: k + 1,
+    }));
+
+    const tables: Record<string, Row[]> = {
+      review_state: dueStates,
+      lemmas: lemmaRows,
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const batch = await svc.getDueBatch();
+
+    // All 15 due items must appear (reviews are uncapped)
+    expect(batch.length).toBeGreaterThanOrEqual(15);
+    const ids = new Set(batch.map(i => i.id));
+    for (let k = 0; k < 15; k++) {
+      expect(ids.has(`due-lemma-${k}`)).toBe(true);
+    }
+  });
+
+  it('new count respects DAY_ONE_NEW_CAP on day 1 (account age < 1 day)', async () => {
+    // Day-1 account: profiles.created_at = just now. No review_state rows (fresh account).
+    const now = new Date();
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      // 30 candidate lemmas — more than DAY_ONE_NEW_CAP=20
+      lemmas: Array.from({ length: 30 }, (_, k) => ({
+        id: `new-lemma-${k}`,
+        lemma: `word-${k}`,
+        gloss_en: `gloss-${k}`,
+        audio_url: `new-lemma-${k}.mp3`,
+        native_url: `new-lemma-${k}.mp3`,
+        envelope: [0.5],
+        word_class: 'concrete',
+        utility_rank: k + 1,
+      })),
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [{ id: 'u1', user_id: 'u1', created_at: now.toISOString() }],
+    };
+
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, now), 'u1');
+    const batch = await svc.getDueBatch();
+
+    // Must not exceed DAY_ONE_NEW_CAP = 20 new items
+    expect(batch.length).toBeLessThanOrEqual(20);
+    // Must have at least some items
+    expect(batch.length).toBeGreaterThan(0);
+  });
+
+  it('audio-less + image-less due items are NOT re-surfaced in the batch', async () => {
+    // One due item with no audio and no image, one with audio
+    const dueStates: Row[] = [
+      {
+        user_id: 'u1',
+        item_type: 'lemma',
+        item_id: 'no-audio-lemma',
+        stage: 'review',
+        due_at: new Date(Date.now() - 5000).toISOString(),
+        stability: 10,
+        difficulty: 5,
+        reps: 3,
+        lapses: 0,
+        last_review: null,
+      },
+      {
+        user_id: 'u1',
+        item_type: 'lemma',
+        item_id: 'has-audio-lemma',
+        stage: 'review',
+        due_at: new Date(Date.now() - 4000).toISOString(),
+        stability: 10,
+        difficulty: 5,
+        reps: 3,
+        lapses: 0,
+        last_review: null,
+      },
+    ];
+
+    const lemmaRows: Row[] = [
+      {
+        id: 'no-audio-lemma',
+        lemma: 'no-audio-lemma',
+        gloss_en: 'no audio',
+        native_url: null,
+        slow_url: null,
+        envelope: null,
+        audio_url: null,
+        media: null, // no image either
+        word_class: 'concrete',
+        utility_rank: 1,
+      },
+      {
+        id: 'has-audio-lemma',
+        lemma: 'has-audio-lemma',
+        gloss_en: 'has audio',
+        native_url: 'has-audio-lemma.mp3',
+        slow_url: null,
+        envelope: [0.5],
+        audio_url: 'has-audio-lemma.mp3',
+        media: null,
+        word_class: 'concrete',
+        utility_rank: 2,
+      },
+    ];
+
+    const tables: Record<string, Row[]> = {
+      review_state: dueStates,
+      lemmas: lemmaRows,
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const batch = await svc.getDueBatch();
+
+    const ids = batch.map(i => i.id);
+    // Audio-less + image-less item must NOT appear
+    expect(ids).not.toContain('no-audio-lemma');
+    // Audio item MUST appear
+    expect(ids).toContain('has-audio-lemma');
+  });
+
+  it('new items are ordered by utility_rank ascending', async () => {
+    // 5 lemmas with descending utility_rank values — output must be ascending.
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [
+        contentRow('l-rank-5', { utility_rank: 5, envelope: [0.5], native_url: 'l5.mp3', word_class: 'concrete' }),
+        contentRow('l-rank-1', { utility_rank: 1, envelope: [0.5], native_url: 'l1.mp3', word_class: 'concrete' }),
+        contentRow('l-rank-3', { utility_rank: 3, envelope: [0.5], native_url: 'l3.mp3', word_class: 'concrete' }),
+        contentRow('l-rank-2', { utility_rank: 2, envelope: [0.5], native_url: 'l2.mp3', word_class: 'concrete' }),
+        contentRow('l-rank-4', { utility_rank: 4, envelope: [0.5], native_url: 'l4.mp3', word_class: 'concrete' }),
+      ],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [{ id: 'u1', user_id: 'u1', created_at: new Date().toISOString() }],
+    };
+
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const batch = await svc.getDueBatch();
+
+    // Batch is new items only; must be in utility_rank order
+    const ranks = batch.map(i => i.id);
+    // The first admitted item must be l-rank-1 (lowest utility_rank = highest utility)
+    expect(ranks[0]).toBe('l-rank-1');
+    // Overall order must be ascending by rank
+    const expectedOrder = ['l-rank-1', 'l-rank-2', 'l-rank-3', 'l-rank-4', 'l-rank-5'];
+    expect(ranks).toEqual(expectedOrder.slice(0, ranks.length));
   });
 });
