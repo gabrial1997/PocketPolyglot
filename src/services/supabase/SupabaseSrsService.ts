@@ -25,6 +25,7 @@ import {
 } from './mappers';
 import {
   DAY_ONE_NEW_CAP,
+  RETENTION_MINIMUM_SAMPLE,
   RETENTION_WINDOW,
 } from '../../session/pacing';
 import {
@@ -106,20 +107,10 @@ export class SupabaseSrsService implements SrsService {
       .select('item_id')
       .eq('user_id', this.userId)
       .or(`card_kind.like.word/learn-%,card_kind.eq.phrase/hear`)
-      .lte('created_at', now.toISOString()); // filter to rows at/before now
-    // Count those >= dayStart manually (the fake builder doesn't support gte natively,
-    // and real Postgres handles it in the DB — but for test-compatibility we filter in JS).
+      .gte('created_at', dayStart)
+      .lte('created_at', now.toISOString());
     if (!data) return 0;
-    const rows = data as Array<{ item_id?: string; created_at?: string }>;
-    // In production the query would also have .gte('created_at', dayStart); since we are
-    // working with the fake builder we do the gte filtering here client-side.
-    // In the real DB path both filters are pushed to the server — this is safe.
-    const todayRows = rows.filter(r => {
-      if (!r.created_at) return true; // include rows without created_at (test compat)
-      return r.created_at >= dayStart;
-    });
-    // COUNT DISTINCT item_id
-    return new Set(todayRows.map(r => r.item_id)).size;
+    return new Set((data as Array<{ item_id?: string }>).map(r => r.item_id)).size;
   }
 
   /** Days since the account was created. Falls back to earliest review_log.created_at. */
@@ -154,7 +145,6 @@ export class SupabaseSrsService implements SrsService {
    * Returns undefined when there are fewer than a minimum of graded mature rows (no throttle).
    */
   private async rollingRetention(): Promise<number | undefined> {
-    const MINIMUM_SAMPLE = 10; // fewer than this → no throttle
     // Fetch the last RETENTION_WINDOW review_log rows that are graded (correct IS NOT NULL)
     // on items at stage='mature'. We join review_log with review_state to check stage.
     // Simplified: fetch last RETENTION_WINDOW rows with correct IS NOT NULL from review_log.
@@ -169,7 +159,7 @@ export class SupabaseSrsService implements SrsService {
     if (!data) return undefined;
     const rows = data as Array<{ correct?: boolean | null }>;
     const graded = rows.filter(r => r.correct !== null && r.correct !== undefined);
-    if (graded.length < MINIMUM_SAMPLE) return undefined;
+    if (graded.length < RETENTION_MINIMUM_SAMPLE) return undefined;
     const correct = graded.filter(r => r.correct === true).length;
     return correct / graded.length;
   }
@@ -198,49 +188,92 @@ export class SupabaseSrsService implements SrsService {
 
   /**
    * Load never-introduced lemma candidates in utility_rank order.
+   * Pages through lemmas in chunks of 200, skipping ids that already have a review_state row,
+   * until we have at least DAY_ONE_NEW_CAP * 4 never-introduced rows or the table is exhausted.
    * Does NOT filter on qa_status (serve drafts per spec).
    */
-  private async lemmaCandiates(): Promise<{ rows: LemmaRow[]; candidates: Candidate[] }> {
-    const limit = DAY_ONE_NEW_CAP * 4; // generous look-ahead
-    const { data } = await this.client
-      .from('lemmas')
-      .select('*')
-      .order('utility_rank', { ascending: true, nullsFirst: false })
-      .limit(limit);
-    // Filter to those without a review_state row — the query approach (NOT EXISTS) is handled
-    // server-side in production via a subquery; in the fake builder we post-filter by whether
-    // item_id appears in stateByKey (passed as parameter from the caller).
-    // NOTE: actual server-side filtering is done by the caller of this helper.
-    if (!data) return { rows: [], candidates: [] };
-    const rows = data as LemmaRow[];
-    const candidates: Candidate[] = rows.map(r => ({
+  private async lemmaCandidates(): Promise<{ rows: LemmaRow[]; candidates: Candidate[] }> {
+    // Load the set of already-introduced lemma ids.
+    const { data: stateData } = await this.client
+      .from('review_state')
+      .select('item_id')
+      .eq('user_id', this.userId)
+      .eq('item_type', 'lemma');
+    const introducedIds = new Set(
+      ((stateData ?? []) as Array<{ item_id?: string }>).map(r => r.item_id).filter(Boolean) as string[]
+    );
+
+    // Page through lemmas in utility_rank order, skipping already-introduced, until we have enough.
+    const TARGET = DAY_ONE_NEW_CAP * 4;
+    const CHUNK = 200;
+    const collectedRows: LemmaRow[] = [];
+    let offset = 0;
+    let exhausted = false;
+
+    while (collectedRows.length < TARGET && !exhausted) {
+      const { data: chunk } = await this.client
+        .from('lemmas')
+        .select('*')
+        .order('utility_rank', { ascending: true, nullsFirst: false })
+        .range(offset, offset + CHUNK - 1);
+      if (!chunk || (chunk as LemmaRow[]).length === 0) { exhausted = true; break; }
+      for (const row of chunk as LemmaRow[]) {
+        if (!introducedIds.has(row.id)) collectedRows.push(row);
+      }
+      if ((chunk as LemmaRow[]).length < CHUNK) exhausted = true;
+      offset += CHUNK;
+    }
+
+    const candidates: Candidate[] = collectedRows.map(r => ({
       id: r.id,
       kind: 'word' as const,
       utilityRank: r.utility_rank ?? 9999,
       hasAudioEnvelope: !!(r.envelope && r.envelope.length > 0),
       semanticField: r.semantic_field ?? null,
     }));
-    return { rows, candidates };
+    return { rows: collectedRows, candidates };
   }
 
   /**
    * Load never-introduced phrase candidates ordered by created_at ASC, id ASC.
-   * (No phrase utility_rank column exists yet — created_at is a deterministic proxy for
-   * import/tier order. A real phrase_rank column is future content-pipeline work.)
+   * Pages through phrases in chunks of 200, skipping ids that already have a review_state row,
+   * until we have at least DAY_ONE_NEW_CAP * 4 never-introduced rows or the table is exhausted.
    */
   private async phraseCandidates(): Promise<{ rows: PhraseRow[]; candidates: Candidate[] }> {
-    const limit = DAY_ONE_NEW_CAP * 4;
-    const { data } = await this.client
-      .from('phrases')
-      .select('*')
-      .order('created_at', { ascending: true })
-      .order('id', { ascending: true })
-      .limit(limit);
-    if (!data) return { rows: [], candidates: [] };
-    const rows = data as PhraseRow[];
+    // Load the set of already-introduced phrase ids.
+    const { data: stateData } = await this.client
+      .from('review_state')
+      .select('item_id')
+      .eq('user_id', this.userId)
+      .eq('item_type', 'phrase');
+    const introducedIds = new Set(
+      ((stateData ?? []) as Array<{ item_id?: string }>).map(r => r.item_id).filter(Boolean) as string[]
+    );
+
+    // Page through phrases in created_at/id order, skipping already-introduced, until we have enough.
+    const TARGET = DAY_ONE_NEW_CAP * 4;
+    const CHUNK = 200;
+    const collectedRows: PhraseRow[] = [];
+    let offset = 0;
+    let exhausted = false;
+
+    while (collectedRows.length < TARGET && !exhausted) {
+      const { data: chunk } = await this.client
+        .from('phrases')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .range(offset, offset + CHUNK - 1);
+      if (!chunk || (chunk as PhraseRow[]).length === 0) { exhausted = true; break; }
+      for (const row of chunk as PhraseRow[]) {
+        if (!introducedIds.has(row.id)) collectedRows.push(row);
+      }
+      if ((chunk as PhraseRow[]).length < CHUNK) exhausted = true;
+      offset += CHUNK;
+    }
 
     // Load phrase_components for all candidate phrases in one query.
-    const phraseIds = rows.map(r => r.id);
+    const phraseIds = collectedRows.map(r => r.id);
     let componentsByPhrase: Map<string, string[]> = new Map();
     if (phraseIds.length > 0) {
       const { data: comps } = await this.client
@@ -258,7 +291,7 @@ export class SupabaseSrsService implements SrsService {
       }
     }
 
-    const candidates: Candidate[] = rows.map((r, idx) => {
+    const candidates: Candidate[] = collectedRows.map((r, idx) => {
       const compIds = componentsByPhrase.get(r.id) ?? [];
       return {
         id: r.id,
@@ -271,7 +304,7 @@ export class SupabaseSrsService implements SrsService {
         anchorLemmaId: compIds[0] ?? undefined,
       };
     });
-    return { rows, candidates };
+    return { rows: collectedRows, candidates };
   }
 
   // -------------------------------------------------------------------------
@@ -297,32 +330,9 @@ export class SupabaseSrsService implements SrsService {
 
     const dueStates: ReviewStateRow[] = (dueStateData ?? []) as ReviewStateRow[];
 
-    // Also fetch the legacy stage='new' review_state rows so the old ordering tests
-    // (that pre-seed stage='new' rows) still pass. These rows also need to be treated as
-    // "due" for backward compat with the existing ordering tests.
-    const { data: newStateData } = await this.client
-      .from('review_state')
-      .select('*')
-      .eq('user_id', this.userId)
-      .eq('stage', 'new')
-      .order('due_at', { ascending: true, nullsFirst: false })
-      .order('item_id', { ascending: true });
-    const newStates: ReviewStateRow[] = (newStateData ?? []) as ReviewStateRow[];
-
-    // Merge: due + new (deduplicated by item_type:item_id).
     const stateByKey = new Map<string, ReviewStateRow>();
-    for (const s of [...dueStates, ...newStates]) {
-      const key = `${s.item_type}:${s.item_id}`;
-      if (!stateByKey.has(key)) stateByKey.set(key, s);
-    }
-    // Build merged rows in due_at then item_id order (same as original sort).
-    const allDueRows: ReviewStateRow[] = [...stateByKey.values()].sort((a, b) => {
-      const da = a.due_at ?? '';
-      const db = b.due_at ?? '';
-      if (da < db) return -1;
-      if (da > db) return 1;
-      return a.item_id < b.item_id ? -1 : a.item_id > b.item_id ? 1 : 0;
-    });
+    for (const s of dueStates) { stateByKey.set(`${s.item_type}:${s.item_id}`, s); }
+    const allDueRows = dueStates;
 
     // ------------------------------------------------------------------
     // 2. Build the SelectContext: gather counts + sets in parallel.
@@ -343,17 +353,12 @@ export class SupabaseSrsService implements SrsService {
 
     // ------------------------------------------------------------------
     // 3. Load candidates: content rows without a review_state row.
+    //    lemmaCandidates() and phraseCandidates() internally skip already-introduced ids.
     // ------------------------------------------------------------------
-    const existingItemIds = new Set(allDueRows.map(s => s.item_id));
-
     const [{ rows: lemmaRows, candidates: lemmaCandidates }, { rows: phraseRows, candidates: phraseCandidates }] =
-      await Promise.all([this.lemmaCandiates(), this.phraseCandidates()]);
+      await Promise.all([this.lemmaCandidates(), this.phraseCandidates()]);
 
-    // Filter out candidates that already have a review_state row (they are "due" already).
-    const filteredLemmaCandidates = lemmaCandidates.filter(c => !existingItemIds.has(c.id));
-    const filteredPhraseCandidates = phraseCandidates.filter(c => !existingItemIds.has(c.id));
-
-    const allCandidates: Candidate[] = [...filteredLemmaCandidates, ...filteredPhraseCandidates];
+    const allCandidates: Candidate[] = [...lemmaCandidates, ...phraseCandidates];
 
     // ------------------------------------------------------------------
     // 4. Build DueRef[] from allDueRows (map to the light shape selectBatch needs).

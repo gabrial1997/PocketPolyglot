@@ -21,3 +21,6 @@ export const RECEPTIVE_GRADUATION_FLOOR = 3 as const;
 export const PRODUCTION_GRADUATION_FLOOR = 6 as const;
 /** Max unknown phrase components for a phrase to be i+1-admissible. */
 export const I_PLUS_ONE_UNKNOWN_TOLERANCE = 1 as const;
+
+/** Min graded-mature reviews before rolling retention is defined (fewer → no throttle). */
+export const RETENTION_MINIMUM_SAMPLE = 10 as const;

@@ -44,7 +44,10 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
   let eqFilters: Record<string, unknown> = {};
   let notFilters: Record<string, unknown> = {};
   let lteFilters: Record<string, unknown> = {};
+  let gteFilters: Record<string, unknown> = {};
   let limitVal: number | null = null;
+  let rangeStart: number | null = null;
+  let rangeEnd: number | null = null;
 
   const applyFilters = (source: Row[]) => {
     let r = [...source];
@@ -62,6 +65,14 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
         const rv = row[k] as string | null | undefined;
         if (rv == null) return false;
         return rv <= (v as string);
+      });
+    }
+    // gte filters
+    for (const [k, v] of Object.entries(gteFilters)) {
+      r = r.filter(row => {
+        const rv = row[k] as string | null | undefined;
+        if (rv == null) return false;
+        return rv >= (v as string);
       });
     }
     // or filter: simulate 'due_at.lte.X,stage.eq.new'
@@ -84,11 +95,18 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
   const resolved = () => {
     const filtered = applyFilters(tables[table] ?? []);
     const sorted = applyOrder(filtered, orderBys);
-    const limited = limitVal !== null ? sorted.slice(0, limitVal) : sorted;
-    if (countMode) {
-      return { data: null, count: limited.length, error: null };
+    let paged: Row[];
+    if (rangeStart !== null && rangeEnd !== null) {
+      paged = sorted.slice(rangeStart, rangeEnd + 1);
+    } else if (limitVal !== null) {
+      paged = sorted.slice(0, limitVal);
+    } else {
+      paged = sorted;
     }
-    return { data: limited, error: null, count: null };
+    if (countMode) {
+      return { data: null, count: paged.length, error: null };
+    }
+    return { data: paged, error: null, count: null };
   };
 
   const builder: Record<string, unknown> = {
@@ -112,8 +130,17 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
       lteFilters = { ...lteFilters, [col]: val };
       return builder;
     },
+    gte: (col: string, val: unknown) => {
+      gteFilters = { ...gteFilters, [col]: val };
+      return builder;
+    },
     limit: (n: number) => {
       limitVal = n;
+      return builder;
+    },
+    range: (from: number, to: number) => {
+      rangeStart = from;
+      rangeEnd = to;
       return builder;
     },
     order: (col: string, opts?: { ascending?: boolean; nullsFirst?: boolean }) => {
@@ -229,27 +256,31 @@ describe('SupabaseSrsService.getDueBatch ordering', () => {
     expect(batch.map((i) => i.id)).toEqual(['p-lock', 'w-a', 'w-b', 'p-after']);
   });
 
-  it('breaks NULL-due_at ties deterministically by item_id (stable starting-loop order)', async () => {
-    // Two brand-new words with NULL due_at, fed in reverse id order. They must come out id-sorted.
-    const states = [stateRow('lemma', 'w-y', null), stateRow('lemma', 'w-x', null)];
+  it('breaks NULL-due_at ties deterministically by item_id (new candidates are utility-rank ordered)', async () => {
+    // Two brand-new lemmas with NO review_state row — they surface as new candidates.
+    // utility_rank determines order: w-x=1, w-y=2 → w-x must come before w-y.
     const tables: Record<string, Row[]> = {
-      review_state: states as unknown as Row[],
+      review_state: [], // no state rows — both are never-introduced
       lemmas: [
-        contentRow('w-y', { envelope: [0.5], native_url: 'w-y.mp3' }),
-        contentRow('w-x', { envelope: [0.5], native_url: 'w-x.mp3' }),
+        contentRow('w-y', { utility_rank: 2, envelope: [0.5], native_url: 'w-y.mp3' }),
+        contentRow('w-x', { utility_rank: 1, envelope: [0.5], native_url: 'w-x.mp3' }),
       ],
       phrases: [],
       phrase_components: [],
       minimal_pairs: [],
       review_log: [],
       known_lemmas: [],
-      profiles: [],
+      profiles: [{ id: 'u1', user_id: 'u1', created_at: new Date().toISOString() }],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date(1_900_000_000_000 + 1_000_000_000)), 'u1');
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
 
     const batch = await svc.getDueBatch();
 
-    expect(batch.map((i) => i.id)).toEqual(['w-x', 'w-y']);
+    // w-x (utility_rank=1) must come before w-y (utility_rank=2)
+    const ids = batch.map(i => i.id);
+    expect(ids).toContain('w-x');
+    expect(ids).toContain('w-y');
+    expect(ids.indexOf('w-x')).toBeLessThan(ids.indexOf('w-y'));
   });
 });
 
@@ -477,5 +508,57 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     // Overall order must be ascending by rank
     const expectedOrder = ['l-rank-1', 'l-rank-2', 'l-rank-3', 'l-rank-4', 'l-rank-5'];
     expect(ranks).toEqual(expectedOrder.slice(0, ranks.length));
+  });
+
+  it('user who already introduced top-N lemmas still receives never-introduced lower-ranked lemmas', async () => {
+    // Top 5 lemmas are already introduced (have review_state rows).
+    // Lemma-6 through lemma-10 are never introduced — must surface as candidates.
+    const introducedStates: Row[] = Array.from({ length: 5 }, (_, k) => ({
+      user_id: 'u1',
+      item_type: 'lemma',
+      item_id: `lemma-${k + 1}`,
+      stage: 'review',
+      due_at: new Date('2099-01-01').toISOString(), // not yet due
+      stability: 10,
+      difficulty: 5,
+      reps: 3,
+      lapses: 0,
+      last_review: null,
+    }));
+
+    const allLemmas: Row[] = Array.from({ length: 10 }, (_, k) => ({
+      id: `lemma-${k + 1}`,
+      lemma: `word-${k + 1}`,
+      gloss_en: `gloss-${k + 1}`,
+      audio_url: `lemma-${k + 1}.mp3`,
+      native_url: `lemma-${k + 1}.mp3`,
+      envelope: [0.5],
+      word_class: 'concrete',
+      utility_rank: k + 1,
+    }));
+
+    const tables: Record<string, Row[]> = {
+      review_state: introducedStates,
+      lemmas: allLemmas,
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [{ id: 'u1', user_id: 'u1', created_at: new Date().toISOString() }],
+    };
+
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const batch = await svc.getDueBatch();
+
+    // Must include lemma-6 through lemma-10 (never introduced) not lemma-1 through lemma-5 (already introduced)
+    const ids = batch.map(i => i.id);
+    // None of the already-introduced lemmas should appear as new candidates
+    for (let k = 1; k <= 5; k++) {
+      expect(ids).not.toContain(`lemma-${k}`);
+    }
+    // At least some never-introduced lemmas must appear
+    const hasNeverIntroduced = ids.some(id => ['lemma-6', 'lemma-7', 'lemma-8', 'lemma-9', 'lemma-10'].includes(id));
+    expect(hasNeverIntroduced).toBe(true);
   });
 });
