@@ -21,6 +21,9 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     wordClass: 'concrete',
     audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3', envelope: [0.2, 0.6, 1] },
     media: { imageUrl: 'house.png' },
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

@@ -54,6 +54,7 @@ const wordConcrete: ReviewItem = {
     { value: 'māsa', gloss: 'sister', correct: false },
     { value: 'mēs', gloss: 'we', correct: false },
   ],
+  receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
 };
 const wordAbstract: ReviewItem = {
   id: 'brivs', type: 'word', stage: 'learning', reps: 1,
@@ -64,6 +65,7 @@ const wordAbstract: ReviewItem = {
     { value: 'brīvs', gloss: 'free', correct: true },
     { value: 'brālis', gloss: 'brother', correct: false },
   ],
+  receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
 };
 const wordFunction: ReviewItem = {
   id: 'uz', type: 'word', stage: 'learning', reps: 1,
@@ -77,11 +79,13 @@ const wordFunction: ReviewItem = {
     { value: 'uz', gloss: 'on / to', correct: true },
     { value: 'no', gloss: 'from', correct: false },
   ],
+  receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
 };
 const pairItem: ReviewItem = {
   id: 'sit-sit', type: 'pair', stage: 'review', reps: 2,
   target: 'sit', gloss: 'this', audio: { nativeUrl: '' },
   pair: { a: 'sit', b: 'sīt', correct: 'a', audioUrl: '' },
+  receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
 };
 const phraseItem: ReviewItem = {
   id: 'es-dzeru-kafiju', type: 'phrase', stage: 'new', reps: 0,
@@ -91,6 +95,7 @@ const phraseItem: ReviewItem = {
     { value: 'I make coffee.', correct: false },
     { value: 'I like coffee.', correct: false },
   ],
+  receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
 };
 
 function Phone({ label, children }: { label: string; children: React.ReactNode }): React.JSX.Element {

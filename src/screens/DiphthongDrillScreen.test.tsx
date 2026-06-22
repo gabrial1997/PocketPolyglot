@@ -20,6 +20,9 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     audio: { nativeUrl: 'x' },
     pair: { a: 'lieta', b: 'lēta', correct: 'a', audioUrl: 'x' },
     glide: { combo: 'ie', from: 'i', to: 'e' },
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

@@ -10,6 +10,7 @@ import type {
   LemmaRow,
   MinimalPairRow,
   PhraseRow,
+  ReviewLogRow,
   ReviewStateRow,
 } from './types';
 import {
@@ -28,6 +29,7 @@ import {
   RETENTION_MINIMUM_SAMPLE,
   RETENTION_WINDOW,
 } from '../../session/pacing';
+import { computeRung, translationVisibilityForRung } from '../../session/ladder';
 import {
   selectBatch,
 } from '../../session/selectBatch';
@@ -65,6 +67,11 @@ export function cardKindToDbType(cardKind: string): DbItemType {
 // items so it is never empty. This bounds a single session's LENGTH, not how many sessions you may
 // start — sessions stay unlimited (no cap).
 const PRACTICE_BATCH = 20;
+
+// Module C2: card_kinds that count toward productiveReps (the production sub-track).
+// All others (word/hear, word/pic-review, phrase/meaning, phrase/hear, drill, diphthong, …) count
+// toward receptiveReps. Split is stable and intentional — do not change without updating pacing.ts.
+const PRODUCTION_CARD_KINDS = new Set(['word/say', 'phrase/sayit', 'pron']);
 
 // ---------------------------------------------------------------------------
 // Private pure helpers
@@ -594,6 +601,47 @@ export class SupabaseSrsService implements SrsService {
     for (const item of items) {
       const state = stateByKey.get(`${itemTypeToDbType(item.type)}:${item.id}`);
       item.reviewPreview = projectReviewLabels(rowToPrior(state), now);
+    }
+
+    // ------------------------------------------------------------------
+    // C2: Derive receptiveReps / productiveReps / translationVisibility
+    // from a single batched review_log query for this user + assembled ids.
+    // ------------------------------------------------------------------
+    if (items.length > 0) {
+      const assembledIds = items.map(i => i.id);
+      const { data: logData } = await this.client
+        .from('review_log')
+        .select('item_type,item_id,card_kind,correct')
+        .eq('user_id', this.userId)
+        .in('item_id', assembledIds);
+
+      if (logData) {
+        // Group counts per (item_type, item_id).
+        const repsByKey = new Map<string, { receptive: number; productive: number }>();
+        for (const row of logData as ReviewLogRow[]) {
+          if (row.correct !== true) continue; // only count correct retrievals
+          const key = `${row.item_type}:${row.item_id}`;
+          const counts = repsByKey.get(key) ?? { receptive: 0, productive: 0 };
+          if (PRODUCTION_CARD_KINDS.has(row.card_kind)) {
+            counts.productive += 1;
+          } else {
+            counts.receptive += 1;
+          }
+          repsByKey.set(key, counts);
+        }
+
+        // Apply to each item.
+        for (const item of items) {
+          const dbType = itemTypeToDbType(item.type);
+          const key = `${dbType}:${item.id}`;
+          const counts = repsByKey.get(key) ?? { receptive: 0, productive: 0 };
+          item.receptiveReps = counts.receptive;
+          item.productiveReps = counts.productive;
+          item.translationVisibility = translationVisibilityForRung(
+            computeRung(item.receptiveReps, item.productiveReps),
+          );
+        }
+      }
     }
 
     return items;

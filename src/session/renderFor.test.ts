@@ -14,6 +14,9 @@ function item(overrides: Partial<ReviewItem>): ReviewItem {
     target: 'māja',
     gloss: 'house',
     audio: { nativeUrl: 'a.mp3' },
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }
@@ -157,6 +160,9 @@ function pairItem(extra: Partial<ReviewItem>): ReviewItem {
     target: 'lieta', gloss: 'thing',
     audio: { nativeUrl: 'x', envelope: [0.1, 0.5, 0.8] },
     pair: { a: 'lieta', b: 'lēta', correct: 'a', audioUrl: 'x' },
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...extra,
   };
 }

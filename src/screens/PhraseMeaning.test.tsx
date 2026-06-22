@@ -21,6 +21,9 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
       { value: 'gm', gloss: 'Good morning!', correct: true },
       { value: 'gn', gloss: 'Good night!', correct: false },
     ],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

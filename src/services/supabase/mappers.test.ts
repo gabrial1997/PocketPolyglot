@@ -127,6 +127,13 @@ describe('lemmaRowToReviewItem', () => {
     expect(item.reps).toBe(0);
   });
 
+  it('defaults C2 rung fields to 0/0/auto (overwritten by getDueBatch)', () => {
+    const item = lemmaRowToReviewItem(lemma());
+    expect(item.receptiveReps).toBe(0);
+    expect(item.productiveReps).toBe(0);
+    expect(item.translationVisibility).toBe('auto');
+  });
+
   it('takes stage/reps from review state when provided', () => {
     const item = lemmaRowToReviewItem(lemma(), reviewState({ stage: 'mature', reps: 7 }));
     expect(item.stage).toBe('mature');
@@ -219,6 +226,13 @@ describe('phraseRowToReviewItem', () => {
     expect(item.reps).toBe(2);
   });
 
+  it('defaults C2 rung fields to 0/0/auto', () => {
+    const item = phraseRowToReviewItem(phrase());
+    expect(item.receptiveReps).toBe(0);
+    expect(item.productiveReps).toBe(0);
+    expect(item.translationVisibility).toBe('auto');
+  });
+
   it('maps is_idiom onto isIdiom', () => {
     expect(phraseRowToReviewItem(phrase({ is_idiom: true })).isIdiom).toBe(true);
     expect(phraseRowToReviewItem(phrase({ is_idiom: false })).isIdiom).toBe(false);
@@ -284,6 +298,13 @@ describe('pairRowToReviewItem', () => {
     const item = pairRowToReviewItem(pair(), reviewState({ item_type: 'pair', stage: 'review', reps: 4 }));
     expect(item.stage).toBe('review');
     expect(item.reps).toBe(4);
+  });
+
+  it('defaults C2 rung fields to 0/0/auto', () => {
+    const item = pairRowToReviewItem(pair());
+    expect(item.receptiveReps).toBe(0);
+    expect(item.productiveReps).toBe(0);
+    expect(item.translationVisibility).toBe('auto');
   });
 
   it('carries the glide for diphthong rows', () => {

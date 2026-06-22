@@ -120,3 +120,13 @@ export interface KnownLemmaRow {
   user_id: string;
   lemma_id: string;
 }
+
+/** public.review_log — one row per graded retrieval. Module C reads card_kind + correct to split reps. */
+export interface ReviewLogRow {
+  user_id: string;
+  item_type: DbItemType;
+  item_id: string;
+  card_kind: string;
+  correct: boolean | null;
+  created_at: string;
+}

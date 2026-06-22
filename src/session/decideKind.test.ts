@@ -5,6 +5,7 @@ const phrase = (overrides: Partial<ReviewItem> = {}): ReviewItem => ({
   id: 'p1', type: 'phrase', stage: 'new', reps: 0,
   target: 'Labdien, es esmu ___.', gloss: 'Hello, I am ___.',
   audio: { nativeUrl: 'p1.mp3' }, componentLemmaIds: ['labdien', 'es', 'esmu'],
+  receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
   ...overrides,
 });
 const empty = new Set<string>();

@@ -19,6 +19,9 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     gloss: 'this',
     audio: { nativeUrl: 'native.mp3' },
     pair: { a: 'sit', b: 'sīt', correct: 'a', audioUrl: 'pair.mp3' },
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

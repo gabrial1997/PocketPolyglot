@@ -17,6 +17,9 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     target: 'Labrīt!',
     gloss: 'Good morning!',
     audio: { nativeUrl: 'native.mp3' },
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

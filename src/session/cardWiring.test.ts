@@ -27,6 +27,9 @@ function item(overrides: Partial<ReviewItem> = {}): ReviewItem {
       { value: 'māja', gloss: 'house', correct: true },
       { value: 'maize', gloss: 'bread', correct: false },
     ],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

@@ -22,6 +22,9 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     gloss: 'Good morning!',
     pron: 'LAH-breet',
     audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3' },
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

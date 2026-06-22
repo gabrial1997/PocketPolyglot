@@ -97,4 +97,13 @@ export interface ReviewItem {
   // TRUE interval rather than a fabricated one. Optional + presentational — absent for stub/preview
   // data, in which case cards fall back to a neutral "your next review is scheduled" line.
   reviewPreview?: { pass: string; miss: string };
+
+  // --- Module C2: maturity-ladder rung fields (DERIVED, NOT persisted) ---
+  // These are computed read-side from review_log by getDueBatch; the rung is orthogonal to FSRS
+  // `stage`. receptiveReps counts correct non-production-card-kind reviews; productiveReps counts
+  // correct production-card-kind (word/say, phrase/sayit, pron) reviews. translationVisibility is
+  // derived from computeRung(receptiveReps, productiveReps) — never a user setting.
+  receptiveReps: number;
+  productiveReps: number;
+  translationVisibility: 'auto' | 'hint' | 'on-demand';
 }

@@ -64,6 +64,10 @@ export function lemmaRowToReviewItem(
     target: row.lemma,
     gloss: row.gloss_en,
     ...(audio ? { audio } : {}),
+    // C2 defaults — overwritten in getDueBatch after review_log query
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
   };
   if (row.pron) item.pron = row.pron;
   item.wordClass = row.word_class;
@@ -91,6 +95,10 @@ export function phraseRowToReviewItem(
     gloss: row.gloss_en,
     isIdiom: row.is_idiom,
     ...(audio ? { audio } : {}),
+    // C2 defaults — overwritten in getDueBatch after review_log query
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
   };
   if (row.literal_gloss) item.literal = row.literal_gloss;
   if (row.usage_note) item.usageNote = row.usage_note;
@@ -117,6 +125,10 @@ export function pairRowToReviewItem(
     target: stimulusWord,
     gloss: '',
     ...(audio ? { audio } : {}),
+    // C2 defaults — overwritten in getDueBatch after review_log query
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     pair: {
       a: row.a,
       b: row.b,

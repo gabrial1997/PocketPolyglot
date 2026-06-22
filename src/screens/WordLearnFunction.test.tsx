@@ -25,6 +25,9 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
       { pre: 'Es eju', w: 'uz', post: 'mājām.', en: 'I am going home.', audioUrl: 'ex1.mp3' },
       { pre: 'Skaties', w: 'uz', post: 'mani.', en: 'Look at me.', audioUrl: 'ex2.mp3' },
     ],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

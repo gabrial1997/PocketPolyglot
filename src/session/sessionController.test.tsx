@@ -26,6 +26,9 @@ const lockedPhrase: ReviewItem = {
   gloss: 'One coffee, please.',
   audio: { nativeUrl: 'x.mp3' },
   componentLemmaIds: ['viens', 'kafija', 'ludzu'], // 2 unknown -> locked
+  receptiveReps: 0,
+  productiveReps: 0,
+  translationVisibility: 'auto',
 };
 
 function fakeServices(batch: ReviewItem[], known: ReadonlySet<string>): ServiceBundle {
@@ -86,6 +89,9 @@ const wordA: ReviewItem = {
   target: 'māja',
   gloss: 'house',
   audio: { nativeUrl: 'a.mp3' },
+  receptiveReps: 0,
+  productiveReps: 0,
+  translationVisibility: 'auto',
 };
 const wordB: ReviewItem = { ...wordA, id: 'b', target: 'labrīt', gloss: 'good morning' };
 
@@ -162,6 +168,9 @@ const newWord = (id: string): ReviewItem => ({
   target: id,
   gloss: id,
   audio: { nativeUrl: `${id}.mp3` },
+  receptiveReps: 0,
+  productiveReps: 0,
+  translationVisibility: 'auto',
 });
 
 it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', async () => {
@@ -177,6 +186,9 @@ it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', as
     gloss: 'Hello, I am ___.',
     audio: { nativeUrl: 'p1.mp3' },
     componentLemmaIds: ['labdien', 'es', 'esmu'],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
   };
   // Batch = [P1, labdien, es, esmu]; nothing known yet -> P1 starts locked.
   const { result } = renderSessionHook([p1, labdien, es, esmu], new Set());
@@ -217,6 +229,9 @@ it('phrase/locked enriches the item with the live "N words to go — learn X" hi
     gloss: 'Hello, I am ___.',
     audio: { nativeUrl: 'p1.mp3' },
     componentLemmaIds: ['labdien', 'es', 'esmu'],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
   };
   const { result } = renderSessionHook([p1, labdien, es, esmu], new Set());
 

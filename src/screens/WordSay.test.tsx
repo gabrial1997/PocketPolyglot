@@ -28,6 +28,9 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
       { value: 'māja', correct: true },
       { value: 'maize', correct: false },
     ],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

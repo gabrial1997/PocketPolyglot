@@ -19,6 +19,9 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     gloss: 'house',
     pron: 'MAH-ya',
     audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3' },
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

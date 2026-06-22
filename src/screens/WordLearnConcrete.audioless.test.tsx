@@ -13,6 +13,9 @@ function item(overrides: Partial<ReviewItem> = {}): ReviewItem {
     id: 'maja', type: 'word', stage: 'new', reps: 0,
     target: 'māja', gloss: 'house', wordClass: 'concrete',
     media: { imageUrl: 'house.png' },
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
     ...overrides,
   };
 }

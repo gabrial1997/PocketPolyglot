@@ -28,6 +28,9 @@ const word = (id: string): ReviewItem => ({
   gloss: id,
   pron: id,
   audio: { nativeUrl: `${id}.mp3` },
+  receptiveReps: 0,
+  productiveReps: 0,
+  translationVisibility: 'auto',
 });
 
 const phrase: ReviewItem = {
@@ -39,6 +42,9 @@ const phrase: ReviewItem = {
   gloss: 'Hello, I am ___.',
   audio: { nativeUrl: 'p1.mp3' },
   componentLemmaIds: ['labdien', 'es', 'esmu'],
+  receptiveReps: 0,
+  productiveReps: 0,
+  translationVisibility: 'auto',
 };
 
 function fakeServices(
@@ -133,6 +139,9 @@ it('seed walk: ph-kafija locked on one word -> learn ludzu -> unlock fires (sing
     gloss: 'One coffee, please.',
     audio: { nativeUrl: 'ph-kafija.mp3' },
     componentLemmaIds: ['viens', 'kafija', 'ludzu'], // viens + kafija pre-known; ludzu is the blocker
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
   };
   const u = render(
     <ThemeProvider>
