@@ -8,3 +8,5 @@
 -- =====================================================================
 alter table public.lemmas add column if not exists utility_rank integer;
 create index if not exists lemmas_utility_rank_idx on public.lemmas (utility_rank);
+create unique index if not exists lemmas_lemma_key on public.lemmas (lemma);
+create unique index if not exists phrases_target_key on public.phrases (target);
