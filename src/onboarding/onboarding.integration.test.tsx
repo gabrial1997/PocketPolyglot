@@ -4,7 +4,7 @@
 //   1. New signup: ensureProfile called, seenDiacritics=false → orientation → dismiss → children.
 //   2. Consent toggle stamps rec_consent_at (via setConsent on SupabaseProfileService fake-client).
 //   3. Record affordance hidden (false) when rec_consent=false; true when flipped.
-import React, { useState } from 'react';
+import React from 'react';
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 import { Text, Pressable, View } from 'react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
@@ -214,36 +214,86 @@ describe('record affordance gate (GDPR)', () => {
     await findByText('Record');
   });
 
-  it('toggling profile from false to true shows the record button', async () => {
-    // A wrapper that can re-render with a new profile
-    function ReRenderHarness(): React.JSX.Element {
-      const [enabled, setEnabled] = useState(false);
-      const testProfile = new FakeProfileService({ recConsent: enabled });
+  // useRecordingAllowed reads consent ONCE on mount (useEffect + [profile] dep).
+  // A mid-session flip on the SAME service instance does NOT re-trigger the hook —
+  // re-reading requires a remount (new profile reference passed to ServiceProvider).
+  // The two tests below document this contract:
+  //   1. Remount with a fresh service instance that has recConsent=true → shows button.
+  //   2. Mutating the stable instance's consent without remount → button stays hidden.
+  // Test (1) also catches the "default-true regression" — if the hook defaulted to true,
+  // the blocked assertion at the start of this describe block would fail.
+
+  it('shows record affordance when consent is already true on mount (remount path)', async () => {
+    // Hold a STABLE profile reference whose consent starts false, then swap to a NEW
+    // instance (recConsent=true) — this simulates the "service changes" path (e.g.
+    // settings screen remounts the subtree with updated profile) and exercises the
+    // hook re-reading on a new mount.
+    let profileRef = new FakeProfileService({ recConsent: false });
+
+    function RemountHarness({ profile }: { profile: FakeProfileService }): React.JSX.Element {
       return (
-        <ServiceProvider services={makeServices(testProfile)}>
+        <ServiceProvider services={makeServices(profile)}>
           <RecordButtonHarness />
-          <Pressable accessibilityRole="button" onPress={() => setEnabled(true)}>
-            <Text>Enable consent</Text>
-          </Pressable>
         </ServiceProvider>
       );
     }
 
-    const { queryByText, getByText, findByText } = render(
+    const { getByTestId, rerender, queryByText } = render(
       <ThemeProvider>
-        <ReRenderHarness />
+        <RemountHarness profile={profileRef} />
       </ThemeProvider>,
     );
 
-    // Initially blocked
+    // Initially blocked — catches any "default-true" regression.
+    await waitFor(() => {
+      expect(getByTestId('allowed-status').props.children).toBe('blocked');
+    });
     expect(queryByText('Record')).toBeNull();
 
-    // Enable consent
+    // Swap to a NEW service instance with recConsent=true.
+    // The [profile] dep in useRecordingAllowed triggers a fresh read.
+    profileRef = new FakeProfileService({ recConsent: true });
     await act(async () => {
-      fireEvent.press(getByText('Enable consent'));
+      rerender(
+        <ThemeProvider>
+          <RemountHarness profile={profileRef} />
+        </ThemeProvider>,
+      );
     });
 
-    // Record button should now appear
-    await findByText('Record');
+    await waitFor(() => {
+      expect(getByTestId('allowed-status').props.children).toBe('allowed');
+    });
+  });
+
+  it('does NOT show record affordance when consent is mutated on a stable instance without remount', async () => {
+    // Demonstrates the hook's read-once-on-mount contract: mutating the service
+    // object's internal state without changing the profile reference does not trigger
+    // a re-read. A live mid-session flip requires a remount (new profile ref).
+    const stableProfile = new FakeProfileService({ recConsent: false });
+
+    const { getByTestId, queryByText } = render(
+      <ThemeProvider>
+        <ServiceProvider services={makeServices(stableProfile)}>
+          <RecordButtonHarness />
+        </ServiceProvider>
+      </ThemeProvider>,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('allowed-status').props.children).toBe('blocked');
+    });
+    expect(queryByText('Record')).toBeNull();
+
+    // Mutate the stable instance — consent is now true internally.
+    await act(async () => {
+      await stableProfile.setRecConsent(true);
+    });
+
+    // The hook does NOT re-read: button stays absent.
+    // (If useRecordingAllowed ever gains a live-update subscription, this test
+    // should be updated to assert 'allowed' instead.)
+    expect(queryByText('Record')).toBeNull();
+    expect(getByTestId('allowed-status').props.children).toBe('blocked');
   });
 });

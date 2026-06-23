@@ -6,6 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useServices } from '../services/ServiceProvider';
+import { useTheme } from '../theme/ThemeProvider';
 import { DiacriticOrientationScreen } from '../screens/DiacriticOrientationScreen';
 
 export interface OnboardingGateProps {
@@ -23,6 +24,7 @@ type GateState = 'loading' | 'orientation' | 'done';
  */
 export function OnboardingGate({ children }: OnboardingGateProps): React.JSX.Element {
   const { profile } = useServices();
+  const T = useTheme();
   const [state, setState] = useState<GateState>('loading');
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export function OnboardingGate({ children }: OnboardingGateProps): React.JSX.Ele
   if (state === 'loading') {
     return (
       <View style={styles.loading}>
-        <Text style={styles.loadingText}>Loading…</Text>
+        <Text style={[styles.loadingText, { color: T.sub }]}>Loading…</Text>
       </View>
     );
   }
@@ -83,6 +85,6 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#888',
+    // color is applied via useTheme() inline to respect light/dark (T.sub)
   },
 });
