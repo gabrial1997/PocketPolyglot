@@ -562,3 +562,123 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     expect(hasNeverIntroduced).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// E2: submit() + RecordingUploader integration tests
+// ---------------------------------------------------------------------------
+
+import type { RecordingUploader } from './SupabaseRecordingUploader';
+import type { CardResult } from '../../types/cardResult';
+import type { CardKind } from '../../types/cardKind';
+
+/** Minimal fake client for submit() — only the tables submit() touches. */
+function makeSubmitClient(reviewLog: Row[] = []) {
+  let _lastLogInsert: Row | null = null;
+
+  const client = {
+    from: (table: string) => {
+      if (table === 'review_state') {
+        const b: Record<string, unknown> = {
+          select: () => b,
+          eq: () => b,
+          upsert: async () => ({ error: null }),
+          maybeSingle: async () => ({ data: null, error: null }),
+          then: (resolve: (v: unknown) => unknown) => resolve({ data: null, error: null }),
+        };
+        return b;
+      }
+      if (table === 'review_log') {
+        const b: Record<string, unknown> = {
+          select: () => b,
+          eq: () => b,
+          insert: async (row: Row) => {
+            _lastLogInsert = row;
+            reviewLog.push(row);
+            return { error: null };
+          },
+          then: (resolve: (v: { data: Row[]; error: null }) => unknown) =>
+            resolve({ data: reviewLog, error: null }),
+        };
+        return b;
+      }
+      const noop: Record<string, unknown> = {
+        select: () => noop,
+        eq: () => noop,
+        insert: async () => ({ error: null }),
+        upsert: async () => ({ error: null }),
+        maybeSingle: async () => ({ data: null, error: null }),
+        then: (resolve: (v: unknown) => unknown) => resolve({ data: [], error: null }),
+      };
+      return noop;
+    },
+    _getLastLogInsert: () => _lastLogInsert,
+  };
+  return client;
+}
+
+function makeCardResult(overrides: Partial<CardResult> = {}): CardResult {
+  return {
+    itemId: 'item-e2',
+    cardKind: 'word/hear' as CardKind,
+    correct: true,
+    ...overrides,
+  };
+}
+
+describe('SupabaseSrsService.submit() — E2 recording_id linkage', () => {
+  it('submit() with recording + stub uploader returning "rec-1" → review_log.insert gets recording_id:"rec-1"', async () => {
+    const stubUploader: RecordingUploader = {
+      upload: jest.fn().mockResolvedValue('rec-1'),
+    };
+    const client = makeSubmitClient();
+    const svc = new SupabaseSrsService(client as never, 'u1', stubUploader);
+
+    await svc.submit(makeCardResult({ recording: 'file:///take.m4a' }));
+
+    const inserted = (client as { _getLastLogInsert: () => Row | null })._getLastLogInsert();
+    expect(inserted).not.toBeNull();
+    expect(inserted!.recording_id).toBe('rec-1');
+    expect(stubUploader.upload).toHaveBeenCalledWith('file:///take.m4a', { durationMs: undefined });
+  });
+
+  it('submit() with recording but consent-false uploader (returns null) → recording_id:null in log', async () => {
+    const stubUploader: RecordingUploader = {
+      upload: jest.fn().mockResolvedValue(null),
+    };
+    const client = makeSubmitClient();
+    const svc = new SupabaseSrsService(client as never, 'u1', stubUploader);
+
+    await svc.submit(makeCardResult({ recording: 'file:///take.m4a' }));
+
+    const inserted = (client as { _getLastLogInsert: () => Row | null })._getLastLogInsert();
+    expect(inserted).not.toBeNull();
+    expect(inserted!.recording_id).toBeNull();
+  });
+
+  it('submit() with no recording → uploader not called, recording_id:null in log', async () => {
+    const stubUploader: RecordingUploader = {
+      upload: jest.fn().mockResolvedValue('should-not-be-called'),
+    };
+    const client = makeSubmitClient();
+    const svc = new SupabaseSrsService(client as never, 'u1', stubUploader);
+
+    // No recording field in CardResult
+    await svc.submit(makeCardResult({ recording: undefined }));
+
+    expect(stubUploader.upload).not.toHaveBeenCalled();
+    const inserted = (client as { _getLastLogInsert: () => Row | null })._getLastLogInsert();
+    expect(inserted).not.toBeNull();
+    expect(inserted!.recording_id).toBeNull();
+  });
+
+  it('submit() with no uploader (undefined) behaves as before — recording_id:null', async () => {
+    const client = makeSubmitClient();
+    const svc = new SupabaseSrsService(client as never, 'u1'); // no uploader
+
+    await svc.submit(makeCardResult());
+
+    const inserted = (client as { _getLastLogInsert: () => Row | null })._getLastLogInsert();
+    expect(inserted).not.toBeNull();
+    expect(inserted!.recording_id).toBeNull();
+  });
+});

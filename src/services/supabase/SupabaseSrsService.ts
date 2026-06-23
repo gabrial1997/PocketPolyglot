@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SrsService } from '../index';
 import type { ReviewItem } from '../../types/reviewItem';
 import type { CardResult } from '../../types/cardResult';
+import type { RecordingUploader } from './SupabaseRecordingUploader';
 import type {
   DbItemType,
   LemmaRow,
@@ -101,6 +102,7 @@ export class SupabaseSrsService implements SrsService {
   constructor(
     private readonly client: SupabaseClient,
     private readonly userId: string,
+    private readonly uploader?: RecordingUploader,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -686,6 +688,13 @@ export class SupabaseSrsService implements SrsService {
     );
     if (upsertErr) throw upsertErr;
 
+    // E2: upload the recording (if present + consent given) BEFORE writing review_log.
+    // Returns null on any failure so the session still advances.
+    const recordingId: string | null =
+      result.recording && this.uploader
+        ? await this.uploader.upload(result.recording, { durationMs: undefined })
+        : null;
+
     const { error: logErr } = await this.client.from('review_log').insert({
       user_id: this.userId,
       item_type: itemType,
@@ -696,6 +705,7 @@ export class SupabaseSrsService implements SrsService {
       self_rating: result.selfRating ?? null,
       latency_ms: result.latencyMs ?? null,
       interval_label: label,
+      recording_id: recordingId,
     });
     if (logErr) throw logErr;
 

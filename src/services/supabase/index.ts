@@ -8,6 +8,7 @@ import { SupabaseKnownWordsStore } from './SupabaseKnownWordsStore';
 import { SupabaseProgressService } from './SupabaseProgressService';
 import { SupabasePodcastService } from './SupabasePodcastService';
 import { SupabaseProfileService } from './SupabaseProfileService';
+import { SupabaseRecordingUploader } from './SupabaseRecordingUploader';
 
 export * from './types';
 export * from './mappers';
@@ -16,6 +17,8 @@ export { SupabaseKnownWordsStore } from './SupabaseKnownWordsStore';
 export { SupabaseProgressService } from './SupabaseProgressService';
 export { SupabasePodcastService } from './SupabasePodcastService';
 export { SupabaseProfileService } from './SupabaseProfileService';
+export { SupabaseRecordingUploader } from './SupabaseRecordingUploader';
+export type { RecordingUploader } from './SupabaseRecordingUploader';
 
 /**
  * Build a ServiceBundle backed by Supabase for a given authenticated user.
@@ -29,13 +32,19 @@ export function createSupabaseServices(
   client: SupabaseClient,
   userId: string,
 ): ServiceBundle {
+  const profile = new SupabaseProfileService(client, userId);
+  const uploader = new SupabaseRecordingUploader(
+    client,
+    userId,
+    () => profile.getRecConsent(),
+  );
   return {
     audio: new ExpoAudioService(),
     recorder: new ExpoRecorderService(),
-    srs: new SupabaseSrsService(client, userId),
+    srs: new SupabaseSrsService(client, userId, uploader),
     known: new SupabaseKnownWordsStore(client, userId),
     progress: new SupabaseProgressService(client, userId),
     podcast: new SupabasePodcastService(client),
-    profile: new SupabaseProfileService(client, userId),
+    profile,
   };
 }
