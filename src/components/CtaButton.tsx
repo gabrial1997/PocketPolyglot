@@ -11,6 +11,7 @@ export function CtaButton({
   variant = 'filled',
   disabled = false,
   icon,
+  testID,
 }: {
   title: string;
   onPress?: () => void;
@@ -18,6 +19,8 @@ export function CtaButton({
   disabled?: boolean;
   /** Optional leading glyph (e.g. a play icon), rendered before the title. */
   icon?: React.ReactNode;
+  /** Optional testID for integration / unit tests. */
+  testID?: string;
 }): React.JSX.Element {
   const T = useTheme();
   const filled = variant === 'filled';
@@ -26,6 +29,7 @@ export function CtaButton({
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
+      testID={testID}
       style={[
         styles.btn,
         {
