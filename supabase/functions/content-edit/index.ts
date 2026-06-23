@@ -12,6 +12,8 @@
  *     client-side flag. Non-founders receive 403.
  *   - JWT verification uses the ANON client + the caller's Authorization header.
  *   - The founder check + content UPDATE run as service_role.
+ *   - CORS Allow-Origin: * is safe here because every request must present a
+ *     valid JWT (verify_jwt + getUserId) — unauthenticated browsers get 401.
  */
 
 // @deno-types="npm:@supabase/supabase-js@2"
@@ -22,10 +24,19 @@ import type { ContentEditRequest } from '../_shared/contentEdit.ts';
 // ── CORS headers ──────────────────────────────────────────────────────────────
 
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': '*', // safe — every request requires a valid JWT (see security invariants above)
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+
+// ── Typed error for no-row-matched ────────────────────────────────────────────
+
+export class NotFoundError extends Error {
+  constructor(message = 'content-edit: no row matched id') {
+    super(message);
+    this.name = 'NotFoundError';
+  }
+}
 
 // ── Pure handler (injected Deps — testable without a live runtime) ─────────────
 
@@ -34,7 +45,11 @@ export interface Deps {
   getUserId(jwt: string): Promise<string | null>;
   /** Returns true iff profiles.settings.editor === true for this user (service_role read). */
   isFounder(userId: string): Promise<boolean>;
-  /** Applies the validated UPDATE as service_role. */
+  /**
+   * Applies the validated UPDATE as service_role.
+   * Throws NotFoundError if no row matched `id`.
+   * Throws any other Error on a genuine DB error.
+   */
   applyUpdate(table: string, id: string, patch: Record<string, string>): Promise<void>;
 }
 
@@ -42,7 +57,7 @@ export async function handleContentEdit(
   req: ContentEditRequest,
   jwt: string | null,
   deps: Deps,
-): Promise<{ status: 200 | 400 | 401 | 403; body: unknown }> {
+): Promise<{ status: 200 | 400 | 401 | 403 | 404 | 500; body: unknown }> {
   // Step 1 — JWT must be present
   if (!jwt) {
     return { status: 401, body: { error: 'Missing or invalid authorization header' } };
@@ -72,7 +87,16 @@ export async function handleContentEdit(
   }
 
   // Step 5 — Apply the UPDATE as service_role
-  await deps.applyUpdate(table, id, patch);
+  try {
+    await deps.applyUpdate(table, id, patch);
+  } catch (err: unknown) {
+    if (err instanceof NotFoundError) {
+      return { status: 404, body: { error: 'row not found' } };
+    }
+    // Genuine DB error — do NOT leak details or service key
+    return { status: 500, body: { error: 'Internal error' } };
+  }
+
   return { status: 200, body: { ok: true } };
 }
 
@@ -127,16 +151,24 @@ Deno.serve(async (httpReq: Request): Promise<Response> => {
         .eq('id', userId)
         .maybeSingle();
       if (error || !data) return false;
-      const row = data as { settings: { editor?: boolean } | null } | null;
-      return row?.settings?.editor === true;
+      const row = data as { settings: unknown } | null;
+      const settings = row?.settings;
+      // Defensive: guard against malformed (non-object) settings
+      const s = (settings && typeof settings === 'object') ? settings as { editor?: boolean } : null;
+      return s?.editor === true;
     },
 
     async applyUpdate(table: string, id: string, patchData: Record<string, string>): Promise<void> {
-      const { error } = await serviceClient
+      const { data, error } = await serviceClient
         .from(table)
         .update(patchData)
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
+      // If zero rows were returned, the id didn't match any row
+      if (!data || data.length === 0) {
+        throw new NotFoundError();
+      }
     },
   };
 

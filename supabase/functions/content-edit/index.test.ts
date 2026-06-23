@@ -4,7 +4,7 @@
  */
 
 import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts';
-import { handleContentEdit } from './index.ts';
+import { handleContentEdit, NotFoundError } from './index.ts';
 import type { Deps } from './index.ts';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -127,4 +127,43 @@ Deno.test('getUserId null (bad JWT) → 401, applyUpdate NOT called', async () =
 
   assertEquals(result.status, 401);
   assertEquals(called, false);
+});
+
+// (f) founder + valid req but applyUpdate signals no row matched → 404 (not 200)
+Deno.test('(f) founder + valid req + applyUpdate no-row → 404', async () => {
+  const deps: Deps = {
+    getUserId: (_jwt: string) => Promise.resolve('user-abc-123'),
+    isFounder: (_userId: string) => Promise.resolve(true),
+    applyUpdate: (_table: string, _id: string, _patch: Record<string, string>) => {
+      throw new NotFoundError();
+    },
+  };
+
+  const result = await handleContentEdit(VALID_LEMMA_REQ, 'valid.jwt.token', deps);
+
+  assertEquals(result.status, 404);
+  const body = result.body as { error: string };
+  assertEquals(body.error, 'row not found');
+});
+
+// (g) founder + valid req but applyUpdate throws a DB error → 500, body has no key/secret
+Deno.test('(g) founder + valid req + applyUpdate DB error → 500, no key in body', async () => {
+  const SERVICE_KEY = 'super-secret-service-role-key-must-not-leak';
+  const deps: Deps = {
+    getUserId: (_jwt: string) => Promise.resolve('user-abc-123'),
+    isFounder: (_userId: string) => Promise.resolve(true),
+    applyUpdate: (_table: string, _id: string, _patch: Record<string, string>) => {
+      // Simulate a DB error that might contain sensitive context
+      throw new Error(`DB connection failed: ${SERVICE_KEY}`);
+    },
+  };
+
+  const result = await handleContentEdit(VALID_LEMMA_REQ, 'valid.jwt.token', deps);
+
+  assertEquals(result.status, 500);
+  const body = result.body as { error: string };
+  assertEquals(body.error, 'Internal error');
+  // Confirm the service key is NOT present anywhere in the response body
+  const serialized = JSON.stringify(body);
+  assertEquals(serialized.includes(SERVICE_KEY), false);
 });
