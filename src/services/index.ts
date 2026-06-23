@@ -53,6 +53,25 @@ export interface PodcastService {
   getEpisode(): Promise<{ title: string; transcript: string; audioUrl: string }>;
 }
 
+export type EditableTable = 'lemmas' | 'phrases' | 'minimal_pairs';
+export type QaStatus = 'draft' | 'native_ok' | 'locked';
+
+export interface ContentEditRequest {
+  table: EditableTable;
+  id: string; // uuid of the row
+  /** Field patches — only whitelisted columns for the table are honored server-side. */
+  fields?: Partial<Record<'gloss_en' | 'target' | 'usage_note' | 'literal_gloss', string>>;
+  qa_status?: QaStatus;
+}
+
+/** Founder-only content editor. Reads the founder flag; submits edits via the content-edit Edge Function. */
+export interface EditorService {
+  /** True iff profiles.settings.editor === true for the signed-in user. */
+  isEditor(): Promise<boolean>;
+  /** Apply a field/qa_status edit to one content row through the service_role Edge Function. */
+  edit(req: ContentEditRequest): Promise<void>;
+}
+
 /** A minimal projection of the user's profile row that onboarding needs. */
 export interface ProfileSnapshot {
   recConsent: boolean;
@@ -92,6 +111,8 @@ export interface ServiceBundle {
   podcast: PodcastService;
   /** Tier-B settings screen: GDPR consent + recording deletion. */
   profile: ProfileService;
+  /** Founder-only content editor (Module F). */
+  editor: EditorService;
 }
 
 export * from './stubs';
