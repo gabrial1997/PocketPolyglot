@@ -53,6 +53,13 @@ export interface PodcastService {
   getEpisode(): Promise<{ title: string; transcript: string; audioUrl: string }>;
 }
 
+/** A minimal projection of the user's profile row that onboarding needs. */
+export interface ProfileSnapshot {
+  recConsent: boolean;
+  trainingConsent: boolean;
+  seenDiacritics: boolean;
+}
+
 /** Tier-B `settings` screen: GDPR recording consent + deletion (CLAUDE.md). NOT a card. */
 export interface ProfileService {
   /** Current GDPR recording-consent flag for the signed-in user. */
@@ -61,6 +68,17 @@ export interface ProfileService {
   setRecConsent(value: boolean): Promise<void>;
   /** Honor GDPR deletion: remove all of the user's recording rows. */
   deleteRecordings(): Promise<void>;
+  /** Read rec_consent, training_consent, and settings.seenDiacritics for the signed-in user.
+   *  Returns null when no profile row exists yet. */
+  getProfile(): Promise<ProfileSnapshot | null>;
+  /** Insert the user's own profile row if missing (fallback for pre-trigger accounts). Idempotent. */
+  ensureProfile(): Promise<void>;
+  /** Mark that the user has seen the diacritics intro. Merges seenDiacritics=true into settings
+   *  WITHOUT clobbering other keys (esp. settings.editor — Module F's gate). */
+  setSeenDiacritics(): Promise<void>;
+  /** Onboarding write: set both rec_consent + training_consent in one update, stamping/clearing
+   *  rec_consent_at. Keep setRecConsent for the Settings tab (single flag). */
+  setConsent(input: { rec: boolean; training: boolean }): Promise<void>;
 }
 
 /** Everything injected through ServiceProvider. */

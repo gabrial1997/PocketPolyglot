@@ -1,6 +1,6 @@
 // Supabase-backed ProfileService — GDPR recording consent (profiles.rec_consent) + deletion.
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { ProfileService } from '../index';
+import type { ProfileService, ProfileSnapshot } from '../index';
 
 export class SupabaseProfileService implements ProfileService {
   constructor(
@@ -29,6 +29,67 @@ export class SupabaseProfileService implements ProfileService {
 
   async deleteRecordings(): Promise<void> {
     const { error } = await this.client.from('recordings').delete().eq('user_id', this.userId);
+    if (error) throw error;
+  }
+
+  // --- D1b: getProfile + ensureProfile ---
+
+  async getProfile(): Promise<ProfileSnapshot | null> {
+    const { data, error } = await this.client
+      .from('profiles')
+      .select('rec_consent, training_consent, settings')
+      .eq('id', this.userId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    const row = data as { rec_consent: boolean; training_consent: boolean; settings: Record<string, unknown> | null };
+    return {
+      recConsent: row.rec_consent ?? false,
+      trainingConsent: row.training_consent ?? false,
+      seenDiacritics: (row.settings as Record<string, unknown> | null)?.seenDiacritics === true,
+    };
+  }
+
+  async ensureProfile(): Promise<void> {
+    // Insert only { id } so the DB defaults for settings, rec_consent, created_at stay intact.
+    // Treat a unique-violation (23505) as success — the row already exists (e.g. from the trigger).
+    const { error } = await this.client
+      .from('profiles')
+      .insert({ id: this.userId })
+      .maybeSingle();
+    if (error && (error as { code?: string }).code !== '23505') throw error;
+  }
+
+  // --- D2a: setSeenDiacritics (settings-merge, editor-safe) ---
+
+  async setSeenDiacritics(): Promise<void> {
+    // Read-modify-write is acceptable here: this is a single-user build with no concurrent
+    // settings writers. This preserves all existing keys (esp. settings.editor — Module F gate).
+    const { data: readData, error: readError } = await this.client
+      .from('profiles')
+      .select('settings')
+      .eq('id', this.userId)
+      .maybeSingle();
+    if (readError) throw readError;
+    const current = (readData as { settings: Record<string, unknown> | null } | null)?.settings ?? {};
+    const { error: writeError } = await this.client
+      .from('profiles')
+      .update({ settings: { ...current, seenDiacritics: true } })
+      .eq('id', this.userId);
+    if (writeError) throw writeError;
+  }
+
+  // --- D3a: setConsent (rec + training + timestamp) ---
+
+  async setConsent(input: { rec: boolean; training: boolean }): Promise<void> {
+    const { error } = await this.client
+      .from('profiles')
+      .update({
+        rec_consent: input.rec,
+        rec_consent_at: input.rec ? new Date().toISOString() : null,
+        training_consent: input.training,
+      })
+      .eq('id', this.userId);
     if (error) throw error;
   }
 }

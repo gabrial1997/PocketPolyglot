@@ -10,6 +10,7 @@ import type {
   ProgressService,
   PodcastService,
   ProfileService,
+  ProfileSnapshot,
   ServiceBundle,
 } from './index';
 import type { ReviewItem } from '../types/reviewItem';
@@ -102,6 +103,9 @@ export class StubPodcastService implements PodcastService {
 
 export class StubProfileService implements ProfileService {
   private consent = false;
+  private trainingConsent = false;
+  private seenDiacritics = false;
+
   async getRecConsent(): Promise<boolean> {
     return this.consent;
   }
@@ -110,6 +114,29 @@ export class StubProfileService implements ProfileService {
   }
   async deleteRecordings(): Promise<void> {
     // real impl: delete recordings rows + storage objects for the user (schema §6)
+  }
+
+  // D1b: getProfile + ensureProfile
+  async getProfile(): Promise<ProfileSnapshot | null> {
+    return {
+      recConsent: this.consent,
+      trainingConsent: this.trainingConsent,
+      seenDiacritics: this.seenDiacritics,
+    };
+  }
+  async ensureProfile(): Promise<void> {
+    // no-op: stub has no DB row to create
+  }
+
+  // D2a: setSeenDiacritics (settings-merge, editor-safe — in-memory only for stub)
+  async setSeenDiacritics(): Promise<void> {
+    this.seenDiacritics = true;
+  }
+
+  // D3a: setConsent (rec + training)
+  async setConsent(input: { rec: boolean; training: boolean }): Promise<void> {
+    this.consent = input.rec;
+    this.trainingConsent = input.training;
   }
 }
 
