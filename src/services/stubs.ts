@@ -11,6 +11,8 @@ import type {
   PodcastService,
   ProfileService,
   ProfileSnapshot,
+  EditorService,
+  ContentEditRequest,
   ServiceBundle,
 } from './index';
 import type { ReviewItem } from '../types/reviewItem';
@@ -140,6 +142,17 @@ export class StubProfileService implements ProfileService {
   }
 }
 
+export class StubEditorService implements EditorService {
+  // Stub never grants editor rights.
+  async isEditor(): Promise<boolean> {
+    return false;
+  }
+  // Stub must never silently no-op a content write — reject loudly.
+  async edit(_req: ContentEditRequest): Promise<void> {
+    return Promise.reject(new Error('editor: stub cannot write content'));
+  }
+}
+
 /** Default bundle of stubs for local dev / tests. */
 export function createStubServices(): ServiceBundle {
   return {
@@ -150,5 +163,6 @@ export function createStubServices(): ServiceBundle {
     progress: new StubProgressService(),
     podcast: new StubPodcastService(),
     profile: new StubProfileService(),
+    editor: new StubEditorService(),
   };
 }
