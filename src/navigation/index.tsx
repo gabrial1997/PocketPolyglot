@@ -21,6 +21,7 @@ import { Screen, GlideViewport } from '../components';
 import { SessionTop } from '../components/cardChrome';
 import { CalendarIcon, SoundIcon, BarsIcon, SettingsIcon, type IconProps } from '../components/icons';
 import { HomeHost, PodcastHost, ProgressHost, SettingsHost } from '../screens';
+import { OnboardingGate } from '../onboarding/OnboardingGate';
 import { type } from '../theme/tokens';
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardKind } from '../types/cardKind';
@@ -247,7 +248,9 @@ function AuthGate(): React.JSX.Element {
 
   return (
     <ServiceProvider services={services}>
-      <Root />
+      <OnboardingGate>
+        <Root />
+      </OnboardingGate>
     </ServiceProvider>
   );
 }
