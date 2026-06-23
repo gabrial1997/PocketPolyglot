@@ -32,9 +32,14 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Revoke direct EXECUTE from public roles: handle_new_user() is a trigger-only
--- function and must never be callable via the REST API (/rpc/handle_new_user).
+-- Revoke direct EXECUTE from public (the default grant PostgreSQL assigns to new
+-- functions). anon and authenticated inherit from public, so revoking from public
+-- is what actually closes the /rpc/handle_new_user REST surface.
+-- Revoking from anon/authenticated alone is silently defeated because those roles
+-- still inherit the grant via the public pseudo-role.
 -- This silences the Supabase security advisor WARNs:
 --   anon_security_definer_function_executable
 --   authenticated_security_definer_function_executable
+revoke execute on function public.handle_new_user() from public;
+-- Belt-and-suspenders: also revoke directly from the named roles.
 revoke execute on function public.handle_new_user() from anon, authenticated;
