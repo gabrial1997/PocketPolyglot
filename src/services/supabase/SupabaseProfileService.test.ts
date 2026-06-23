@@ -5,8 +5,11 @@ function fakeClient() {
   const calls: { table: string; op: string; payload?: unknown; eq?: [string, unknown] }[] = [];
   // nextSelectRows: a queue — each call to maybeSingle() pops the front; if empty uses the last set.
   let nextSelectRows: (Record<string, unknown> | null)[] = [{ rec_consent: true }];
-  // nextError: if set, the next awaitable terminal (maybeSingle / eq-on-update-delete / insert) resolves with this error.
+  // nextError: consumed by the next awaitable terminal (maybeSingle / eq-on-update-delete / insert).
   let nextError: { code?: string; message?: string } | null = null;
+  // nextWriteError: consumed ONLY by write terminals (insert resolver and update/delete .eq() terminal).
+  // Does NOT affect maybeSingle() so read-modify-write tests can let the read succeed and the write fail.
+  let nextWriteError: { code?: string; message?: string } | null = null;
 
   const client = {
     from(table: string) {
@@ -21,7 +24,9 @@ function fakeClient() {
           ctx.payload = payload;
           calls.push(ctx);
           // Insert terminal: awaitable, resolves { error }.
-          const err = nextError;
+          // Prefer the targeted write-error slot; fall back to the general one-shot slot.
+          const err = nextWriteError ?? nextError;
+          nextWriteError = null;
           nextError = null;
           return Promise.resolve({ data: null, error: err });
         },
@@ -42,13 +47,16 @@ function fakeClient() {
             return builder;
           }
           // update/delete terminal: awaitable, resolves { data, error }.
-          const err = nextError;
+          // Prefer the targeted write-error slot; fall back to the general one-shot slot.
+          const err = nextWriteError ?? nextError;
+          nextWriteError = null;
           nextError = null;
           return Promise.resolve({ data: null, error: err });
         },
         async maybeSingle() {
           // Pop the front of the queue if there are multiple rows queued (for read-modify-write tests).
           const row = nextSelectRows.length > 1 ? nextSelectRows.shift()! : nextSelectRows[0];
+          // maybeSingle() only consumes the general error slot, NOT nextWriteError.
           const err = nextError;
           nextError = null;
           return { data: err ? null : row, error: err };
@@ -65,10 +73,17 @@ function fakeClient() {
     /** Queue multiple rows: first maybeSingle() call returns rows[0], second returns rows[1], etc. */
     setRows: (rows: (Record<string, unknown> | null)[]) => { nextSelectRows = [...rows]; },
     /**
-     * Inject an error to be returned by the next awaitable terminal.
-     * The terminal clears it after consuming it (one-shot).
+     * Inject an error to be returned by the next awaitable terminal (insert / update .eq / delete .eq / maybeSingle).
+     * Used by insert-error tests (e.g. 23505 duplicate-key). One-shot: cleared after consumption.
      */
     setNextError: (code: string, message = 'injected error') => { nextError = { code, message }; },
+    /**
+     * Inject an error to be returned ONLY by the next WRITE terminal (insert / update .eq / delete .eq).
+     * maybeSingle() (the read path) ignores this slot, so read-modify-write tests can let the
+     * read succeed and the write fail — targeting the update's writeError guard specifically.
+     * One-shot: cleared after consumption.
+     */
+    setNextWriteError: (code: string, message = 'injected write error') => { nextWriteError = { code, message }; },
   };
 }
 
@@ -190,10 +205,13 @@ it('setSeenDiacritics throws when no profile row exists (enforces ensureProfile 
 });
 
 it('setSeenDiacritics surfaces a write error from the update', async () => {
-  const { client, setRow, setNextError } = fakeClient();
+  const { client, setRow, setNextWriteError } = fakeClient();
+  // READ succeeds: maybeSingle() returns a real row and does NOT consume nextWriteError.
   setRow({ settings: {} });
-  // The read consumes nothing from the error queue; next error fires on the update's .eq() terminal.
-  setNextError('42501', 'permission denied');
+  // WRITE fails: the update's .eq() terminal consumes nextWriteError — not the read path.
+  // If the `if (writeError) throw writeError` guard in setSeenDiacritics were removed,
+  // the error would be silently ignored and this test would FAIL (no rejection).
+  setNextWriteError('42501', 'permission denied');
   const svc = new SupabaseProfileService(client as never, 'user-1');
   await expect(svc.setSeenDiacritics()).rejects.toMatchObject({ code: '42501' });
 });
