@@ -1,0 +1,386 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`matches snapshot 1`] = `
+<RCTSafeAreaView
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#F4F2ED",
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "flex": 1,
+        },
+        {
+          "paddingHorizontal": 24,
+        },
+      ]
+    }
+  >
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "paddingBottom": 40,
+        }
+      }
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 34,
+                "letterSpacing": -0.2,
+                "lineHeight": 40,
+                "marginBottom": 14,
+                "marginTop": 12,
+              },
+              {
+                "color": "#1A2733",
+                "fontFamily": "Spectral_500Medium",
+              },
+            ]
+          }
+        >
+          Latvian letters
+        </Text>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 16,
+                "lineHeight": 24,
+                "marginBottom": 24,
+              },
+              {
+                "color": "rgba(26,39,51,0.58)",
+              },
+            ]
+          }
+        >
+          Latvian uses a few accented characters that carry meaning. Here is a quick map — you will see these throughout the app.
+        </Text>
+        <View
+          style={
+            [
+              {
+                "borderRadius": 20,
+                "borderWidth": 0.5,
+                "marginBottom": 20,
+                "overflow": "hidden",
+              },
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "rgba(26,39,51,0.09)",
+              },
+            ]
+          }
+        >
+          <View
+            style={
+              [
+                {
+                  "paddingHorizontal": 20,
+                  "paddingVertical": 16,
+                  "rowGap": 4,
+                },
+                {
+                  "borderBottomColor": "rgba(26,39,51,0.09)",
+                  "borderBottomWidth": 0.5,
+                },
+              ]
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 26,
+                    "letterSpacing": 2,
+                    "lineHeight": 34,
+                  },
+                  {
+                    "color": "#1A2733",
+                    "fontFamily": "Spectral_500Medium",
+                  },
+                ]
+              }
+            >
+              ā  ē  ī  ū
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "fontWeight": "600",
+                    "letterSpacing": 0.4,
+                    "textTransform": "uppercase",
+                  },
+                  {
+                    "color": "#2C5E8C",
+                  },
+                ]
+              }
+            >
+              long vowels
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "lineHeight": 19,
+                  },
+                  {
+                    "color": "rgba(26,39,51,0.58)",
+                  },
+                ]
+              }
+            >
+              The line means you hold the vowel a beat longer.
+            </Text>
+          </View>
+          <View
+            style={
+              [
+                {
+                  "paddingHorizontal": 20,
+                  "paddingVertical": 16,
+                  "rowGap": 4,
+                },
+                {
+                  "borderBottomColor": "rgba(26,39,51,0.09)",
+                  "borderBottomWidth": 0.5,
+                },
+              ]
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 26,
+                    "letterSpacing": 2,
+                    "lineHeight": 34,
+                  },
+                  {
+                    "color": "#1A2733",
+                    "fontFamily": "Spectral_500Medium",
+                  },
+                ]
+              }
+            >
+              č  š  ž
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "fontWeight": "600",
+                    "letterSpacing": 0.4,
+                    "textTransform": "uppercase",
+                  },
+                  {
+                    "color": "#2C5E8C",
+                  },
+                ]
+              }
+            >
+              ch  sh  zh
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "lineHeight": 19,
+                  },
+                  {
+                    "color": "rgba(26,39,51,0.58)",
+                  },
+                ]
+              }
+            >
+              Like "church", "show", "measure".
+            </Text>
+          </View>
+          <View
+            style={
+              [
+                {
+                  "paddingHorizontal": 20,
+                  "paddingVertical": 16,
+                  "rowGap": 4,
+                },
+                false,
+              ]
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 26,
+                    "letterSpacing": 2,
+                    "lineHeight": 34,
+                  },
+                  {
+                    "color": "#1A2733",
+                    "fontFamily": "Spectral_500Medium",
+                  },
+                ]
+              }
+            >
+              ģ  ķ  ļ  ņ
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "fontWeight": "600",
+                    "letterSpacing": 0.4,
+                    "textTransform": "uppercase",
+                  },
+                  {
+                    "color": "#2C5E8C",
+                  },
+                ]
+              }
+            >
+              soft variants
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "lineHeight": 19,
+                  },
+                  {
+                    "color": "rgba(26,39,51,0.58)",
+                  },
+                ]
+              }
+            >
+              The cedilla softens the consonant, like a "y" blended in.
+            </Text>
+          </View>
+        </View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 16,
+                "lineHeight": 24,
+                "marginBottom": 32,
+              },
+              {
+                "color": "rgba(26,39,51,0.58)",
+              },
+            ]
+          }
+        >
+          Getting these slightly off at first is completely fine. The app will give you time to build familiarity — no mastery check here.
+        </Text>
+        <View
+          style={
+            {
+              "marginTop": 4,
+            }
+          }
+        >
+          <View
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 18,
+                  "height": 56,
+                  "justifyContent": "center",
+                  "width": "100%",
+                },
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderColor": "#2C5E8C",
+                  "borderWidth": 0,
+                  "opacity": 1,
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "center",
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "fontSize": 17,
+                      "fontWeight": "600",
+                    },
+                    {
+                      "color": "#FFFFFF",
+                    },
+                  ]
+                }
+              >
+                Got it
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</RCTSafeAreaView>
+`;
