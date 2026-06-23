@@ -5,6 +5,9 @@ function fakeClient() {
   const calls: { table: string; op: string; payload?: unknown; eq?: [string, unknown] }[] = [];
   // nextSelectRows: a queue — each call to maybeSingle() pops the front; if empty uses the last set.
   let nextSelectRows: (Record<string, unknown> | null)[] = [{ rec_consent: true }];
+  // nextError: if set, the next awaitable terminal (maybeSingle / eq-on-update-delete / insert) resolves with this error.
+  let nextError: { code?: string; message?: string } | null = null;
+
   const client = {
     from(table: string) {
       const ctx: { table: string; op: string; payload?: unknown; eq?: [string, unknown] } = { table, op: '' };
@@ -16,9 +19,11 @@ function fakeClient() {
         insert(payload: unknown) {
           ctx.op = 'insert';
           ctx.payload = payload;
-          // Insert ops don't chain .eq(), so push immediately.
           calls.push(ctx);
-          return builder;
+          // Insert terminal: awaitable, resolves { error }.
+          const err = nextError;
+          nextError = null;
+          return Promise.resolve({ data: null, error: err });
         },
         update(payload: unknown) {
           ctx.op = 'update';
@@ -32,12 +37,21 @@ function fakeClient() {
         eq(col: string, val: unknown) {
           ctx.eq = [col, val];
           calls.push(ctx);
-          return builder;
+          if (ctx.op === 'select') {
+            // select chains to maybeSingle(); return builder so the caller can .maybeSingle()
+            return builder;
+          }
+          // update/delete terminal: awaitable, resolves { data, error }.
+          const err = nextError;
+          nextError = null;
+          return Promise.resolve({ data: null, error: err });
         },
         async maybeSingle() {
           // Pop the front of the queue if there are multiple rows queued (for read-modify-write tests).
           const row = nextSelectRows.length > 1 ? nextSelectRows.shift()! : nextSelectRows[0];
-          return { data: row, error: null };
+          const err = nextError;
+          nextError = null;
+          return { data: err ? null : row, error: err };
         },
       };
       return builder;
@@ -50,6 +64,11 @@ function fakeClient() {
     setRow: (r: Record<string, unknown> | null) => { nextSelectRows = [r]; },
     /** Queue multiple rows: first maybeSingle() call returns rows[0], second returns rows[1], etc. */
     setRows: (rows: (Record<string, unknown> | null)[]) => { nextSelectRows = [...rows]; },
+    /**
+     * Inject an error to be returned by the next awaitable terminal.
+     * The terminal clears it after consuming it (one-shot).
+     */
+    setNextError: (code: string, message = 'injected error') => { nextError = { code, message }; },
   };
 }
 
@@ -132,12 +151,28 @@ it('ensureProfile inserts a profiles row with only the user id', async () => {
   expect((ins?.payload as Record<string, unknown>).settings).toBeUndefined();
 });
 
+it('ensureProfile tolerates a 23505 unique-violation (row already exists)', async () => {
+  const { client, setNextError } = fakeClient();
+  setNextError('23505', 'duplicate key value violates unique constraint');
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  // Must resolve without throwing.
+  await expect(svc.ensureProfile()).resolves.toBeUndefined();
+});
+
+it('ensureProfile re-throws a non-23505 insert error', async () => {
+  const { client, setNextError } = fakeClient();
+  setNextError('23503', 'foreign key violation');
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await expect(svc.ensureProfile()).rejects.toMatchObject({ code: '23503' });
+});
+
 // --- D2a: setSeenDiacritics (settings-merge, editor-safe) ---
 
 it('setSeenDiacritics merges settings.seenDiacritics=true and preserves other keys', async () => {
   const { client, calls, setRows } = fakeClient();
-  // First maybeSingle() call (the read) returns existing settings; second is the update result.
-  setRows([{ settings: { editor: true } }, null]);
+  // First maybeSingle() call (the read) returns existing settings.
+  // The update path does NOT call maybeSingle() — it resolves via .eq() directly.
+  setRows([{ settings: { editor: true } }]);
   const svc = new SupabaseProfileService(client as never, 'user-1');
   await svc.setSeenDiacritics();
   const upd = calls.find((c) => c.op === 'update');
@@ -145,6 +180,22 @@ it('setSeenDiacritics merges settings.seenDiacritics=true and preserves other ke
   expect(upd?.eq).toEqual(['id', 'user-1']);
   const settings = (upd?.payload as { settings: Record<string, unknown> }).settings;
   expect(settings).toEqual({ editor: true, seenDiacritics: true });
+});
+
+it('setSeenDiacritics throws when no profile row exists (enforces ensureProfile invariant)', async () => {
+  const { client, setRow } = fakeClient();
+  setRow(null);
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await expect(svc.setSeenDiacritics()).rejects.toThrow('setSeenDiacritics: no profile row for user');
+});
+
+it('setSeenDiacritics surfaces a write error from the update', async () => {
+  const { client, setRow, setNextError } = fakeClient();
+  setRow({ settings: {} });
+  // The read consumes nothing from the error queue; next error fires on the update's .eq() terminal.
+  setNextError('42501', 'permission denied');
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await expect(svc.setSeenDiacritics()).rejects.toMatchObject({ code: '42501' });
 });
 
 // --- D3a: setConsent (rec + training + timestamp) ---

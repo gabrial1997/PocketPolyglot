@@ -8,6 +8,11 @@ export class SupabaseProfileService implements ProfileService {
     private readonly userId: string,
   ) {}
 
+  // Shared helper for GDPR audit timestamp — keeps setRecConsent and setConsent in sync.
+  private recConsentAt(value: boolean): string | null {
+    return value ? new Date().toISOString() : null;
+  }
+
   async getRecConsent(): Promise<boolean> {
     const { data, error } = await this.client
       .from('profiles')
@@ -22,7 +27,7 @@ export class SupabaseProfileService implements ProfileService {
   async setRecConsent(value: boolean): Promise<void> {
     const { error } = await this.client
       .from('profiles')
-      .update({ rec_consent: value, rec_consent_at: value ? new Date().toISOString() : null })
+      .update({ rec_consent: value, rec_consent_at: this.recConsentAt(value) })
       .eq('id', this.userId);
     if (error) throw error;
   }
@@ -46,7 +51,7 @@ export class SupabaseProfileService implements ProfileService {
     return {
       recConsent: row.rec_consent ?? false,
       trainingConsent: row.training_consent ?? false,
-      seenDiacritics: (row.settings as Record<string, unknown> | null)?.seenDiacritics === true,
+      seenDiacritics: row.settings?.seenDiacritics === true,
     };
   }
 
@@ -55,8 +60,7 @@ export class SupabaseProfileService implements ProfileService {
     // Treat a unique-violation (23505) as success — the row already exists (e.g. from the trigger).
     const { error } = await this.client
       .from('profiles')
-      .insert({ id: this.userId })
-      .maybeSingle();
+      .insert({ id: this.userId });
     if (error && (error as { code?: string }).code !== '23505') throw error;
   }
 
@@ -65,13 +69,17 @@ export class SupabaseProfileService implements ProfileService {
   async setSeenDiacritics(): Promise<void> {
     // Read-modify-write is acceptable here: this is a single-user build with no concurrent
     // settings writers. This preserves all existing keys (esp. settings.editor — Module F gate).
+    // NOTE: Module F race (jsonb_set) is a known pre-Module-F follow-up; migrate when Module F lands.
     const { data: readData, error: readError } = await this.client
       .from('profiles')
       .select('settings')
       .eq('id', this.userId)
       .maybeSingle();
     if (readError) throw readError;
-    const current = (readData as { settings: Record<string, unknown> | null } | null)?.settings ?? {};
+    if (!readData) {
+      throw new Error('setSeenDiacritics: no profile row for user; call ensureProfile() first');
+    }
+    const current = (readData as { settings: Record<string, unknown> | null }).settings ?? {};
     const { error: writeError } = await this.client
       .from('profiles')
       .update({ settings: { ...current, seenDiacritics: true } })
@@ -86,7 +94,7 @@ export class SupabaseProfileService implements ProfileService {
       .from('profiles')
       .update({
         rec_consent: input.rec,
-        rec_consent_at: input.rec ? new Date().toISOString() : null,
+        rec_consent_at: this.recConsentAt(input.rec),
         training_consent: input.training,
       })
       .eq('id', this.userId);
