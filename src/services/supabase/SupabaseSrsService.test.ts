@@ -638,7 +638,7 @@ describe('SupabaseSrsService.submit() — E2 recording_id linkage', () => {
     const inserted = (client as { _getLastLogInsert: () => Row | null })._getLastLogInsert();
     expect(inserted).not.toBeNull();
     expect(inserted!.recording_id).toBe('rec-1');
-    expect(stubUploader.upload).toHaveBeenCalledWith('file:///take.m4a', { durationMs: undefined });
+    expect(stubUploader.upload).toHaveBeenCalledWith('file:///take.m4a');
   });
 
   it('submit() with recording but consent-false uploader (returns null) → recording_id:null in log', async () => {

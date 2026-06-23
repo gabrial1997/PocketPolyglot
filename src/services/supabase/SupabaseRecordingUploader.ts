@@ -33,44 +33,52 @@ export class SupabaseRecordingUploader implements RecordingUploader {
     // Guard 2: GDPR consent gate — no upload, no insert without consent.
     if (!(await this.getConsent())) return null;
 
-    // Generate a stable id + storage path.
-    const id: string = crypto.randomUUID();
-    const storage_path = `${this.userId}/${id}.m4a`;
+    // Top-level catch: any thrown rejection (e.g. fetch network error) returns null
+    // so the session always advances — never throws into submit().
+    try {
+      // Generate a stable id + storage path.
+      const id: string = crypto.randomUUID();
+      const storage_path = `${this.userId}/${id}.m4a`;
 
-    // Resolve bytes: string URI → fetch; Blob → use directly.
-    let blob: Blob;
-    if (typeof recording === 'string') {
-      blob = await fetch(recording).then(r => r.blob());
-    } else {
-      blob = recording;
-    }
+      // Resolve bytes: string URI → fetch; Blob → use directly.
+      let blob: Blob;
+      if (typeof recording === 'string') {
+        blob = await fetch(recording).then(r => r.blob());
+      } else {
+        blob = recording;
+      }
 
-    // Upload to the private bucket.
-    const { error: uploadError } = await this.client.storage
-      .from('recordings')
-      .upload(storage_path, blob, { contentType: 'audio/m4a', upsert: false });
+      // Upload to the private bucket.
+      const { error: uploadError } = await this.client.storage
+        .from('recordings')
+        .upload(storage_path, blob, { contentType: 'audio/m4a', upsert: false });
 
-    if (uploadError) {
-      // Do not throw — the session must still advance.
+      if (uploadError) {
+        // Do not throw — the session must still advance.
+        return null;
+      }
+
+      // Insert the recordings row — EXACTLY these 5 columns.
+      // NEVER set score or score_payload (scope fence).
+      const { error: insertError } = await this.client.from('recordings').insert({
+        id,
+        user_id: this.userId,
+        storage_path,
+        duration_ms: opts?.durationMs ?? null,
+        consent_at: new Date().toISOString(),
+      });
+
+      if (insertError) {
+        // Best-effort cleanup of the orphaned storage object; do not throw.
+        await this.client.storage.from('recordings').remove([storage_path]);
+        return null;
+      }
+
+      return id;
+    } catch {
+      // Backstop for any thrown rejection (e.g. fetch network error, r.blob() rejection).
+      // Returns null so the session always advances.
       return null;
     }
-
-    // Insert the recordings row — EXACTLY these 5 columns.
-    // NEVER set score or score_payload (scope fence).
-    const { error: insertError } = await this.client.from('recordings').insert({
-      id,
-      user_id: this.userId,
-      storage_path,
-      duration_ms: opts?.durationMs ?? null,
-      consent_at: new Date().toISOString(),
-    });
-
-    if (insertError) {
-      // Best-effort cleanup of the orphaned storage object; do not throw.
-      await this.client.storage.from('recordings').remove([storage_path]);
-      return null;
-    }
-
-    return id;
   }
 }

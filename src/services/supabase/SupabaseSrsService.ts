@@ -692,7 +692,7 @@ export class SupabaseSrsService implements SrsService {
     // Returns null on any failure so the session still advances.
     const recordingId: string | null =
       result.recording && this.uploader
-        ? await this.uploader.upload(result.recording, { durationMs: undefined })
+        ? await this.uploader.upload(result.recording)
         : null;
 
     const { error: logErr } = await this.client.from('review_log').insert({

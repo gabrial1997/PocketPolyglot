@@ -244,4 +244,26 @@ describe('SupabaseRecordingUploader.upload()', () => {
     await uploader.upload('file:///recording.m4a'); // no opts
     expect(calls.recordingsInsert!.duration_ms).toBeNull();
   });
+
+  it('string URI + fetch REJECTS → upload() RESOLVES to null (never throws), insert NOT called', async () => {
+    // Simulate a network failure: fetch itself rejects.
+    const rejectingFetch = jest.fn().mockRejectedValue(new Error('network down'));
+    global.fetch = rejectingFetch as unknown as typeof fetch;
+
+    const { client, calls } = makeFakeClient({});
+    const uploader = new SupabaseRecordingUploader(
+      client as never,
+      USER_ID,
+      async () => true,
+    );
+
+    // Must RESOLVE to null — not reject/throw — proving "never throws into submit".
+    await expect(uploader.upload('file:///recording.m4a')).resolves.toBeNull();
+
+    // fetch was attempted
+    expect(rejectingFetch).toHaveBeenCalledWith('file:///recording.m4a');
+
+    // insert must NOT have been called (we never got past fetch)
+    expect(calls.recordingsInsert).toBeNull();
+  });
 });
