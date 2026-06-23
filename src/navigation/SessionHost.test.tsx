@@ -11,6 +11,7 @@ import { StyleSheet } from 'react-native';
 import { render, fireEvent, act, within } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
+import { EditorProvider } from '../services/EditorProvider';
 import { SessionHost } from './index';
 import { CardIcon } from '../components/cardChrome';
 import { CONFIRM_MS } from '../screens/useLoopStage';
@@ -54,7 +55,7 @@ const itemB: ReviewItem = {
   ],
 };
 
-function fakeServices(batch: ReviewItem[]): ServiceBundle {
+function fakeServices(batch: ReviewItem[], isEditorResult = false): ServiceBundle {
   return {
     audio: { play: async () => {}, stop: async () => {}, isPlaying: () => false, preload: () => {}, subscribe: () => () => {} },
     recorder: { start: async () => {}, stop: async () => 'rec://x', isRecording: () => false },
@@ -67,18 +68,37 @@ function fakeServices(batch: ReviewItem[]): ServiceBundle {
     progress: { getCoverage: async () => ({ known: 0, total: 1000 }) },
     podcast: { getEpisode: async () => ({ title: 'x', transcript: '', audioUrl: 'x' }) },
     profile: { getRecConsent: async () => false, setRecConsent: async () => {}, deleteRecordings: async () => {}, getProfile: async () => null, ensureProfile: async () => {}, setSeenDiacritics: async () => {}, setConsent: async () => {} },
-    editor: { isEditor: async () => false, edit: async () => {} },
+    editor: { isEditor: async () => isEditorResult, edit: async () => {} },
   };
 }
 
-function renderHost(batch: ReviewItem[], onExit: () => void = () => undefined) {
+function renderHost(batch: ReviewItem[], onExit: () => void = () => undefined, isEditorResult = false) {
+  const services = fakeServices(batch, isEditorResult);
   return render(
     <ThemeProvider>
-      <ServiceProvider services={fakeServices(batch)}>
-        <SessionHost onExit={onExit} />
+      <ServiceProvider services={services}>
+        <EditorProvider>
+          <SessionHost onExit={onExit} />
+        </EditorProvider>
       </ServiceProvider>
     </ThemeProvider>,
   );
+}
+
+/** renderHost variant that also returns the services bundle (for spy assertions). */
+function renderHostWithServices(batch: ReviewItem[], isEditorResult: boolean) {
+  const services = fakeServices(batch, isEditorResult);
+  const editSpy = jest.spyOn(services.editor, 'edit');
+  const utils = render(
+    <ThemeProvider>
+      <ServiceProvider services={services}>
+        <EditorProvider>
+          <SessionHost onExit={() => undefined} />
+        </EditorProvider>
+      </ServiceProvider>
+    </ThemeProvider>,
+  );
+  return { ...utils, editSpy };
 }
 
 // Poll with REAL timer ticks until `check` passes or the deadline elapses (then rethrow).
@@ -166,4 +186,66 @@ it('bounces to home on an empty batch — via effect, not the misleading prog sc
   await settle(() => expect(onExit).toHaveBeenCalled());
   // ...and never shows the "N / 1000 words" coverage screen as a loading/empty state.
   expect(u.queryByText(/words/)).toBeNull();
+});
+
+// ---------------------------------------------------------------------------
+// F7 — founder flag/edit affordance
+// ---------------------------------------------------------------------------
+
+it('F7: flag/edit button is ABSENT when editor.isEditor() returns false', async () => {
+  const u = renderHost([itemA, itemB], () => undefined, /* isEditorResult= */ false);
+  await settle(() => expect(u.getByText('māja')).toBeTruthy());
+  expect(u.queryByLabelText('Flag or edit this card')).toBeNull();
+});
+
+it('F7: flag/edit button is PRESENT when editor.isEditor() returns true', async () => {
+  const u = renderHost([itemA, itemB], () => undefined, /* isEditorResult= */ true);
+  await settle(() => {
+    expect(u.getByText('māja')).toBeTruthy();
+    expect(u.getByLabelText('Flag or edit this card')).toBeTruthy();
+  });
+});
+
+it('F7: pressing the flag/edit button opens the EditSheet', async () => {
+  const u = renderHost([itemA, itemB], () => undefined, /* isEditorResult= */ true);
+  await settle(() => expect(u.getByLabelText('Flag or edit this card')).toBeTruthy());
+  fireEvent.press(u.getByLabelText('Flag or edit this card'));
+  // EditSheet renders the Save button when open
+  expect(u.getByTestId('submit-button')).toBeTruthy();
+});
+
+it('F7: submitting the EditSheet calls services.editor.edit once with the mapped request', async () => {
+  const WORD_UUID = '00000000-0000-0000-0000-000000000001';
+  const itemWithUuid: ReviewItem = {
+    ...itemA,
+    id: WORD_UUID,
+    gloss: 'house',
+    target: 'māja',
+    usageNote: 'common word',
+    literal: 'stone house',
+  };
+
+  const { editSpy, getByLabelText, getByTestId } = renderHostWithServices(
+    [itemWithUuid, itemB],
+    /* isEditorResult= */ true,
+  );
+
+  // Wait for card + affordance to appear
+  await settle(() => expect(getByLabelText('Flag or edit this card')).toBeTruthy());
+
+  // Open the sheet
+  fireEvent.press(getByLabelText('Flag or edit this card'));
+  await settle(() => expect(getByTestId('submit-button')).toBeTruthy());
+
+  // Submit without changes (patch may be empty but submit should still fire)
+  // Change a field so the patch is non-empty (validateContentEdit requires ≥1 change)
+  const targetInput = getByTestId('input-target');
+  fireEvent.changeText(targetInput, 'māja2');
+
+  fireEvent.press(getByTestId('submit-button'));
+
+  await settle(() => expect(editSpy).toHaveBeenCalledTimes(1));
+  const call = editSpy.mock.calls[0]![0];
+  expect(call.table).toBe('lemmas');
+  expect(call.id).toBe(WORD_UUID);
 });

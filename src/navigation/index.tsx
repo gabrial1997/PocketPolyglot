@@ -26,6 +26,9 @@ import { type } from '../theme/tokens';
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardKind } from '../types/cardKind';
 import type { CardResult } from '../types/cardResult';
+import { EditorProvider, useEditor } from '../services/EditorProvider';
+import { EditSheet } from '../components/EditSheet';
+import type { EditableTable, QaStatus } from '../services/index';
 
 // Import only the one weight we use. The package's barrel (`@expo-google-fonts/spectral`) requires
 // every weight, and some of those .ttf assets aren't present in this install — which breaks the
@@ -126,18 +129,33 @@ function SessionPlaceholder({ label }: { label?: string }): React.JSX.Element {
 /** SessionHost — pulls the controller state and mounts the card for the current item. */
 const EXIT_FADE_MS = 200;
 
+/**
+ * Map a ReviewItem to the EditableTable name (word→lemmas, phrase→phrases, pair→minimal_pairs).
+ * Used to seed the EditSheet for the founder affordance; no scheduler impact.
+ */
+function itemTypeToEditableTable(type: ReviewItem['type']): EditableTable {
+  if (type === 'word') return 'lemmas';
+  if (type === 'phrase') return 'phrases';
+  return 'minimal_pairs';
+}
+
 export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Element {
   const session = useSession();
   const finished = !session.loading && (session.done || !session.current);
   // Read GDPR recording consent ONCE per session mount from ProfileService (CLAUDE.md §GDPR).
   // Cards are pure — they receive the resolved boolean; they never call the service themselves.
-  const { profile } = useServices();
+  const { profile, editor } = useServices();
   const [recConsent, setRecConsent] = useState<boolean>(true); // permissive default until resolved
   useEffect(() => {
     // Deliberately fail-closed (GDPR): if consent cannot be confirmed, recording is disabled.
     void profile.getRecConsent().then(setRecConsent).catch(() => setRecConsent(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Founder edit affordance — enabled only when useEditor().enabled is true.
+  const { enabled: editorEnabled } = useEditor();
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   // Exit fade: leaving via the X shouldn't be an abrupt cut. Fade the whole session out, then hand
   // back to home. Reduced motion / the finished-bounce skip the animation. (Probe + timer-commit
@@ -178,6 +196,52 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
   if (session.loading) return <SessionPlaceholder label="Loading your session…" />;
   if (!session.current) return <SessionPlaceholder />; // also narrows current for the card below
 
+  const currentItem = session.current.item;
+  const editTable = itemTypeToEditableTable(currentItem.type);
+
+  // Seed the EditSheet initial values from the ReviewItem.
+  // `qa_status` is not stored on ReviewItem (it's a DB provenance trail); default to 'draft'.
+  const editInitial: {
+    gloss_en?: string;
+    target?: string;
+    usage_note?: string;
+    literal_gloss?: string;
+    qa_status: QaStatus;
+  } = {
+    gloss_en: currentItem.gloss,
+    target: currentItem.target,
+    // Pass through optional fields if present on the item (additive, no scheduler impact).
+    usage_note: currentItem.usageNote,
+    literal_gloss: currentItem.literal,
+    // qa_status is provenance metadata — NOT on ReviewItem; default 'draft' for stepper start.
+    qa_status: 'draft',
+  };
+
+  const handleEditSubmit: React.ComponentProps<typeof EditSheet>['onSubmit'] = (patch) => {
+    // Build the full ContentEditRequest from the current item + patch.
+    const req = {
+      table: editTable,
+      id: currentItem.id,
+      ...(patch.fields ? { fields: patch.fields } : {}),
+      ...(patch.qa_status !== undefined ? { qa_status: patch.qa_status } : {}),
+    };
+    setEditSubmitting(true);
+    void editor
+      .edit(req)
+      .then(() => {
+        setEditSubmitting(false);
+        setEditSheetOpen(false);
+      })
+      .catch((err: unknown) => {
+        // Non-blocking: the deck MUST NOT stall on an edit failure (mirrors submit-resilience
+        // in sessionController — srs.submit errors are caught and the session advances).
+        setEditSubmitting(false);
+        // Surface the error for visibility without blocking the learner.
+        // eslint-disable-next-line no-console
+        console.warn('[editor] edit failed — session unaffected', err);
+      });
+  };
+
   return (
     <Animated.View style={[styles.sessionShell, { opacity: exitOpacity }]}>
       {/* GlideViewport owns "remount per CARD encounter": keyed off item id + kind, it freezes the
@@ -202,8 +266,31 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
       <SafeAreaView style={styles.sessionTopOverlay} pointerEvents="box-none">
         <View style={styles.sessionTopInner} pointerEvents="box-none">
           <SessionTop step={session.step} total={session.total} onClose={handleClose} />
+          {/* Founder-only flag/edit affordance — hidden for all non-founder users.
+              Lives in the session HOST chrome, NOT inside any card (cards stay pure).
+              The server Edge Function is the real gate; useEditor().enabled is client UX only. */}
+          {editorEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Flag or edit this card"
+              onPress={() => setEditSheetOpen(true)}
+              style={styles.editAffordance}
+            />
+          ) : null}
         </View>
       </SafeAreaView>
+      {/* EditSheet — rendered in the session host, never inside a card. */}
+      {editorEnabled && editSheetOpen ? (
+        <View style={styles.editSheetOverlay}>
+          <EditSheet
+            table={editTable}
+            initial={editInitial}
+            onSubmit={handleEditSubmit}
+            onCancel={() => setEditSheetOpen(false)}
+            submitting={editSubmitting}
+          />
+        </View>
+      ) : null}
     </Animated.View>
   );
 }
@@ -261,9 +348,12 @@ function AuthGate(): React.JSX.Element {
 
   return (
     <ServiceProvider services={services}>
-      <OnboardingGate>
-        <Root />
-      </OnboardingGate>
+      {/* EditorProvider resolves the founder flag once; useEditor() is safe anywhere below. */}
+      <EditorProvider>
+        <OnboardingGate>
+          <Root />
+        </OnboardingGate>
+      </EditorProvider>
     </ServiceProvider>
   );
 }
@@ -317,4 +407,8 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 6 },
+  // Founder-only flag/edit affordance button (a small tap target in the chrome row).
+  editAffordance: { width: 32, height: 32, marginLeft: 8 },
+  // EditSheet overlay — covers the session chrome when open.
+  editSheetOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
 });
