@@ -16,9 +16,6 @@ import { CtaButton } from './CtaButton';
 import { EDITABLE_FIELDS_BY_TABLE, QA_ORDER } from '../services/contentEdit';
 import type { EditableTable, QaStatus } from '../services/index';
 
-// Re-export QA_ORDER so callers can reference it without touching contentEdit directly.
-export { QA_ORDER } from '../services/contentEdit';
-
 export interface EditSheetProps {
   table: EditableTable;
   initial: {
