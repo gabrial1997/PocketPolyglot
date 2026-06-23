@@ -270,7 +270,7 @@ describe('SupabaseSrsService.getDueBatch ordering', () => {
       minimal_pairs: [],
       review_log: [],
       known_lemmas: [],
-      profiles: [{ id: 'u1', user_id: 'u1', created_at: new Date().toISOString() }],
+      profiles: [{ id: 'u1', created_at: new Date().toISOString() }],
     };
     const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
 
@@ -495,7 +495,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       minimal_pairs: [],
       review_log: [],
       known_lemmas: [],
-      profiles: [{ id: 'u1', user_id: 'u1', created_at: new Date().toISOString() }],
+      profiles: [{ id: 'u1', created_at: new Date().toISOString() }],
     };
 
     const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
@@ -508,6 +508,52 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     // Overall order must be ascending by rank
     const expectedOrder = ['l-rank-1', 'l-rank-2', 'l-rank-3', 'l-rank-4', 'l-rank-5'];
     expect(ranks).toEqual(expectedOrder.slice(0, ranks.length));
+  });
+
+  // ---------------------------------------------------------------------------
+  // Regression: accountAgeDays must query profiles by `id`, not `user_id`.
+  // A user whose profiles.created_at is 3 days ago AND who has NO review_log rows
+  // must be classified as a RETURNING user (steady-state new cap = 5), NOT day-1 (20).
+  // This test FAILS against the old `.eq('user_id', ...)` code (profile not found →
+  // falls through to empty review_log → age=0 → day-1 cap=20 → batch.length up to 20).
+  // ---------------------------------------------------------------------------
+  it('user with profiles.created_at 3 days ago + no review_log is classified as returning (steady-state cap=5)', async () => {
+    // 3 days ago
+    const now = new Date();
+    const threeDaysAgo = new Date(now.getTime() - 3 * 86_400_000).toISOString();
+
+    // profiles row has `id` matching userId but NO `user_id` column — faithful to real schema.
+    // Old code queried `.eq('user_id', userId)` → returned null → age=0 → DAY_ONE_NEW_CAP(20).
+    // Fixed code queries `.eq('id', userId)` → returns this row → age=3 → STEADY_STATE_NEW_CAP(5).
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      // 30 candidates so the cap is the binding constraint
+      lemmas: Array.from({ length: 30 }, (_, k) => ({
+        id: `cap-lemma-${k}`,
+        lemma: `word-${k}`,
+        gloss_en: `gloss-${k}`,
+        audio_url: `cap-lemma-${k}.mp3`,
+        native_url: `cap-lemma-${k}.mp3`,
+        envelope: [0.5],
+        word_class: 'concrete',
+        utility_rank: k + 1,
+      })),
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [], // no review history at all
+      known_lemmas: [],
+      // Faithful schema: `id` is the PK. No `user_id` column on this row.
+      profiles: [{ id: 'u1', created_at: threeDaysAgo }],
+    };
+
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, now), 'u1');
+    const batch = await svc.getDueBatch();
+
+    // With the fix: accountAgeDays = 3 (≥1) → STEADY_STATE_NEW_CAP = 5
+    // Without the fix: profile not found (wrong column) → age=0 → DAY_ONE_NEW_CAP = 20
+    expect(batch.length).toBeLessThanOrEqual(5);
+    expect(batch.length).toBeGreaterThan(0);
   });
 
   it('user who already introduced top-N lemmas still receives never-introduced lower-ranked lemmas', async () => {
@@ -545,7 +591,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       minimal_pairs: [],
       review_log: [],
       known_lemmas: [],
-      profiles: [{ id: 'u1', user_id: 'u1', created_at: new Date().toISOString() }],
+      profiles: [{ id: 'u1', created_at: new Date().toISOString() }],
     };
 
     const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');

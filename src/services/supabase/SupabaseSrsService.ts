@@ -125,12 +125,15 @@ export class SupabaseSrsService implements SrsService {
 
   /** Days since the account was created. Falls back to earliest review_log.created_at. */
   private async accountAgeDays(now: Date): Promise<number> {
-    // Try profiles.created_at first.
-    const { data: profile } = await this.client
+    // Try profiles.created_at first. profiles PK is `id` (not `user_id`).
+    const { data: profile, error: profileErr } = await this.client
       .from('profiles')
       .select('created_at')
-      .eq('user_id', this.userId)
+      .eq('id', this.userId)
       .maybeSingle();
+    if (profileErr) {
+      console.warn('[SupabaseSrsService] accountAgeDays: profiles query failed, falling back to review_log', profileErr);
+    }
     let created: Date | null = null;
     if (profile && (profile as { created_at?: string }).created_at) {
       created = new Date((profile as { created_at: string }).created_at);
