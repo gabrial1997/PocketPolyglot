@@ -35,7 +35,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
   };
 }
 
-function renderCard(overrides: Partial<ReviewItem> = {}) {
+function renderCard(overrides: Partial<ReviewItem> = {}, extra: Partial<RecordingCardProps & ChoiceCardProps> = {}) {
   const props: RecordingCardProps & ChoiceCardProps = {
     item: fixtureItem(overrides),
     onPlay: jest.fn(),
@@ -44,6 +44,7 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
     onRecordStop: jest.fn(),
     onPlayCompare: jest.fn(),
     onComplete: jest.fn(),
+    ...extra,
   };
   const utils = render(
     <ThemeProvider>
@@ -231,5 +232,33 @@ describe('WordSay', () => {
     fireEvent.press(u.getByText('maize')); // wrong
     expect(u.props.onComplete).not.toHaveBeenCalled();
     expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+  });
+
+  // ── recConsent gate (Task E3) ────────────────────────────────────────────────
+  // When recConsent=false the MicOrb / record affordance must be hidden; the card still emits
+  // {cardKind:'word/say', spoke:true} so the session advances and the result/compare stage works.
+
+  it('recConsent=false: record affordance not rendered (no MicOrb on the speak stage)', () => {
+    const u = renderCard({}, { recConsent: false });
+    // Drive to the speak stage
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm();
+    // MicOrb is hidden when consent is false — no Record or Stop recording label
+    expect(u.queryByLabelText('Record')).toBeNull();
+    expect(u.queryByLabelText('Stop recording')).toBeNull();
+  });
+
+  it('recConsent=false: card can still complete and emits { cardKind:word/say, spoke:true }', () => {
+    const u = renderCard({}, { recConsent: false });
+    // Drive to speak (no mic) -> press Continue (skips rec, goes to result) -> press Continue (completes)
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm();
+    // Speak stage: no MicOrb, but Continue is available to skip rec and go to result
+    fireEvent.press(u.getByText('Continue')); // speak -> result
+    // Result stage: press Continue to complete
+    fireEvent.press(u.getByText('Continue')); // result -> onComplete
+    expect(u.props.onComplete).toHaveBeenCalledWith(
+      expect.objectContaining({ cardKind: 'word/say', spoke: true }),
+    );
   });
 });

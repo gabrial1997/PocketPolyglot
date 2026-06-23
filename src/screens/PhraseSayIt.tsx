@@ -16,7 +16,8 @@ import type { RecordingCardProps } from './cardProps';
 type Stage = 'cue' | 'rec' | 'compare';
 
 export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
-  const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange, recConsent = true } = props;
+  // GDPR record gate: when false, hide the record affordance on the cue/rec stage.
   const T = useTheme();
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip slows the native model.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
@@ -38,19 +39,21 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
           <>
             <Text style={[styles.cue, { color: T.ink }]}>{item.gloss}</Text>
             <Text style={[styles.cueSub, { color: T.sub }]}>Say it in Latvian.</Text>
-            <View style={styles.mic}>
-              <MicOrb
-                size={84}
-                rec={stage === 'rec'}
-                onPress={() => {
-                  if (stage === 'rec') { onRecordStop(); setStage('compare'); }
-                  else { onRecordStart(); setStage('rec'); }
-                }}
-              />
-              <Text style={[styles.recHint, { color: stage === 'rec' ? T.record : T.faint, fontWeight: stage === 'rec' ? '600' : '400' }]}>
-                {stage === 'rec' ? 'Listening… tap to stop' : 'Tap to record'}
-              </Text>
-            </View>
+            {recConsent ? (
+              <View style={styles.mic}>
+                <MicOrb
+                  size={84}
+                  rec={stage === 'rec'}
+                  onPress={() => {
+                    if (stage === 'rec') { onRecordStop(); setStage('compare'); }
+                    else { onRecordStart(); setStage('rec'); }
+                  }}
+                />
+                <Text style={[styles.recHint, { color: stage === 'rec' ? T.record : T.faint, fontWeight: stage === 'rec' ? '600' : '400' }]}>
+                  {stage === 'rec' ? 'Listening… tap to stop' : 'Tap to record'}
+                </Text>
+              </View>
+            ) : null}
           </>
         ) : (
           <>

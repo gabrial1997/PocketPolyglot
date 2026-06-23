@@ -26,7 +26,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
   };
 }
 
-function renderCard(overrides: Partial<ReviewItem> = {}) {
+function renderCard(overrides: Partial<ReviewItem> = {}, extra: Partial<RecordingCardProps> = {}) {
   const props: RecordingCardProps = {
     item: fixtureItem(overrides),
     onPlay: jest.fn(),
@@ -34,6 +34,7 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
     onRecordStop: jest.fn(),
     onPlayCompare: jest.fn(),
     onComplete: jest.fn(),
+    ...extra,
   };
   const utils = render(
     <ThemeProvider>
@@ -122,5 +123,43 @@ describe('PronounceScreen', () => {
     expect(u.queryByText(/Close\./)).toBeNull();
     // The honest self-compare prompt takes its place.
     expect(u.getByText('Play both back to compare — trust your ear.')).toBeTruthy();
+  });
+
+  // ── recConsent gate (Task E3) ────────────────────────────────────────────────
+  // When recConsent=false the Record control must be hidden; native A/B is still playable.
+  // When recConsent=true (default) the full Record → Compare flow works and emits { cardKind:'pron', spoke:true }.
+
+  it('recConsent=false: Record control is hidden', () => {
+    const u = renderCard({}, { recConsent: false });
+    expect(u.queryByText('Record')).toBeNull();
+    expect(u.queryByText('Recording…')).toBeNull();
+  });
+
+  it('recConsent=false: native A/B row is still playable (no crash)', () => {
+    const u = renderCard({}, { recConsent: false });
+    // Native row still visible — pressing it calls onPlayCompare
+    // The card renders native row via CompareRow or Row component with "Native" label
+    expect(u.getByText('Native')).toBeTruthy();
+  });
+
+  it('recConsent=false: no crash on render', () => {
+    // Just verifying the component renders without throwing
+    expect(() => renderCard({}, { recConsent: false })).not.toThrow();
+  });
+
+  it('recConsent=true (default): Record → Compare flow emits { cardKind:pron, spoke:true } and plays native then you', () => {
+    jest.useFakeTimers();
+    try {
+      const u = renderCard({}, { recConsent: true });
+      fireEvent.press(u.getByText('Record'));
+      fireEvent.press(u.getByText('Recording…'));
+      fireEvent.press(u.getByText('Compare'));
+      expect(u.props.onPlayCompare).toHaveBeenCalledWith('native', 1);
+      act(() => { jest.advanceTimersByTime(2000); });
+      expect(u.props.onPlayCompare).toHaveBeenCalledWith('you');
+      expect(u.props.onComplete).toHaveBeenCalledWith({ itemId: 'maja', cardKind: 'pron', spoke: true });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

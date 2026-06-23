@@ -15,6 +15,7 @@ import { createSupabaseServices } from '../services/supabase';
 import { supabase } from '../services/supabaseClient';
 import { useSession } from '../session/sessionController';
 import { useReviewCardHandlers } from '../session/useReviewCardHandlers';
+import { useServices } from '../services/ServiceProvider';
 import { PlaybackProvider } from '../session/PlaybackProvider';
 import { CARD_REGISTRY } from './registry';
 import { Screen, GlideViewport } from '../components';
@@ -92,6 +93,7 @@ export function CardHost({
   submit,
   advance,
   nextReviewLabel,
+  recConsent,
 }: {
   item: ReviewItem;
   kind: CardKind;
@@ -99,13 +101,15 @@ export function CardHost({
   /** Gate-card advance (phrase/locked, phrase/unlock) — steps the deck WITHOUT posting a review. */
   advance: () => void;
   nextReviewLabel: string | null;
+  /** GDPR record gate sourced from ProfileService once per session; pure cards receive the value. */
+  recConsent: boolean;
 }): React.JSX.Element {
   // The controller wires every callback to the injected services; the card stays pure (§1, §5).
   // `handlers` includes onAdvance/onUnlocked (the gate-card path) — spread reaches phrase/locked
   // (onAdvance) and phrase/unlock (onUnlocked); other cards simply ignore the extra callbacks.
   const handlers = useReviewCardHandlers(item, submit, advance);
   const Card = CARD_REGISTRY[kind];
-  return <Card item={item} {...handlers} nextReviewLabel={nextReviewLabel} />;
+  return <Card item={item} {...handlers} nextReviewLabel={nextReviewLabel} recConsent={recConsent} />;
 }
 
 /** Neutral full-screen placeholder for loading / between cards (NOT the prog coverage screen). */
@@ -126,6 +130,14 @@ const EXIT_FADE_MS = 200;
 export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Element {
   const session = useSession();
   const finished = !session.loading && (session.done || !session.current);
+  // Read GDPR recording consent ONCE per session mount from ProfileService (CLAUDE.md §GDPR).
+  // Cards are pure — they receive the resolved boolean; they never call the service themselves.
+  const { profile } = useServices();
+  const [recConsent, setRecConsent] = useState<boolean>(true); // permissive default until resolved
+  useEffect(() => {
+    void profile.getRecConsent().then(setRecConsent).catch(() => setRecConsent(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Exit fade: leaving via the X shouldn't be an abrupt cut. Fade the whole session out, then hand
   // back to home. Reduced motion / the finished-bounce skip the animation. (Probe + timer-commit
@@ -181,6 +193,7 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
           submit={session.submit}
           advance={session.advance}
           nextReviewLabel={session.lastReviewLabel}
+          recConsent={recConsent}
         />
       </GlideViewport>
       {/* Session chrome (close + progress) floats above the gliding cards so the learner can leave

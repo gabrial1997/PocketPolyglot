@@ -14,7 +14,8 @@ import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 type Props = RecordingCardProps & ChoiceCardProps;
 
 export function WordSay(props: Props): React.JSX.Element {
-  const { item, onPlay, onStop, onPreload, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onPreload, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange, recConsent = true } = props;
+  // GDPR record gate: when false, hide the record affordance and skip the rec stage.
   const T = useTheme();
   const m = useLoopStage();
   const choices = item.choices ?? [];
@@ -95,13 +96,19 @@ export function WordSay(props: Props): React.JSX.Element {
             </View>
             <PlayOrb size={58} filled={false} playing={playing} onPress={replay} />
             <SpeedChip value={speed} onChange={changeSpeed} />
-            <View style={styles.mic}>
-              <MicOrb rec={m.stage === 'rec'} onPress={() => { if (m.stage === 'rec') { onRecordStop(); m.finishRec(); } else { startRec(); } }} />
-              <Caption>{m.stage === 'rec' ? 'Listening… tap to stop' : 'Now say it'}</Caption>
-            </View>
+            {recConsent ? (
+              <View style={styles.mic}>
+                <MicOrb rec={m.stage === 'rec'} onPress={() => { if (m.stage === 'rec') { onRecordStop(); m.finishRec(); } else { startRec(); } }} />
+                <Caption>{m.stage === 'rec' ? 'Listening… tap to stop' : 'Now say it'}</Caption>
+              </View>
+            ) : null}
           </CardBody>
           <CardFooter>
-            <FootNote>Speaking it closes the loop.</FootNote>
+            {recConsent ? (
+              <FootNote>Speaking it closes the loop.</FootNote>
+            ) : (
+              <CtaButton title="Continue" onPress={() => { m.finishRec(); }} />
+            )}
           </CardFooter>
         </>
       ) : null}

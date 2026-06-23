@@ -25,7 +25,8 @@ import type { RecordingCardProps } from './cardProps';
 const COMPARE_MS = 1700; // play native+you back-to-back, then complete
 
 export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
-  const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange, recConsent = true } = props;
+  // GDPR record gate: when false, hide the Record control. Native A/B row still playable.
   const T = useTheme();
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip slows the native model.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
@@ -108,10 +109,12 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
       </View>
 
       <View style={styles.controls}>
-        <Pressable accessibilityRole="button" onPress={toggleRecord} style={[styles.ctrl, { borderColor: rec ? hexA(T.record, 0.5) : T.hair, backgroundColor: rec ? hexA(T.record, T.dark ? 0.12 : 0.06) : 'transparent' }]}>
-          <View style={[styles.recDot, { backgroundColor: T.record }]} />
-          <Text style={[styles.ctrlText, { color: rec ? T.record : T.sub }]}>{rec ? 'Recording…' : 'Record'}</Text>
-        </Pressable>
+        {recConsent ? (
+          <Pressable accessibilityRole="button" onPress={toggleRecord} style={[styles.ctrl, { borderColor: rec ? hexA(T.record, 0.5) : T.hair, backgroundColor: rec ? hexA(T.record, T.dark ? 0.12 : 0.06) : 'transparent' }]}>
+            <View style={[styles.recDot, { backgroundColor: T.record }]} />
+            <Text style={[styles.ctrlText, { color: rec ? T.record : T.sub }]}>{rec ? 'Recording…' : 'Record'}</Text>
+          </Pressable>
+        ) : null}
         <Pressable accessibilityRole="button" disabled={!recorded || comparing} onPress={doCompare} style={[styles.ctrl, styles.ctrlFilled, { backgroundColor: T.primary, opacity: !recorded || comparing ? 0.5 : 1, shadowColor: T.primary }]}>
           <CardIcon name="play" size={16} color={T.onPrimary} />
           <Text style={[styles.ctrlText, { color: T.onPrimary }]}>Compare</Text>

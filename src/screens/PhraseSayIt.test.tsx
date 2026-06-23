@@ -25,7 +25,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
   };
 }
 
-function renderCard(overrides: Partial<ReviewItem> = {}) {
+function renderCard(overrides: Partial<ReviewItem> = {}, extra: Partial<RecordingCardProps> = {}) {
   const props: RecordingCardProps = {
     item: fixtureItem(overrides),
     onPlay: jest.fn(),
@@ -33,6 +33,7 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
     onRecordStop: jest.fn(),
     onPlayCompare: jest.fn(),
     onComplete: jest.fn(),
+    ...extra,
   };
   const utils = render(
     <ThemeProvider>
@@ -116,5 +117,53 @@ describe('PhraseSayIt', () => {
     toRating(u);
     fireEvent.press(u.getByText('Got it'));
     expect(u.getByText('Your next review is scheduled.')).toBeTruthy();
+  });
+
+  // ── recConsent gate (Task E3) ────────────────────────────────────────────────
+  // When recConsent=false the MicOrb / record affordance must be hidden; "Show the phrase" still
+  // reaches the compare stage, and self-rate good/again still emits { cardKind:'phrase/sayit', spoke:true, selfRating }.
+
+  it('recConsent=false: MicOrb not rendered on the cue stage', () => {
+    const u = renderCard({}, { recConsent: false });
+    expect(u.queryByLabelText('Record')).toBeNull();
+    expect(u.queryByLabelText('Stop recording')).toBeNull();
+    // The "Show the phrase" ghost still exists so the user can reach compare without recording
+    expect(u.getByText('Show the phrase')).toBeTruthy();
+  });
+
+  it('recConsent=false: "Show the phrase" reaches compare without recording', () => {
+    const u = renderCard({}, { recConsent: false });
+    fireEvent.press(u.getByText('Show the phrase'));
+    // Compare stage reached — phrase is visible
+    expect(u.getByText('Labrīt!')).toBeTruthy();
+    // Self-rate buttons are present
+    expect(u.getByText('Got it')).toBeTruthy();
+    expect(u.getByText('Not yet')).toBeTruthy();
+    // MicOrb still hidden in compare stage
+    expect(u.queryByLabelText('Record')).toBeNull();
+  });
+
+  it('recConsent=false: self-rate "good" emits { cardKind:phrase/sayit, spoke:true, selfRating:good }', () => {
+    const u = renderCard({}, { recConsent: false });
+    fireEvent.press(u.getByText('Show the phrase'));
+    fireEvent.press(u.getByText('Got it'));
+    expect(u.props.onComplete).toHaveBeenCalledWith({
+      itemId: 'labrit',
+      cardKind: 'phrase/sayit',
+      spoke: true,
+      selfRating: 'good',
+    });
+  });
+
+  it('recConsent=false: self-rate "again" emits { cardKind:phrase/sayit, spoke:true, selfRating:again }', () => {
+    const u = renderCard({}, { recConsent: false });
+    fireEvent.press(u.getByText('Show the phrase'));
+    fireEvent.press(u.getByText('Not yet'));
+    expect(u.props.onComplete).toHaveBeenCalledWith({
+      itemId: 'labrit',
+      cardKind: 'phrase/sayit',
+      spoke: true,
+      selfRating: 'again',
+    });
   });
 });
