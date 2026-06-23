@@ -20,14 +20,15 @@ function setup(overrides: { onAccept?: jest.Mock; onDecline?: jest.Mock } = {}) 
 describe('ConsentScreen — GDPR disclosures', () => {
   it('shows retention disclosure (kept over time / progress)', () => {
     const { getAllByText } = setup();
-    // Must have text matching "kept", "over time", or "progress"
-    const matches = getAllByText(/kept|over time|progress/i);
+    // Anchors to the actual disclosure label/body: "kept over time" — unique to the retention card
+    const matches = getAllByText(/kept over time/i);
     expect(matches.length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows rater/coach-access disclosure (coach / listen / reviewer)', () => {
     const { getAllByText } = setup();
-    const matches = getAllByText(/coach|listen|reviewer/i);
+    // Anchors to the actual disclosure label/body: "reviewer may listen" — unique to the rater card
+    const matches = getAllByText(/reviewer may listen/i);
     expect(matches.length).toBeGreaterThanOrEqual(1);
   });
 });
