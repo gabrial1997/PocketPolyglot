@@ -22,3 +22,8 @@ export { PodcastHost } from './PodcastHost';
 export { ProgressHost } from './ProgressHost';
 export { SettingsHost } from './SettingsHost';
 export * from './cardProps';
+// Onboarding screens (Module D) — pure presentational, NOT in CARD_REGISTRY
+export { DiacriticOrientationScreen } from './DiacriticOrientationScreen';
+export type { DiacriticOrientationScreenProps } from './DiacriticOrientationScreen';
+export { ConsentScreen } from './ConsentScreen';
+export type { ConsentScreenProps } from './ConsentScreen';

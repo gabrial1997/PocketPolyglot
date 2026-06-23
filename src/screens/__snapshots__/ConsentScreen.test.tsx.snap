@@ -1,0 +1,486 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`matches snapshot 1`] = `
+<RCTSafeAreaView
+  style={
+    [
+      {
+        "flex": 1,
+      },
+      {
+        "backgroundColor": "#F4F2ED",
+      },
+      undefined,
+    ]
+  }
+>
+  <View
+    style={
+      [
+        {
+          "flex": 1,
+        },
+        {
+          "paddingHorizontal": 24,
+        },
+      ]
+    }
+  >
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "paddingBottom": 40,
+        }
+      }
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+      <View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 34,
+                "letterSpacing": -0.2,
+                "lineHeight": 40,
+                "marginBottom": 14,
+                "marginTop": 12,
+              },
+              {
+                "color": "#1A2733",
+                "fontFamily": "Spectral_500Medium",
+              },
+            ]
+          }
+        >
+          Recording your speech
+        </Text>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 16,
+                "lineHeight": 24,
+                "marginBottom": 20,
+              },
+              {
+                "color": "rgba(26,39,51,0.58)",
+              },
+            ]
+          }
+        >
+          To help you improve, the app can record your attempts as you practise speaking. Here is what that means for your data:
+        </Text>
+        <View
+          style={
+            [
+              {
+                "borderRadius": 20,
+                "borderWidth": 0.5,
+                "marginBottom": 16,
+                "overflow": "hidden",
+              },
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "rgba(26,39,51,0.09)",
+              },
+            ]
+          }
+        >
+          <View
+            style={
+              {
+                "paddingHorizontal": 20,
+                "paddingVertical": 16,
+                "rowGap": 6,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 15,
+                    "fontWeight": "600",
+                    "lineHeight": 20,
+                  },
+                  {
+                    "color": "#1A2733",
+                  },
+                ]
+              }
+            >
+              Your recordings are kept over time
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "lineHeight": 19,
+                  },
+                  {
+                    "color": "rgba(26,39,51,0.58)",
+                  },
+                ]
+              }
+            >
+              Your pronunciation recordings are stored and kept over time so the app can track your progress and show you how your speech has developed.
+            </Text>
+          </View>
+          <View
+            style={
+              [
+                {
+                  "height": 0.5,
+                  "marginHorizontal": 20,
+                },
+                {
+                  "backgroundColor": "rgba(26,39,51,0.09)",
+                },
+              ]
+            }
+          />
+          <View
+            style={
+              {
+                "paddingHorizontal": 20,
+                "paddingVertical": 16,
+                "rowGap": 6,
+              }
+            }
+          >
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 15,
+                    "fontWeight": "600",
+                    "lineHeight": 20,
+                  },
+                  {
+                    "color": "#1A2733",
+                  },
+                ]
+              }
+            >
+              A human reviewer may listen
+            </Text>
+            <Text
+              style={
+                [
+                  {
+                    "fontSize": 13,
+                    "lineHeight": 19,
+                  },
+                  {
+                    "color": "rgba(26,39,51,0.58)",
+                  },
+                ]
+              }
+            >
+              A human language coach or reviewer may listen to a sample of your recordings to help improve the app and its feedback. Recordings are never shared publicly.
+            </Text>
+          </View>
+        </View>
+        <View
+          style={
+            [
+              {
+                "borderRadius": 20,
+                "borderWidth": 0.5,
+                "marginBottom": 28,
+              },
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "rgba(26,39,51,0.09)",
+              },
+            ]
+          }
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "columnGap": 14,
+                "flexDirection": "row",
+                "paddingHorizontal": 20,
+                "paddingVertical": 16,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "flex": 1,
+                  "rowGap": 4,
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "fontSize": 15,
+                      "fontWeight": "600",
+                    },
+                    {
+                      "color": "#1A2733",
+                    },
+                  ]
+                }
+              >
+                Help train pronunciation models
+              </Text>
+              <Text
+                style={
+                  [
+                    {
+                      "fontSize": 13,
+                      "lineHeight": 18,
+                    },
+                    {
+                      "color": "rgba(26,39,51,0.58)",
+                    },
+                  ]
+                }
+              >
+                Also allow my recordings to help train pronunciation models. Off by default.
+              </Text>
+            </View>
+            <View
+              accessibilityLabel="Allow training data use"
+              accessibilityRole="switch"
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": false,
+                  "disabled": undefined,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessibilityValue={
+                {
+                  "max": undefined,
+                  "min": undefined,
+                  "now": undefined,
+                  "text": undefined,
+                }
+              }
+              accessible={true}
+              collapsable={false}
+              focusable={true}
+              onBlur={[Function]}
+              onClick={[Function]}
+              onFocus={[Function]}
+              onResponderGrant={[Function]}
+              onResponderMove={[Function]}
+              onResponderRelease={[Function]}
+              onResponderTerminate={[Function]}
+              onResponderTerminationRequest={[Function]}
+              onStartShouldSetResponder={[Function]}
+              style={
+                [
+                  {
+                    "borderRadius": 14,
+                    "height": 28,
+                    "justifyContent": "center",
+                    "width": 46,
+                  },
+                  {
+                    "backgroundColor": "rgba(26,39,51,0.16)",
+                  },
+                ]
+              }
+            >
+              <View
+                style={
+                  [
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderRadius": 11,
+                      "height": 22,
+                      "position": "absolute",
+                      "width": 22,
+                    },
+                    {
+                      "left": 3,
+                    },
+                  ]
+                }
+              />
+            </View>
+          </View>
+        </View>
+        <View
+          style={
+            {
+              "rowGap": 12,
+            }
+          }
+        >
+          <View
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": false,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessibilityValue={
+              {
+                "max": undefined,
+                "min": undefined,
+                "now": undefined,
+                "text": undefined,
+              }
+            }
+            accessible={true}
+            collapsable={false}
+            focusable={true}
+            onBlur={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onResponderGrant={[Function]}
+            onResponderMove={[Function]}
+            onResponderRelease={[Function]}
+            onResponderTerminate={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            style={
+              [
+                {
+                  "alignItems": "center",
+                  "borderRadius": 18,
+                  "height": 56,
+                  "justifyContent": "center",
+                  "width": "100%",
+                },
+                {
+                  "backgroundColor": "#2C5E8C",
+                  "borderColor": "#2C5E8C",
+                  "borderWidth": 0,
+                  "opacity": 1,
+                },
+              ]
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "flexDirection": "row",
+                  "justifyContent": "center",
+                }
+              }
+            >
+              <Text
+                style={
+                  [
+                    {
+                      "fontSize": 17,
+                      "fontWeight": "600",
+                    },
+                    {
+                      "color": "#FFFFFF",
+                    },
+                  ]
+                }
+              >
+                Allow recording
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "marginTop": 2,
+              }
+            }
+          >
+            <View
+              accessibilityRole="button"
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": false,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessibilityValue={
+                {
+                  "max": undefined,
+                  "min": undefined,
+                  "now": undefined,
+                  "text": undefined,
+                }
+              }
+              accessible={true}
+              collapsable={false}
+              focusable={true}
+              onBlur={[Function]}
+              onClick={[Function]}
+              onFocus={[Function]}
+              onResponderGrant={[Function]}
+              onResponderMove={[Function]}
+              onResponderRelease={[Function]}
+              onResponderTerminate={[Function]}
+              onResponderTerminationRequest={[Function]}
+              onStartShouldSetResponder={[Function]}
+              style={
+                [
+                  {
+                    "alignItems": "center",
+                    "borderRadius": 18,
+                    "height": 56,
+                    "justifyContent": "center",
+                    "width": "100%",
+                  },
+                  {
+                    "backgroundColor": "transparent",
+                    "borderColor": "#2C5E8C",
+                    "borderWidth": 1.5,
+                    "opacity": 1,
+                  },
+                ]
+              }
+            >
+              <View
+                style={
+                  {
+                    "alignItems": "center",
+                    "flexDirection": "row",
+                    "justifyContent": "center",
+                  }
+                }
+              >
+                <Text
+                  style={
+                    [
+                      {
+                        "fontSize": 17,
+                        "fontWeight": "600",
+                      },
+                      {
+                        "color": "#2C5E8C",
+                      },
+                    ]
+                  }
+                >
+                  Not now
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</RCTSafeAreaView>
+`;
