@@ -248,4 +248,8 @@ it('F7: submitting the EditSheet calls services.editor.edit once with the mapped
   const call = editSpy.mock.calls[0]![0];
   expect(call.table).toBe('lemmas');
   expect(call.id).toBe(WORD_UUID);
+  // Assert mapped fields are present and correct — a broken ReviewItem→ContentEditRequest field
+  // mapping (e.g. dropping fields or mis-naming keys) would be caught here.
+  expect(call.fields).toBeDefined();
+  expect(call.fields?.target).toBe('māja2');
 });

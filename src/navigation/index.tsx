@@ -27,8 +27,8 @@ import type { ReviewItem } from '../types/reviewItem';
 import type { CardKind } from '../types/cardKind';
 import type { CardResult } from '../types/cardResult';
 import { EditorProvider, useEditor } from '../services/EditorProvider';
-import { EditSheet } from '../components/EditSheet';
-import type { EditableTable, QaStatus } from '../services/index';
+import { EditSheet, type EditSheetProps } from '../components/EditSheet';
+import type { EditableTable } from '../services/index';
 
 // Import only the one weight we use. The package's barrel (`@expo-google-fonts/spectral`) requires
 // every weight, and some of those .ttf assets aren't present in this install — which breaks the
@@ -201,13 +201,7 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
 
   // Seed the EditSheet initial values from the ReviewItem.
   // `qa_status` is not stored on ReviewItem (it's a DB provenance trail); default to 'draft'.
-  const editInitial: {
-    gloss_en?: string;
-    target?: string;
-    usage_note?: string;
-    literal_gloss?: string;
-    qa_status: QaStatus;
-  } = {
+  const editInitial: EditSheetProps['initial'] = {
     gloss_en: currentItem.gloss,
     target: currentItem.target,
     // Pass through optional fields if present on the item (additive, no scheduler impact).
