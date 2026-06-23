@@ -258,7 +258,7 @@ describe('WordSay', () => {
     // Result stage: press Continue to complete
     fireEvent.press(u.getByText('Continue')); // result -> onComplete
     expect(u.props.onComplete).toHaveBeenCalledWith(
-      expect.objectContaining({ cardKind: 'word/say', spoke: true }),
+      expect.objectContaining({ itemId: 'maja', cardKind: 'word/say', correct: true, spoke: true }),
     );
   });
 });

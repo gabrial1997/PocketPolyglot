@@ -8,14 +8,13 @@ import { useFonts } from 'expo-font';
 import type { User } from '@supabase/supabase-js';
 import { CardPreviewGallery } from '../dev/CardPreviewGallery';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
-import { ServiceProvider } from '../services/ServiceProvider';
+import { ServiceProvider, useServices } from '../services/ServiceProvider';
 import { AuthProvider, useAuth } from '../auth/AuthProvider';
 import { SignInScreen } from '../auth/SignInScreen';
 import { createSupabaseServices } from '../services/supabase';
 import { supabase } from '../services/supabaseClient';
 import { useSession } from '../session/sessionController';
 import { useReviewCardHandlers } from '../session/useReviewCardHandlers';
-import { useServices } from '../services/ServiceProvider';
 import { PlaybackProvider } from '../session/PlaybackProvider';
 import { CARD_REGISTRY } from './registry';
 import { Screen, GlideViewport } from '../components';
@@ -135,6 +134,7 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
   const { profile } = useServices();
   const [recConsent, setRecConsent] = useState<boolean>(true); // permissive default until resolved
   useEffect(() => {
+    // Deliberately fail-closed (GDPR): if consent cannot be confirmed, recording is disabled.
     void profile.getRecConsent().then(setRecConsent).catch(() => setRecConsent(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

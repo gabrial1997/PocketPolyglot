@@ -135,16 +135,15 @@ describe('PronounceScreen', () => {
     expect(u.queryByText('Recording…')).toBeNull();
   });
 
-  it('recConsent=false: native A/B row is still playable (no crash)', () => {
+  it('recConsent=false: pressing the native play affordance calls onPlayCompare("native")', () => {
+    // This test FAILS without Fix 1: the native row had no pressable wrapper when recConsent=false,
+    // so onPlayCompare was unreachable — the only path (Compare button) was disabled because
+    // `recorded` is permanently false without consent.
     const u = renderCard({}, { recConsent: false });
-    // Native row still visible — pressing it calls onPlayCompare
-    // The card renders native row via CompareRow or Row component with "Native" label
-    expect(u.getByText('Native')).toBeTruthy();
-  });
-
-  it('recConsent=false: no crash on render', () => {
-    // Just verifying the component renders without throwing
-    expect(() => renderCard({}, { recConsent: false })).not.toThrow();
+    fireEvent.press(u.getByLabelText('Play native audio'));
+    expect(u.props.onPlayCompare).toHaveBeenCalledWith('native', 1);
+    // The 'you' leg must NOT be played when there is no recording.
+    expect(u.props.onPlayCompare).not.toHaveBeenCalledWith('you');
   });
 
   it('recConsent=true (default): Record → Compare flow emits { cardKind:pron, spoke:true } and plays native then you', () => {

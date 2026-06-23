@@ -83,7 +83,20 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
         </View>
 
         <View style={styles.rows}>
-          <Row icon="speaker" label="Native" playing={playingSide === 'native'} />
+          {/* Without consent, the Record control is hidden — wrap the Native row in a Pressable so
+              the learner can still hear the model. With consent the row is not interactive here;
+              Compare drives A/B playback (native → you) as normal. */}
+          {recConsent ? (
+            <Row icon="speaker" label="Native" playing={playingSide === 'native'} />
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Play native audio"
+              onPress={() => { onPlayCompare?.('native', speed); setPlayingSide('native'); }}
+            >
+              <Row icon="speaker" label="Native" playing={playingSide === 'native'} />
+            </Pressable>
+          )}
           {recorded ? (
             <Row icon="mic" label="You" you playing={playingSide === 'you'} />
           ) : (
