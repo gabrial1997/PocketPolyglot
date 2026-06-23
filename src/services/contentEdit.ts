@@ -28,9 +28,8 @@ export function validateContentEdit(req: ContentEditRequest): {
   id: string;
   patch: Record<string, string>;
 } {
-  // 1. Table
-  const allowedTables: ReadonlyArray<EditableTable> = ['lemmas', 'phrases', 'minimal_pairs'];
-  if (!allowedTables.includes(req.table)) {
+  // 1. Table — single source of truth: EDITABLE_FIELDS_BY_TABLE
+  if (!(req.table in EDITABLE_FIELDS_BY_TABLE)) {
     throw new Error(`validateContentEdit: unknown table "${String(req.table)}"`);
   }
 
@@ -52,8 +51,8 @@ export function validateContentEdit(req: ContentEditRequest): {
   const whitelist = EDITABLE_FIELDS_BY_TABLE[req.table];
   const patch: Record<string, string> = {};
 
-  if (req.fields !== undefined) {
-    const fieldEntries = Object.entries(req.fields) as [string, string | undefined][];
+  if (req.fields != null) {
+    const fieldEntries = Object.entries(req.fields as Record<string, unknown>);
     for (const [col, val] of fieldEntries) {
       // Unknown or forbidden column
       if (!whitelist.includes(col)) {
@@ -62,6 +61,12 @@ export function validateContentEdit(req: ContentEditRequest): {
         );
       }
       if (val === undefined) continue;
+      // Reject non-string values (null, number, boolean, …) — security boundary
+      if (typeof val !== 'string') {
+        throw new Error(
+          `validateContentEdit: value for "${col}" must be a string, got ${typeof val}`,
+        );
+      }
       // NOT NULL columns reject empty strings
       if (NOT_NULL_FIELDS.has(col) && val === '') {
         throw new Error(

@@ -45,10 +45,25 @@ void _bundleEditor;
 // --- Runtime checks (Jest) ---
 
 it('EditorService, ContentEditRequest, EditableTable, QaStatus exported', () => {
-  // Runtime: verify the types are imported (above imports compile without error)
-  // and that ServiceBundle shape is assignable (the satisfies above would fail to compile otherwise).
-  // If the exports are missing, TypeScript compile step fails the test suite.
-  expect(true).toBe(true);
+  // Runtime: verify the stub (built above with typed literals) has real function members.
+  // If EditorService interface were removed, the `satisfies EditorService` on _editorStub would
+  // fail to compile, so this also acts as a compile-time guard.
+  const ed: EditorService = { isEditor: async () => false, edit: async () => {} };
+  expect(typeof ed.isEditor).toBe('function');
+  expect(typeof ed.edit).toBe('function');
+
+  // Verify ContentEditRequest accepts a well-typed value at runtime (the typed literal above
+  // proves compile-time assignability; asserting its keys proves it wasn't erased to {}).
+  const req: ContentEditRequest = {
+    table: 'lemmas',
+    id: '00000000-0000-0000-0000-000000000001',
+    fields: { gloss_en: 'hello' },
+    qa_status: 'native_ok',
+  };
+  expect(req.table).toBe('lemmas');
+  expect(req.id).toBe('00000000-0000-0000-0000-000000000001');
+  expect(req.fields).toEqual({ gloss_en: 'hello' });
+  expect(req.qa_status).toBe('native_ok');
 });
 
 it('ServiceBundle has an editor member (shape check)', () => {

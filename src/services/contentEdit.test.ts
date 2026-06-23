@@ -69,10 +69,10 @@ it('empty literal_gloss → allowed (nullable column)', () => {
 
 // --- Rejection cases ---
 
-it('unknown table → throws', () => {
+it('unknown table → throws with table error', () => {
   expect(() =>
     validateContentEdit({ table: 'unknown_table' as never, id: VALID_UUID, fields: { gloss_en: 'hi' } }),
-  ).toThrow();
+  ).toThrow(/unknown table|table/i);
 });
 
 it('minimal_pairs field edit (e.g. gloss_en) → throws (no editable fields)', () => {
@@ -82,57 +82,97 @@ it('minimal_pairs field edit (e.g. gloss_en) → throws (no editable fields)', (
       id: VALID_UUID,
       fields: { gloss_en: 'hi' },
     }),
-  ).toThrow();
+  ).toThrow(/not editable|column/i);
 });
 
-it('unknown/forbidden column on lemmas → throws', () => {
+it('unknown/forbidden column on lemmas → throws with column error', () => {
   expect(() =>
     validateContentEdit({
       table: 'lemmas',
       id: VALID_UUID,
       fields: { notes_internal: 'secret' } as never,
     }),
-  ).toThrow();
+  ).toThrow(/not editable|column/i);
 });
 
-it('bad qa_status value → throws', () => {
+it('bad qa_status value → throws with qa_status error', () => {
   expect(() =>
     validateContentEdit({ table: 'lemmas', id: VALID_UUID, qa_status: 'published' as never }),
-  ).toThrow();
+  ).toThrow(/qa_status/i);
 });
 
-it('non-uuid id → throws', () => {
+it('non-uuid id → throws with uuid error', () => {
   expect(() =>
     validateContentEdit({ table: 'lemmas', id: 'not-a-uuid', fields: { gloss_en: 'hi' } }),
-  ).toThrow();
+  ).toThrow(/uuid/i);
 });
 
-it('empty patch (no fields, no qa_status) → throws', () => {
+it('empty patch (no fields, no qa_status) → throws with empty patch error', () => {
   expect(() =>
     validateContentEdit({ table: 'lemmas', id: VALID_UUID }),
-  ).toThrow();
+  ).toThrow(/empty|no fields|qa_status/i);
 });
 
-it('empty patch (empty fields object, no qa_status) → throws', () => {
+it('empty patch (empty fields object, no qa_status) → throws with empty patch error', () => {
   expect(() =>
     validateContentEdit({ table: 'lemmas', id: VALID_UUID, fields: {} }),
-  ).toThrow();
+  ).toThrow(/empty|no fields|qa_status/i);
 });
 
 it('empty string for gloss_en on lemmas → throws (NOT NULL violation)', () => {
   expect(() =>
     validateContentEdit({ table: 'lemmas', id: VALID_UUID, fields: { gloss_en: '' } }),
-  ).toThrow();
+  ).toThrow(/cannot be empty|NOT NULL/i);
 });
 
 it('empty string for target on phrases → throws (NOT NULL violation)', () => {
   expect(() =>
     validateContentEdit({ table: 'phrases', id: VALID_UUID, fields: { target: '' } }),
-  ).toThrow();
+  ).toThrow(/cannot be empty|NOT NULL/i);
 });
 
 it('empty string for gloss_en on phrases → throws (NOT NULL violation)', () => {
   expect(() =>
     validateContentEdit({ table: 'phrases', id: VALID_UUID, fields: { gloss_en: '' } }),
-  ).toThrow();
+  ).toThrow(/cannot be empty|NOT NULL/i);
+});
+
+// --- Fix 1: fields:null behaviour ---
+
+it('fields:null with qa_status → valid (qa_status-only edit, no crash)', () => {
+  const result = validateContentEdit({
+    table: 'lemmas',
+    id: VALID_UUID,
+    fields: null as never,
+    qa_status: 'draft',
+  });
+  expect(result.patch).toEqual({ qa_status: 'draft' });
+});
+
+it('fields:null with no qa_status → throws empty patch error (not TypeError)', () => {
+  expect(() =>
+    validateContentEdit({ table: 'lemmas', id: VALID_UUID, fields: null as never }),
+  ).toThrow(/empty|no fields|qa_status/i);
+});
+
+// --- Fix 2: non-string field values ---
+
+it('fields gloss_en:null → throws non-string value error', () => {
+  expect(() =>
+    validateContentEdit({
+      table: 'lemmas',
+      id: VALID_UUID,
+      fields: { gloss_en: null as never },
+    }),
+  ).toThrow(/must be a string|non-string|object/i);
+});
+
+it('fields gloss_en:123 → throws non-string value error', () => {
+  expect(() =>
+    validateContentEdit({
+      table: 'lemmas',
+      id: VALID_UUID,
+      fields: { gloss_en: 123 as never },
+    }),
+  ).toThrow(/must be a string|non-string|number/i);
 });
