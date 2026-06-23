@@ -69,6 +69,7 @@ function makeServices(profile: ProfileService): ServiceBundle {
     progress: new StubProgressService(),
     podcast: new StubPodcastService(),
     profile,
+    editor: { isEditor: async () => false, edit: async () => {} },
   };
 }
 

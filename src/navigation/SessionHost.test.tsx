@@ -67,6 +67,7 @@ function fakeServices(batch: ReviewItem[]): ServiceBundle {
     progress: { getCoverage: async () => ({ known: 0, total: 1000 }) },
     podcast: { getEpisode: async () => ({ title: 'x', transcript: '', audioUrl: 'x' }) },
     profile: { getRecConsent: async () => false, setRecConsent: async () => {}, deleteRecordings: async () => {}, getProfile: async () => null, ensureProfile: async () => {}, setSeenDiacritics: async () => {}, setConsent: async () => {} },
+    editor: { isEditor: async () => false, edit: async () => {} },
   };
 }
 

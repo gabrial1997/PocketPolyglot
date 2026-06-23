@@ -1,7 +1,7 @@
 // Pure shared content-edit validation module.
 // Importable from both React Native (client) and Deno (Edge Function).
 // No I/O, no RN/Node-only imports.
-import type { EditableTable, QaStatus, ContentEditRequest } from './index';
+import type { EditableTable, ContentEditRequest } from './index';
 
 export const EDITABLE_FIELDS_BY_TABLE: Record<EditableTable, readonly string[]> = {
   lemmas:        ['gloss_en', 'target', 'usage_note', 'literal_gloss'],
