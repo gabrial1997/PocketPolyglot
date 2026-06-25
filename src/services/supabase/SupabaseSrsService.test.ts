@@ -284,6 +284,41 @@ describe('SupabaseSrsService.getDueBatch ordering', () => {
   });
 });
 
+describe('SupabaseSrsService.getDueBatch — MC distractors', () => {
+  it('builds choices from get_distractors: correct answer + all distractors, order-independent', async () => {
+    const tables: Record<string, Row[]> = {
+      review_state: [{ ...stateRow('lemma', 'w-a', 0), stage: 'review' }] as unknown as Row[],
+      lemmas: [contentRow('w-a', { envelope: [0.5], native_url: 'w-a.mp3' })],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+    // get_distractors returns 3 closest-sounding decoys.
+    const distractors = [
+      { id: 'd1', lemma: 'kabata', gloss_en: 'pocket' },
+      { id: 'd2', lemma: 'kazas', gloss_en: 'wedding' },
+      { id: 'd3', lemma: 'kakls', gloss_en: 'neck' },
+    ];
+    const svc = new SupabaseSrsService(
+      fakeClient(tables, { get_distractors: distractors }, new Date(1_900_000_000_000 + 1_000_000_000)),
+      'u1',
+    );
+
+    const batch = await svc.getDueBatch();
+    const item = batch.find((i) => i.id === 'w-a');
+    expect(item?.choices).toBeDefined();
+    const choices = item!.choices!;
+    // 1 correct + 3 distractors, set-equality (order is shuffled, so don't assert positions).
+    expect(choices).toHaveLength(4);
+    expect(choices.filter((c) => c.correct)).toHaveLength(1);
+    expect(choices.find((c) => c.correct)!.value).toBe('w-a');
+    expect(new Set(choices.map((c) => c.value))).toEqual(new Set(['w-a', 'kabata', 'kazas', 'kakls']));
+  });
+});
+
 // ---------------------------------------------------------------------------
 // B2: New tests for the rewritten getDueBatch that sources candidates from
 //     content tables (no review_state row needed to surface new items).

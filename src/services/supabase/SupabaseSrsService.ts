@@ -572,7 +572,7 @@ export class SupabaseSrsService implements SrsService {
             target: row.id,
             n: 3,
           });
-          item.choices = [
+          const choices = [
             { value: item.target, gloss: item.gloss, correct: true },
             ...((distractors ?? []) as LemmaRow[]).map((d) => ({
               value: d.lemma,
@@ -580,6 +580,16 @@ export class SupabaseSrsService implements SrsService {
               correct: false,
             })),
           ];
+          // Shuffle so the correct answer isn't always the first option (Fisher–Yates). Done once
+          // per fetch; the card renders this fixed order (positions stay stable across wrong-pick
+          // re-renders). With 0 distractors this is a harmless no-op on a single-element array.
+          for (let i = choices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = choices[i]!;
+            choices[i] = choices[j]!;
+            choices[j] = tmp;
+          }
+          item.choices = choices;
         } catch {
           // Leave choices undefined; cards degrade gracefully.
         }
