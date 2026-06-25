@@ -31,8 +31,10 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
     let uri: string | undefined;
     try {
       uri = await captureScreen({ format: 'png', quality: 0.8 });
-    } catch {
+    } catch (e) {
       uri = undefined; // best-effort; text-only still works
+      // eslint-disable-next-line no-console
+      console.warn('[bug-report] screenshot capture failed', e);
     }
     setShotUri(uri);
     setError(null);
