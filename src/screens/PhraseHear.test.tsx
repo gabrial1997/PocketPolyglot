@@ -91,4 +91,11 @@ describe('PhraseHear', () => {
     const u = renderCard();
     expect(u.queryByText(/Literally:/)).toBeNull();
   });
+
+  it('renders with no audio and the mount auto-play does not throw', () => {
+    expect(() => renderCard({ audio: undefined })).not.toThrow();
+    const u = renderCard({ audio: undefined });
+    // The written phrase still renders (exposure card needs no audio).
+    expect(u.getByText(u.props.item?.target ?? 'labrīt')).toBeTruthy();
+  });
 });
