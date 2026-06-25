@@ -10,6 +10,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, ChoiceButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, TryAgainNote, type Speed } from '../components';
 import { Eyebrow, Caption, CardBody } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
+import { fonts } from '../theme/tokens';
 import { shouldShowGloss } from './glossVisibility';
 import type { ChoiceCardProps } from './cardProps';
 
@@ -66,6 +67,7 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
     <Screen>
       <CardBody>
         <Eyebrow>Listen — which meaning?</Eyebrow>
+        <Text style={[styles.headword, { color: T.ink }]}>{item.target}</Text>
         <View style={styles.wave}>
           <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={48} count={42} />
         </View>
@@ -100,6 +102,7 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
 }
 
 const styles = StyleSheet.create({
+  headword: { fontFamily: fonts.headline, fontSize: 30, fontWeight: '600', textAlign: 'center', marginTop: 6 },
   wave: { width: '78%', marginTop: 4 },
   choices: { width: '100%', rowGap: 10, marginTop: 10 },
   revealBtn: { paddingVertical: 11, paddingHorizontal: 28, borderRadius: 99, borderWidth: 1.5, alignSelf: 'center', marginTop: 10 },

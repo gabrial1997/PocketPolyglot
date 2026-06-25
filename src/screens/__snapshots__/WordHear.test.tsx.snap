@@ -57,6 +57,24 @@ exports[`WordHear renders the initial recognition stage from item data (snapshot
       >
         LISTEN — WHICH MEANING?
       </Text>
+      <Text
+        style={
+          [
+            {
+              "fontFamily": "Spectral_500Medium",
+              "fontSize": 30,
+              "fontWeight": "600",
+              "marginTop": 6,
+              "textAlign": "center",
+            },
+            {
+              "color": "#1A2733",
+            },
+          ]
+        }
+      >
+        māja
+      </Text>
       <View
         style={
           {

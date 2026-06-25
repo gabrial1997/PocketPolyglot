@@ -242,4 +242,18 @@ describe('WordHear', () => {
       jest.useRealTimers();
     }
   });
+
+  it('shows the written target word (so it is answerable without audio)', () => {
+    const u = renderCard();
+    expect(u.getByText(u.props.item?.target ?? 'kabinets')).toBeTruthy();
+  });
+
+  it('renders without item.audio and tapping the orb does not throw', () => {
+    const u = renderCard({ audio: undefined, target: 'kabinets' });
+    // The written word + choices still render.
+    expect(u.getByText('kabinets')).toBeTruthy();
+    // Orb is present and tappable; with no audio it must not crash.
+    const orb = u.getByLabelText(/play|listen/i);
+    expect(() => fireEvent.press(orb)).not.toThrow();
+  });
 });
