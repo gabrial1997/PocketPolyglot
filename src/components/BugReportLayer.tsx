@@ -4,6 +4,7 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
 import {
   View, Text, Pressable, TextInput, StyleSheet, Platform, ActivityIndicator, SafeAreaView,
+  KeyboardAvoidingView, Keyboard,
 } from 'react-native';
 import Constants from 'expo-constants';
 import { captureScreen } from 'react-native-view-shot';
@@ -82,9 +83,23 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
           </Pressable>
         ) : null}
         {open ? (
-          <SafeAreaView style={styles.sheetWrap}>
-            <View style={[styles.sheet, { backgroundColor: T.bg, borderColor: T.hair }]}>
-              <Text style={[styles.title, { color: T.ink }]}>Report a bug</Text>
+          <View style={styles.overlay}>
+            {/* Backdrop: a tap anywhere outside the sheet drops the keyboard so it never
+                gets stuck covering the input (the multiline field has no return-to-dismiss). */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss keyboard"
+              style={styles.backdrop}
+              onPress={Keyboard.dismiss}
+            />
+            <KeyboardAvoidingView
+              style={styles.kav}
+              pointerEvents="box-none"
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
+              <SafeAreaView style={styles.sheetWrap}>
+                <View style={[styles.sheet, { backgroundColor: T.bg, borderColor: T.hair }]}>
+                  <Text style={[styles.title, { color: T.ink }]}>Report a bug</Text>
               {shotUri ? (
                 <Text style={[styles.meta, { color: T.faint }]}>Screenshot attached</Text>
               ) : (
@@ -112,8 +127,10 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
                   {busy ? <ActivityIndicator color={T.onPrimary} /> : <Text style={[styles.sendText, { color: T.onPrimary }]}>Send report</Text>}
                 </Pressable>
               </View>
-            </View>
-          </SafeAreaView>
+                </View>
+              </SafeAreaView>
+            </KeyboardAvoidingView>
+          </View>
         ) : null}
       </View>
     </SetScreenContext.Provider>
@@ -127,7 +144,13 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', opacity: 0.6,
   },
   fabGlyph: { fontSize: 20 },
-  sheetWrap: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  // Full-screen overlay holding a tap-to-dismiss backdrop + the keyboard-avoiding sheet.
+  overlay: { ...StyleSheet.absoluteFillObject },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.25)' },
+  // KAV fills the overlay and bottom-aligns the sheet; box-none lets taps above the sheet
+  // fall through to the backdrop. behavior:'padding' (iOS) floats the sheet above the keyboard.
+  kav: { flex: 1, justifyContent: 'flex-end' },
+  sheetWrap: { left: 0, right: 0, bottom: 0 },
   sheet: { margin: 12, padding: 16, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth },
   title: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
   meta: { fontSize: 12, marginBottom: 8 },

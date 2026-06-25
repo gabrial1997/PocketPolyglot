@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Text } from 'react-native';
+import { Text, Keyboard } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { createStubServices } from '../services/stubs';
@@ -55,6 +55,17 @@ describe('BugReportLayer', () => {
     await waitFor(() => expect(submit).toHaveBeenCalled());
     // Text preserved after failure.
     expect(getByPlaceholderText('What went wrong?').props.value).toBe('keep me');
+  });
+
+  it('tapping the backdrop dismisses the keyboard (so it never gets stuck over the input)', async () => {
+    const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation(() => {});
+    const submit = jest.fn().mockResolvedValue(undefined);
+    const { getByLabelText, getByPlaceholderText } = renderLayer(submit);
+    fireEvent.press(getByLabelText('Report a bug'));
+    await waitFor(() => getByPlaceholderText('What went wrong?'));
+    fireEvent.press(getByLabelText('Dismiss keyboard'));
+    expect(dismiss).toHaveBeenCalledTimes(1);
+    dismiss.mockRestore();
   });
 
   it('useSetReportScreen tags the screen passed to submit', async () => {
