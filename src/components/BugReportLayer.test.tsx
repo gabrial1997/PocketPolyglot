@@ -8,7 +8,7 @@ import { ThemeProvider } from '../theme/ThemeProvider';
 import { BugReportLayer, useSetReportScreen } from './BugReportLayer';
 
 jest.mock('react-native-view-shot', () => ({
-  captureRef: jest.fn().mockResolvedValue('file:///shot.png'),
+  captureRef: jest.fn().mockResolvedValue('QkFTRTY0UE5H'), // base64 PNG bytes (result:'base64')
 }));
 
 function renderLayer(submit: (i: BugReportInput) => Promise<void>, child?: React.ReactNode) {
@@ -40,7 +40,7 @@ describe('BugReportLayer', () => {
     await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
     const arg = submit.mock.calls[0][0] as BugReportInput;
     expect(arg.description).toBe('the orb is stuck');
-    expect(arg.screenshotUri).toBe('file:///shot.png');
+    expect(arg.screenshotBase64).toBe('QkFTRTY0UE5H');
     expect(typeof arg.appVersion).toBe('string');
     expect(typeof arg.platform).toBe('string');
   });

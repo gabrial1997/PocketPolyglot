@@ -22,7 +22,7 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
   const { bugReport } = useServices();
   const [screen, setScreen] = useState('app');
   const [open, setOpen] = useState(false);
-  const [shotUri, setShotUri] = useState<string | undefined>(undefined);
+  const [shotB64, setShotB64] = useState<string | undefined>(undefined);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,15 +31,16 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
   const contentRef = useRef<View>(null);
 
   const openSheet = useCallback(async () => {
-    let uri: string | undefined;
+    let b64: string | undefined;
     try {
-      uri = await captureRef(contentRef, { format: 'png', quality: 0.8 });
+      // result:'base64' returns the PNG bytes directly — no file uri, no fetch(file://).blob().
+      b64 = await captureRef(contentRef, { format: 'png', quality: 0.8, result: 'base64' });
     } catch (e) {
-      uri = undefined; // best-effort; text-only still works
+      b64 = undefined; // best-effort; text-only still works
       // eslint-disable-next-line no-console
       console.warn('[bug-report] screenshot capture failed', e);
     }
-    setShotUri(uri);
+    setShotB64(b64);
     setError(null);
     setOpen(true);
   }, []);
@@ -47,7 +48,7 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
   const close = useCallback(() => {
     setOpen(false);
     setText('');
-    setShotUri(undefined);
+    setShotB64(undefined);
     setError(null);
   }, []);
 
@@ -59,7 +60,7 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
       await bugReport.submit({
         description: text.trim(),
         screen,
-        screenshotUri: shotUri,
+        screenshotBase64: shotB64,
         appVersion: Constants.expoConfig?.version ?? 'dev',
         platform: Platform.OS,
         osVersion: String(Platform.Version),
@@ -71,7 +72,7 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
       setBusy(false);
       setError('Could not send — try again.');
     }
-  }, [text, busy, bugReport, screen, shotUri, close]);
+  }, [text, busy, bugReport, screen, shotB64, close]);
 
   return (
     <SetScreenContext.Provider value={setScreen}>
@@ -109,7 +110,7 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
               <SafeAreaView style={styles.sheetWrap}>
                 <View style={[styles.sheet, { backgroundColor: T.bg, borderColor: T.hair }]}>
                   <Text style={[styles.title, { color: T.ink }]}>Report a bug</Text>
-              {shotUri ? (
+              {shotB64 ? (
                 <Text style={[styles.meta, { color: T.faint }]}>Screenshot attached</Text>
               ) : (
                 <Text style={[styles.meta, { color: T.faint }]}>No screenshot (capture failed)</Text>

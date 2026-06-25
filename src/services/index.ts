@@ -80,8 +80,8 @@ export interface BugReportInput {
   appVersion?: string;
   platform?: string;
   osVersion?: string;
-  /** Local file uri of the captured screenshot; uploaded best-effort (optional). */
-  screenshotUri?: string;
+  /** Base64 PNG of the captured screen; decoded + uploaded best-effort (optional). */
+  screenshotBase64?: string;
   /** Arbitrary extra diagnostics (jsonb). */
   extra?: Record<string, unknown>;
 }
