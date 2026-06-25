@@ -8,6 +8,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useServices } from '../services/ServiceProvider';
 import { useTheme } from '../theme/ThemeProvider';
 import { DiacriticOrientationScreen } from '../screens/DiacriticOrientationScreen';
+import { useSetReportScreen } from '../components/BugReportLayer';
 
 export interface OnboardingGateProps {
   children: React.ReactNode;
@@ -26,6 +27,8 @@ export function OnboardingGate({ children }: OnboardingGateProps): React.JSX.Ele
   const { profile } = useServices();
   const T = useTheme();
   const [state, setState] = useState<GateState>('loading');
+  const setReportScreen = useSetReportScreen();
+  useEffect(() => { setReportScreen('onboarding'); }, [setReportScreen]);
 
   useEffect(() => {
     let cancelled = false;

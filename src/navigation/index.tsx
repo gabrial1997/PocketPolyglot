@@ -29,6 +29,7 @@ import type { CardResult } from '../types/cardResult';
 import { EditorProvider, useEditor } from '../services/EditorProvider';
 import { EditSheet, type EditSheetProps } from '../components/EditSheet';
 import type { EditableTable } from '../services/index';
+import { BugReportLayer, useSetReportScreen } from '../components/BugReportLayer';
 
 // Import only the one weight we use. The package's barrel (`@expo-google-fonts/spectral`) requires
 // every weight, and some of those .ttf assets aren't present in this install — which breaks the
@@ -294,6 +295,8 @@ function Root(): React.JSX.Element {
   const [route, setRoute] = useState<Route>('home');
   const { user } = useAuth();
   const name = displayName(user);
+  const setReportScreen = useSetReportScreen();
+  useEffect(() => { setReportScreen(route); }, [route, setReportScreen]);
 
   if (route === 'session') {
     // Session is a focused flow with no tab bar; exit returns to home. PlaybackProvider (inside
@@ -344,9 +347,11 @@ function AuthGate(): React.JSX.Element {
     <ServiceProvider services={services}>
       {/* EditorProvider resolves the founder flag once; useEditor() is safe anywhere below. */}
       <EditorProvider>
-        <OnboardingGate>
-          <Root />
-        </OnboardingGate>
+        <BugReportLayer>
+          <OnboardingGate>
+            <Root />
+          </OnboardingGate>
+        </BugReportLayer>
       </EditorProvider>
     </ServiceProvider>
   );
