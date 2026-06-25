@@ -106,4 +106,9 @@ export interface ReviewItem {
   receptiveReps: number;
   productiveReps: number;
   translationVisibility: 'auto' | 'hint' | 'on-demand';
+
+  // In-session learning steps: a `retest` copy of a just-introduced new word. renderFor routes
+  // retest words to the recognition quiz (word/hear) instead of the intro card. Derived/in-memory
+  // only — never persisted.
+  retest?: boolean;
 }

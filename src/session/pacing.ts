@@ -24,3 +24,6 @@ export const I_PLUS_ONE_UNKNOWN_TOLERANCE = 1 as const;
 
 /** Min graded-mature reviews before rolling retention is defined (fewer → no throttle). */
 export const RETENTION_MINIMUM_SAMPLE = 10 as const;
+
+/** Learning steps: introduce this many new words, then immediately quiz those same words. */
+export const LEARNING_STEP_GROUP_SIZE = 3 as const;
