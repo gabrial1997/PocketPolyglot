@@ -1,7 +1,7 @@
 // Beta tooling overlay: a floating "report a bug" button on every authenticated screen.
 // Captures the current screen, collects context, and submits via the injected BugReportService.
 // NOT a card — it is shell-level UI and may read useServices().
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 import {
   View, Text, Pressable, TextInput, StyleSheet, Platform, ActivityIndicator, SafeAreaView,
 } from 'react-native';
@@ -67,10 +67,8 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
     }
   }, [text, busy, bugReport, screen, shotUri, close]);
 
-  const ctx = useMemo(() => setScreen, []);
-
   return (
-    <SetScreenContext.Provider value={ctx}>
+    <SetScreenContext.Provider value={setScreen}>
       <View style={styles.fill}>
         {children}
         {!open ? (
@@ -111,7 +109,7 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
                   disabled={!text.trim() || busy}
                   style={[styles.btn, styles.send, { backgroundColor: T.primary, opacity: !text.trim() || busy ? 0.5 : 1 }]}
                 >
-                  {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendText}>Send report</Text>}
+                  {busy ? <ActivityIndicator color={T.onPrimary} /> : <Text style={[styles.sendText, { color: T.onPrimary }]}>Send report</Text>}
                 </Pressable>
               </View>
             </View>
@@ -134,9 +132,9 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
   meta: { fontSize: 12, marginBottom: 8 },
   input: { minHeight: 80, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, padding: 10, textAlignVertical: 'top' },
-  error: { color: '#C0392B', marginTop: 8 },
+  error: { color: '#C0392B', marginTop: 8 }, // intentional hardcoded error/danger color (no theme token)
   row: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 12 },
   btn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10 },
   send: {},
-  sendText: { color: '#fff', fontWeight: '700' },
+  sendText: { fontWeight: '700' },
 });
