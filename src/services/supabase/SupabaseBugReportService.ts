@@ -3,6 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { decode as decodeBase64 } from 'base64-arraybuffer';
 import type { BugReportInput, BugReportService } from '../index';
+import { randomUuid } from '../uuid';
 
 export class SupabaseBugReportService implements BugReportService {
   constructor(
@@ -17,7 +18,7 @@ export class SupabaseBugReportService implements BugReportService {
       // Best-effort: a failed screenshot must NOT block the text report. We upload decoded bytes
       // (not a fetch(file://).blob(), which is unreliable in React Native).
       try {
-        const id = crypto.randomUUID();
+        const id = randomUuid();
         const path = `${this.userId}/${id}.png`;
         const bytes = decodeBase64(input.screenshotBase64); // ArrayBuffer
         const { error } = await this.client.storage

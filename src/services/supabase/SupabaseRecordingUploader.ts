@@ -6,6 +6,7 @@
 //  - Inserts EXACTLY { id, user_id, storage_path, duration_ms, consent_at } into `recordings`.
 //  - Returns the new recording_id on success; returns null on any error (never throws into submit).
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { randomUuid } from '../uuid';
 
 export interface RecordingUploader {
   /**
@@ -37,7 +38,7 @@ export class SupabaseRecordingUploader implements RecordingUploader {
     // so the session always advances — never throws into submit().
     try {
       // Generate a stable id + storage path.
-      const id: string = crypto.randomUUID();
+      const id: string = randomUuid();
       const storage_path = `${this.userId}/${id}.m4a`;
 
       // Resolve bytes: string URI → fetch; Blob → use directly.
