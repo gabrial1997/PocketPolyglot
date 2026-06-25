@@ -215,13 +215,15 @@ it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', as
   // These retests have the same item.id as the originals — submit through them so P1 can surface.
   // The retest items share ids with the originals; requeuePhraseAfterComponents places P1 after the
   // last retest copy (since it also matches by id), so P1 appears after all 3 retests.
+  // NOTE: must submit with correct:true — the correctness gate means only a correctly-answered
+  // recall card adds the word to the in-session learned overlay (word/hear emits correct:!missed).
   for (const w of ['labdien', 'es', 'esmu']) {
     await settleHook(() => {
       expect(result.current.current?.item.id).toBe(w);
       expect(result.current.current?.item.retest).toBe(true);
     });
     await act(async () => {
-      await result.current.submit({ itemId: w, cardKind: 'word/hear', spoke: false });
+      await result.current.submit({ itemId: w, cardKind: 'word/hear', correct: true, spoke: false });
     });
   }
 
@@ -252,6 +254,49 @@ it('interleaves new-word intros with in-session retest quizzes', async () => {
   const { result } = renderSessionHook(newWords, new Set());
   // 4 new words -> expandLearningSteps -> group of 3 intros + 3 retests, then 1 intro + 1 retest = 8.
   await settleHook(() => expect(result.current.total).toBe(8));
+});
+
+// --- correctness gate on the in-session known overlay ---
+// A WRONG answer on a component word must NOT add it to `learned` (phrase stays locked).
+// A CORRECT answer must add it (phrase may unlock).
+// Use stage:'review' words so expandLearningSteps leaves them unexpanded.
+it('a WRONG answer on a component word does NOT unlock its phrase (correctness-gated)', async () => {
+  const wordA: ReviewItem = {
+    id: 'a', type: 'word', stage: 'review', reps: 1, target: 'a', gloss: 'a',
+    wordClass: 'concrete', receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto',
+  };
+  const phraseP: ReviewItem = {
+    id: 'p', type: 'phrase', stage: 'new', reps: 0, target: 'p', gloss: 'p',
+    componentLemmaIds: ['a'], receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
+  };
+  const { result } = renderSessionHook([wordA, phraseP], new Set());
+  await settleHook(() => expect(result.current.loading).toBe(false));
+  // wordA loads first — submit it WRONG.
+  await settleHook(() => expect(result.current.current?.item.id).toBe('a'));
+  await act(async () => {
+    await result.current.submit({ itemId: 'a', cardKind: 'word/hear', correct: false, spoke: false });
+  });
+  // 'a' was answered wrong → still not in learned overlay → phrase stays locked.
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
+});
+
+it('a CORRECT answer on a component word lets its phrase unlock', async () => {
+  const wordA: ReviewItem = {
+    id: 'a', type: 'word', stage: 'review', reps: 1, target: 'a', gloss: 'a',
+    wordClass: 'concrete', receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto',
+  };
+  const phraseP: ReviewItem = {
+    id: 'p', type: 'phrase', stage: 'new', reps: 0, target: 'p', gloss: 'p',
+    componentLemmaIds: ['a'], receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
+  };
+  const { result } = renderSessionHook([wordA, phraseP], new Set());
+  await settleHook(() => expect(result.current.loading).toBe(false));
+  await settleHook(() => expect(result.current.current?.item.id).toBe('a'));
+  // Submit wordA CORRECT → 'a' enters learned overlay → phrase is no longer locked.
+  await act(async () => {
+    await result.current.submit({ itemId: 'a', cardKind: 'word/hear', correct: true, spoke: false });
+  });
+  await settleHook(() => expect(result.current.current?.kind).not.toBe('phrase/locked'));
 });
 
 it('phrase/locked enriches the item with the live "N words to go — learn X" hint', async () => {

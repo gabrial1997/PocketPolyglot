@@ -96,8 +96,10 @@ export function useSession(): SessionState {
 
   const submit = useCallback(
     async (result: CardResult) => {
-      // A learned word immediately changes lock state for later phrases (optimistic overlay).
-      if (item && item.type === 'word') learned.current.add(item.id);
+      // Only a word answered CORRECTLY counts toward unlocking phrases — the intro/learn cards emit
+      // no `correct` (exposure ≠ learned); recall cards emit correct:!missed. Exposure alone must
+      // not unlock.
+      if (item && item.type === 'word' && result.correct === true) learned.current.add(item.id);
       // Advance the deck IMMEDIATELY, before awaiting the network. A slow or failing srs.submit must
       // never strand the learner on a card whose Continue has already fired and now does nothing
       // (bug 4 — the dead-CTA hang). Post in the background and reconcile the review label when it
