@@ -78,12 +78,16 @@ describe('ExpoRecorderService.start()', () => {
     expect(mockSetAudioMode).toHaveBeenCalledWith({ allowsRecording: true, playsInSilentMode: true });
   });
 
-  it('only calls setAudioModeAsync once across multiple takes', async () => {
+  it('re-applies record mode on each take (guard resets on stop so the next take routes correctly)', async () => {
     const svc = new ExpoRecorderService();
     await svc.start();
     await svc.stop();
     await svc.start();
-    expect(mockSetAudioMode).toHaveBeenCalledTimes(1);
+    // record mode set on take 1 and take 2 (the stop() in between reset the guard)
+    expect(mockSetAudioMode).toHaveBeenCalledWith({ allowsRecording: true, playsInSilentMode: true });
+    expect(
+      mockSetAudioMode.mock.calls.filter((c) => c[0]?.allowsRecording === true).length,
+    ).toBe(2);
   });
 
   it('creates a fresh AudioRecorder and calls prepareToRecordAsync then record()', async () => {
@@ -138,5 +142,22 @@ describe('ExpoRecorderService.stop()', () => {
     await svc.start();
     await expect(svc.stop()).rejects.toThrow(/uri/i);
     expect(svc.isRecording()).toBe(false);
+  });
+
+  it('restores playback audio mode (allowsRecording:false) on stop() so later playback is not quiet', async () => {
+    const svc = new ExpoRecorderService();
+    await svc.start();
+    mockSetAudioMode.mockClear();
+    await svc.stop();
+    expect(mockSetAudioMode).toHaveBeenCalledWith({ allowsRecording: false, playsInSilentMode: true });
+  });
+
+  it('restores playback audio mode even when the recording uri is null', async () => {
+    MockAudioRecorder.mockImplementationOnce(() => makeFakeRecorder(null));
+    const svc = new ExpoRecorderService();
+    await svc.start();
+    mockSetAudioMode.mockClear();
+    await expect(svc.stop()).rejects.toThrow(/uri/i);
+    expect(mockSetAudioMode).toHaveBeenCalledWith({ allowsRecording: false, playsInSilentMode: true });
   });
 });

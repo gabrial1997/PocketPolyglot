@@ -57,6 +57,13 @@ export class ExpoRecorderService implements RecorderService {
 
     await recorder.stop();
 
+    // Restore playback routing. iOS leaves the session in playAndRecord (earpiece / ducked output)
+    // after recording, which makes every subsequent clip quiet for the rest of the session. Reset
+    // BEFORE the uri check so the session is always cleaned up, even on an interrupted/null take.
+    // Clear the guard so the next start() re-applies record mode (allowsRecording:true).
+    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+    this.recordModeReady = false;
+
     const uri = recorder.uri;
     if (uri === null) {
       throw new Error('Recording uri is null — the recording was interrupted or produced no output.');
