@@ -44,8 +44,9 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
 
   // Phrase reviews. (locked/unlock handled by the controller, not here.)
   if (item.type === 'phrase') {
-    // B3 guard: audio-less phrases must not reach phrase/hear or phrase/sayit.
-    if (!hasAudio) return 'phrase/meaning';
+    // Audio-less phrases use the exposure card (written phrase + silent orb). phrase/meaning is NOT
+    // used — it renders from item.choices, which phrases don't have. (Restoring it = separate task.)
+    if (!hasAudio) return 'phrase/hear';
     if (item.stage === 'new') return 'phrase/hear'; // first exposure
     // idiom (literal != actual) → meaning check always.
     if (item.isIdiom) return 'phrase/meaning';

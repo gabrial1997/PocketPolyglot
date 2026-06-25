@@ -391,7 +391,9 @@ describe('selectBatch', () => {
   // 10. Audio gate
   // -------------------------------------------------------------------------
   describe('audio gate', () => {
-    it('does NOT admit an audio-less phrase', () => {
+    it('DOES admit an audio-less phrase whose anchor is recalled and components are known', () => {
+      // Phrase audio gate removed: audio-less phrases are now admitted so they can flow
+      // through the loop via phrase/hear (exposure card — audio-optional).
       const ctx = baseCtx({
         accountAgeDays: 1,
         introducedToday: 0,
@@ -407,7 +409,26 @@ describe('selectBatch', () => {
 
       const result = selectBatch({ due: [], candidates: [audiolessPhrase], ctx });
 
-      expect(result.admittedNew).toHaveLength(0);
+      expect(result.admittedNew).toHaveLength(1);
+      expect(result.admittedNew[0]?.id).toBe('p1');
+    });
+
+    it('admits an audio-less phrase whose anchor is recalled and components are known', () => {
+      // Mirror of the "admits a phrase" i+1 test but with hasAudioEnvelope:false.
+      const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
+      const recalledLemmaIds = new Set(['anchor1']);
+      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+
+      const audiolessPhrase = makePhrase('p1', 1, {
+        hasAudioEnvelope: false,
+        componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // only C unknown (≤ tolerance)
+        anchorLemmaId: 'anchor1',
+      });
+
+      const result = selectBatch({ due: [], candidates: [audiolessPhrase], ctx });
+
+      expect(result.admittedNew).toHaveLength(1);
+      expect(result.admittedNew[0]?.id).toBe('p1');
     });
 
     it('DOES admit an audio-less word', () => {

@@ -185,13 +185,6 @@ export function selectBatch(input: {
     if (admittedNonPairCount >= newAllowance) break;
 
     // ------------------------------------------------------------------
-    // Gate (a): Audio gate (phrases only — words always eligible)
-    // ------------------------------------------------------------------
-    if (candidate.kind === 'phrase' && !candidate.hasAudioEnvelope) {
-      continue;
-    }
-
-    // ------------------------------------------------------------------
     // Gate (b): i+1 phrase gate (phrases only)
     // ------------------------------------------------------------------
     if (candidate.kind === 'phrase') {

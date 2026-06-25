@@ -137,21 +137,27 @@ describe('renderFor', () => {
     });
   });
 
-  describe('audio-less phrase routing (B3 guard)', () => {
-    it('audio-less new phrase -> phrase/meaning (never phrase/hear)', () => {
+  describe('audio-less phrase routing (exposure card, not phrase/meaning)', () => {
+    it('audio-less new phrase -> phrase/hear (exposure card; phrase/meaning is out of scope for phrases)', () => {
       const result = renderFor(noAudioItem({ type: 'phrase', stage: 'new' }));
-      expect(result).toBe('phrase/meaning');
-      expect(result).not.toBe('phrase/hear');
+      expect(result).toBe('phrase/hear');
+      expect(result).not.toBe('phrase/meaning');
     });
-    it('audio-less non-idiom phrase -> phrase/meaning (never phrase/sayit)', () => {
+    it('audio-less non-idiom phrase -> phrase/hear (never phrase/sayit)', () => {
       const result = renderFor(noAudioItem({ type: 'phrase', stage: 'review', reps: 1 }));
-      expect(result).toBe('phrase/meaning');
+      expect(result).toBe('phrase/hear');
       expect(result).not.toBe('phrase/sayit');
+      expect(result).not.toBe('phrase/meaning');
     });
-    it('audio-less mature phrase -> phrase/meaning (never phrase/hear or phrase/sayit)', () => {
+    it('audio-less mature phrase -> phrase/hear (never phrase/sayit or phrase/meaning)', () => {
       const result = renderFor(noAudioItem({ type: 'phrase', stage: 'mature', reps: 5 }));
-      expect(result).toBe('phrase/meaning');
-      expect(result).not.toMatch(/phrase\/hear|phrase\/sayit/);
+      expect(result).toBe('phrase/hear');
+      expect(result).not.toMatch(/phrase\/sayit|phrase\/meaning/);
+    });
+    it('an audio-less phrase routes to phrase/hear (not the choice-less phrase/meaning)', () => {
+      const item = { id: 'p', type: 'phrase' as const, stage: 'new' as const, reps: 0, target: 'labrīt', gloss: 'good morning',
+        receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' as const };
+      expect(renderFor(item)).toBe('phrase/hear');
     });
   });
 
