@@ -75,35 +75,36 @@ describe('renderFor', () => {
     });
   });
 
-  describe('audio-less word routing (B3 guard)', () => {
+  describe('audio-less word routing (recognition quiz is audio-optional)', () => {
     it('audio-less word with image -> word/pic-review (visual fallback)', () => {
       expect(
         renderFor(noAudioItem({ stage: 'review', media: { imageUrl: 'house.png' } })),
       ).toBe('word/pic-review');
     });
-    it('audio-less word without image, concrete class -> word/learn-concrete (introduce-only)', () => {
+    it('audio-less word without image, concrete class -> word/hear (quizzable; play button silent)', () => {
       const result = renderFor(noAudioItem({ stage: 'review', wordClass: 'concrete' }));
-      expect(result).toBe('word/learn-concrete');
-      expect(result).not.toMatch(/word\/hear|word\/say/);
+      expect(result).toBe('word/hear');
+      expect(result).not.toBe('word/say');
     });
-    it('audio-less word without image, abstract class -> word/learn-abstract', () => {
+    it('audio-less word without image, abstract class -> word/hear', () => {
       expect(
         renderFor(noAudioItem({ stage: 'review', wordClass: 'abstract' })),
-      ).toBe('word/learn-abstract');
+      ).toBe('word/hear');
     });
-    it('audio-less word without image, function class -> word/learn-function', () => {
+    it('audio-less word without image, function class -> word/hear', () => {
       expect(
         renderFor(noAudioItem({ stage: 'review', wordClass: 'function' })),
-      ).toBe('word/learn-function');
+      ).toBe('word/hear');
     });
-    it('audio-less word without image, no wordClass -> word/learn-concrete (default)', () => {
+    it('audio-less word without image, no wordClass -> word/hear', () => {
       const result = renderFor(noAudioItem({ stage: 'review', wordClass: undefined }));
-      expect(result).toBe('word/learn-concrete');
-      expect(result).not.toMatch(/word\/hear|word\/say/);
+      expect(result).toBe('word/hear');
+      expect(result).not.toBe('word/say');
     });
-    it('audio-less word, high reps -> never word/hear or word/say', () => {
+    it('audio-less word, high reps -> word/hear (recognition quiz, not production)', () => {
+      // Without audio, word/say is never returned (production requires audio for compare).
       const result = renderFor(noAudioItem({ stage: 'mature', reps: 10 }));
-      expect(result).not.toBe('word/hear');
+      expect(result).toBe('word/hear');
       expect(result).not.toBe('word/say');
     });
   });
@@ -196,4 +197,39 @@ test('renderFor routes a pair WITH a glide to diphthong', () => {
 
 test('renderFor routes a pair WITHOUT a glide to drill', () => {
   expect(renderFor(pairItem({}))).toBe('drill');
+});
+
+describe('renderFor — learning-step retest + audio-optional recognition', () => {
+  const base = {
+    reps: 0, target: 'vārds', gloss: 'word',
+    receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' as const,
+  };
+
+  it('a retest new word (no audio) routes to word/hear, not a learn card', () => {
+    const item = { ...base, id: 'a', type: 'word' as const, stage: 'new' as const, wordClass: 'concrete' as const, retest: true };
+    expect(renderFor(item)).toBe('word/hear');
+  });
+
+  it('a retest word with an image routes to word/pic-review', () => {
+    const item = { ...base, id: 'a', type: 'word' as const, stage: 'new' as const, retest: true, media: { imageUrl: 'x.png' } };
+    expect(renderFor(item)).toBe('word/pic-review');
+  });
+
+  it('an audio-less word REVIEW routes to word/hear (quizzable without audio)', () => {
+    const item = { ...base, id: 'a', type: 'word' as const, stage: 'review' as const, wordClass: 'concrete' as const };
+    expect(renderFor(item)).toBe('word/hear');
+  });
+
+  it('an audio word at production rung routes to word/say', () => {
+    const item = {
+      ...base, id: 'a', type: 'word' as const, stage: 'review' as const,
+      audio: { envelope: [0.5] }, receptiveReps: 3, productiveReps: 6,
+    };
+    expect(renderFor(item)).toBe('word/say');
+  });
+
+  it('a genuine new word (no retest) still routes to its learn card', () => {
+    const item = { ...base, id: 'a', type: 'word' as const, stage: 'new' as const, wordClass: 'concrete' as const };
+    expect(renderFor(item)).toBe('word/learn-concrete');
+  });
 });

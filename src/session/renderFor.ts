@@ -23,22 +23,22 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
   const hasAudio = !!item.audio?.envelope;
 
   // New words: first exposure → the learn template chosen by word class.
-  if (item.stage === 'new' && item.type === 'word') {
+  // A `retest` copy is NOT a first exposure — it falls through to the recognition quiz below.
+  if (item.stage === 'new' && item.type === 'word' && !item.retest) {
     if (item.wordClass === 'concrete') return 'word/learn-concrete';
     if (item.wordClass === 'abstract') return 'word/learn-abstract';
     if (item.wordClass === 'function') return 'word/learn-function';
   }
 
-  // Word reviews.
+  // Word reviews + retests. Recognition (word/hear) is audio-OPTIONAL — it shows the written
+  // word, so audio-less words are still quizzable (the play button is silent until audio exists).
   if (item.type === 'word') {
     if (item.media?.imageUrl) return 'word/pic-review'; // full loop on picturable words
-    // B3 guard: audio-less words must not reach word/hear or word/say — re-show the learn
-    // template (introduce-only; no audio review surface available).
-    if (!hasAudio) return `word/learn-${item.wordClass ?? 'concrete'}` as ReviewCardKind;
-    // Route by ladder rung: production ('say') only once productiveReps >= PRODUCTION_GRADUATION_FLOOR.
-    return computeRung(item.receptiveReps ?? 0, item.productiveReps ?? 0) === 'production'
-      ? 'word/say'
-      : 'word/hear';
+    // Production (word/say) compares the learner against native audio, so it requires audio.
+    if (hasAudio && computeRung(item.receptiveReps ?? 0, item.productiveReps ?? 0) === 'production') {
+      return 'word/say';
+    }
+    return 'word/hear';
   }
 
   // Phrase reviews. (locked/unlock handled by the controller, not here.)
