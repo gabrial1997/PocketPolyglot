@@ -211,6 +211,20 @@ it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', as
     });
   }
 
+  // expandLearningSteps inserts in-session retest copies (word/hear) after the group of 3 intros.
+  // These retests have the same item.id as the originals — submit through them so P1 can surface.
+  // The retest items share ids with the originals; requeuePhraseAfterComponents places P1 after the
+  // last retest copy (since it also matches by id), so P1 appears after all 3 retests.
+  for (const w of ['labdien', 'es', 'esmu']) {
+    await settleHook(() => {
+      expect(result.current.current?.item.id).toBe(w);
+      expect(result.current.current?.item.retest).toBe(true);
+    });
+    await act(async () => {
+      await result.current.submit({ itemId: w, cardKind: 'word/hear', spoke: false });
+    });
+  }
+
   // All words now known -> P1 re-surfaces as the one-time reveal.
   await settleHook(() => expect(result.current.current?.kind).toBe('phrase/unlock'));
   // Gate advance re-queues P1 immediately next as its first SRS exposure.
@@ -218,6 +232,26 @@ it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', as
     result.current.advance();
   });
   await settleHook(() => expect(result.current.current?.kind).toBe('phrase/hear'));
+});
+
+it('interleaves new-word intros with in-session retest quizzes', async () => {
+  const newWords = ['a', 'b', 'c', 'd'].map(
+    (id): ReviewItem => ({
+      id,
+      type: 'word',
+      stage: 'new',
+      reps: 0,
+      target: id,
+      gloss: id,
+      wordClass: 'concrete',
+      receptiveReps: 0,
+      productiveReps: 0,
+      translationVisibility: 'auto',
+    }),
+  );
+  const { result } = renderSessionHook(newWords, new Set());
+  // 4 new words -> expandLearningSteps -> group of 3 intros + 3 retests, then 1 intro + 1 retest = 8.
+  await settleHook(() => expect(result.current.total).toBe(8));
 });
 
 it('phrase/locked enriches the item with the live "N words to go — learn X" hint', async () => {

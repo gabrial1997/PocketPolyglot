@@ -28,6 +28,9 @@ const word = (id: string): ReviewItem => ({
   gloss: id,
   pron: id,
   audio: { nativeUrl: `${id}.mp3` },
+  // choices required: the word/hear retest card (expanded by expandLearningSteps) is a MC quiz and
+  // needs choices to be completable. One correct option matching the gloss suffices.
+  choices: [{ value: id, gloss: id, correct: true }, { value: `other-${id}`, gloss: `other-${id}`, correct: false }],
   receptiveReps: 0,
   productiveReps: 0,
   translationVisibility: 'auto',
@@ -108,6 +111,20 @@ it('locked -> learn 3 words -> unlock -> hear: the hear card actually appears (n
     fireEvent.press(continues[continues.length - 1]);
   }
 
+  // expandLearningSteps appended retest copies (word/hear) after the group of 3 intros.
+  // requeuePhraseAfterComponents places p1 after the last retest (all share ids with originals).
+  // word/hear auto-advances on correct choice pick — select the correct gloss for each retest.
+  for (const w of ['labdien', 'es', 'esmu']) {
+    // Wait for the retest card's headword to appear (word/hear shows item.target).
+    await settle(() => expect(u.getAllByText(w).length).toBeGreaterThanOrEqual(1));
+    // The correct choice label matches the gloss (= id for test words); pick it to advance.
+    const choices = u.getAllByText(w);
+    // During a glide both the leaving and entering cards are briefly mounted; press the last match.
+    fireEvent.press(choices[choices.length - 1]);
+    // Wait for the auto-advance delay (ADVANCE_DELAY_MS = 500ms in WordHear).
+    await settle(() => undefined, 25, 30);
+  }
+
   // All words known -> the one-time unlock reveal (the chime card; Eyebrow-style uppercase label).
   await settle(() => expect(u.getByText('PHRASE UNLOCKED')).toBeTruthy());
 
@@ -163,10 +180,19 @@ it('seed walk: ph-kafija locked on one word -> learn ludzu -> unlock fires (sing
   await settle(() => expect(u.getByText('UPCOMING PHRASE')).toBeTruthy());
   fireEvent.press(u.getByLabelText('Continue')); // gate advance -> re-queue after ludzu
 
-  // Learn the single blocking word.
+  // Learn the single blocking word (word/learn-* intro card).
   await settle(() => expect(u.getByText('ludzu')).toBeTruthy());
   const continues = u.getAllByText('Continue');
   fireEvent.press(continues[continues.length - 1]);
+
+  // expandLearningSteps appended a retest copy of ludzu (word/hear). Submit through it so the phrase
+  // can surface. requeuePhraseAfterComponents places the phrase after the last queue item matching
+  // ludzu's id, which is the retest copy. word/hear auto-advances on a correct choice pick.
+  await settle(() => expect(u.getAllByText('ludzu').length).toBeGreaterThanOrEqual(1));
+  const ludzuChoices = u.getAllByText('ludzu');
+  fireEvent.press(ludzuChoices[ludzuChoices.length - 1]);
+  // Wait for the auto-advance delay (ADVANCE_DELAY_MS = 500ms in WordHear).
+  await settle(() => undefined, 25, 30);
 
   // All three components now known -> the one-time unlock reveal (the chime card) fires...
   await settle(() => expect(u.getByText('PHRASE UNLOCKED')).toBeTruthy());

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useServices } from '../services/ServiceProvider';
 import { decideKind } from './decideKind';
 import { requeuePhraseAfterComponents, requeueNext, lockHint } from './requeue';
+import { expandLearningSteps } from './learningSteps';
+import { LEARNING_STEP_GROUP_SIZE } from './pacing';
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardResult } from '../types/cardResult';
 import type { CardKind } from '../types/cardKind';
@@ -55,7 +57,7 @@ export function useSession(): SessionState {
     setLoading(true);
     await known.refresh();
     const items = await srs.getDueBatch();
-    setQueue(items);
+    setQueue(expandLearningSteps(items, LEARNING_STEP_GROUP_SIZE));
     setPos(0);
     seenLocked.current = new Set();
     revealed.current = new Set();
