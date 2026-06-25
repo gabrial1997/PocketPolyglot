@@ -8,7 +8,7 @@ import { ThemeProvider } from '../theme/ThemeProvider';
 import { BugReportLayer, useSetReportScreen } from './BugReportLayer';
 
 jest.mock('react-native-view-shot', () => ({
-  captureScreen: jest.fn().mockResolvedValue('file:///shot.png'),
+  captureRef: jest.fn().mockResolvedValue('file:///shot.png'),
 }));
 
 function renderLayer(submit: (i: BugReportInput) => Promise<void>, child?: React.ReactNode) {

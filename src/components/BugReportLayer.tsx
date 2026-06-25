@@ -1,13 +1,13 @@
 // Beta tooling overlay: a floating "report a bug" button on every authenticated screen.
 // Captures the current screen, collects context, and submits via the injected BugReportService.
 // NOT a card — it is shell-level UI and may read useServices().
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
 import {
   View, Text, Pressable, TextInput, StyleSheet, Platform, ActivityIndicator, SafeAreaView,
   KeyboardAvoidingView, Keyboard,
 } from 'react-native';
 import Constants from 'expo-constants';
-import { captureScreen } from 'react-native-view-shot';
+import { captureRef } from 'react-native-view-shot';
 import { useServices } from '../services/ServiceProvider';
 import { useTheme } from '../theme/ThemeProvider';
 
@@ -26,11 +26,14 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Ref to the wrapped app content — captureRef (the Expo-Go-supported API) snapshots THIS view.
+  // captureScreen was unreliable in Expo Go; capturing a ref of the content avoids that.
+  const contentRef = useRef<View>(null);
 
   const openSheet = useCallback(async () => {
     let uri: string | undefined;
     try {
-      uri = await captureScreen({ format: 'png', quality: 0.8 });
+      uri = await captureRef(contentRef, { format: 'png', quality: 0.8 });
     } catch (e) {
       uri = undefined; // best-effort; text-only still works
       // eslint-disable-next-line no-console
@@ -73,7 +76,11 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
   return (
     <SetScreenContext.Provider value={setScreen}>
       <View style={styles.fill}>
-        {children}
+        {/* Ref'd wrapper so captureRef snapshots the app content only (not the FAB/sheet overlay).
+            collapsable={false} keeps it a real native view for view-shot on Android. */}
+        <View ref={contentRef} collapsable={false} style={styles.fill}>
+          {children}
+        </View>
         {!open ? (
           <Pressable
             accessibilityRole="button"
