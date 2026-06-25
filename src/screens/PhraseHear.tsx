@@ -40,8 +40,9 @@ export function PhraseHear({ item, onPlay, onStop, onPreload, onComplete, speed:
   // Runs once on mount — GlideViewport remounts the card per item, so each new phrase plays.
   useEffect(() => {
     onPreload?.('native'); // warm the clip so the auto-play starts without a load stall
-    // Only auto-play when the phrase actually has audio — audio-less phrases show the written form
-    // with a silent play orb (tapping it is likewise a no-op until audio exists).
+    // Only auto-play ON MOUNT when the phrase actually has audio — audio-less phrases show the
+    // written form with a silent play orb (a manual orb tap relies on usePlayClip being a no-op
+    // when there's no clip).
     if (item.audio?.nativeUrl || item.audio?.envelope) playClip();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
