@@ -17,9 +17,10 @@ import type { ReviewCardKind } from '../types/cardKind';
 import { computeRung } from './ladder';
 
 export function renderFor(item: ReviewItem): ReviewCardKind {
-  // B3: audio gate — gated kinds (word/hear, word/say, phrase/hear, phrase/sayit, drill,
-  // diphthong) require a precomputed amplitude envelope. Text-only / envelope-less items
-  // are introduce-only and must route to a visual surface instead.
+  // Audio gate. word/hear is now audio-OPTIONAL: it shows the written word, so audio-less words
+  // are still quizzable (the play orb is silent until audio exists). The kinds that still REQUIRE
+  // a precomputed amplitude envelope are word/say, phrase/hear, phrase/sayit, drill, diphthong
+  // (production compares against native audio; the perception drills need the clip).
   const hasAudio = !!item.audio?.envelope;
 
   // New words: first exposure → the learn template chosen by word class.
