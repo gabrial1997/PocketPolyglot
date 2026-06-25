@@ -4,13 +4,9 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
-import { PhraseHear, REPEAT_DELAY_MS } from './PhraseHear';
+import { PhraseHear } from './PhraseHear';
 import type { ReviewItem } from '../types/reviewItem';
 import type { BaseCardProps } from './cardProps';
-
-// The fixture carries no envelope, so the card uses its FALLBACK_MS clip length (1600ms); the
-// repeat is scheduled clipLength + REPEAT_DELAY_MS after mount. Advance past that to see it fire.
-const FALLBACK_MS = 1600;
 
 function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
   return {
@@ -75,14 +71,14 @@ describe('PhraseHear', () => {
     });
   });
 
-  it('says the phrase then repeats it once on first show', () => {
+  it('plays the phrase exactly once on first show — no auto-repeat (user decision 2026-06-25)', () => {
     const u = renderCard(); // mount auto-plays once
     expect(u.props.onPlay).toHaveBeenCalledWith('native', 1); // default speed 1x passed as the rate
     expect(u.props.onPlay).toHaveBeenCalledTimes(1);
     act(() => {
-      jest.advanceTimersByTime(FALLBACK_MS + REPEAT_DELAY_MS + 50);
+      jest.advanceTimersByTime(5000); // well past any old repeat window
     });
-    expect(u.props.onPlay).toHaveBeenCalledTimes(2); // repeats it, exactly once
+    expect(u.props.onPlay).toHaveBeenCalledTimes(1); // still once — the repeat was removed
   });
 
   it('shows the literal/usage note when the phrase carries one', () => {

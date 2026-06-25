@@ -8,14 +8,12 @@
 // "First review tomorrow." + Continue. Soundbar gate timing preserved from the prior card.
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, SpeedChip, LiveWaveform, CtaButton, usePlayClip, clipMs, FRAME_MS, type Speed } from '../components';
+import { Screen, PlayOrb, SpeedChip, LiveWaveform, CtaButton, usePlayClip, FRAME_MS, type Speed } from '../components';
 import { CardIcon, Eyebrow, PhraseLine, LiteralNote } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import type { BaseCardProps } from './cardProps';
 import type { ReviewItem } from '../types/reviewItem';
-
-export const REPEAT_DELAY_MS = 700; // gap after the first clip finishes before the repeat
 
 type HearExtra = { newForm?: string; newLemma?: string };
 
@@ -31,20 +29,18 @@ export function PhraseHear({ item, onPlay, onStop, onPreload, onComplete, speed:
 
   const playClip = (): void => play(() => onPlay('native', speed), speed);
   // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; at rest it replays.
-  // (The mount auto-play/repeat below always uses playClip directly, never this toggle.)
+  // (The mount auto-play below uses playClip directly, never this toggle.)
   const toggleClip = (): void => {
     if (playing) { onStop?.(); stopGate(); }
     else playClip();
   };
 
-  // First exposure SAYS the phrase, then REPEATS it once (BACKEND_INTEGRATION §4 / 2026-06-19 spec).
-  // The repeat waits out the first clip's length (+ a short gap) so it doesn't overlap playback.
-  // Runs once on mount — GlideViewport remounts the card per item, so each new phrase replays.
+  // First exposure plays the phrase ONCE on mount (user decision 2026-06-25 — the prior
+  // say-then-repeat felt like an unexpected double-play). The learner taps the orb to replay.
+  // Runs once on mount — GlideViewport remounts the card per item, so each new phrase plays.
   useEffect(() => {
-    onPreload?.('native'); // warm the clip so the first auto-play starts without a load stall (bug 1)
-    playClip(); // say it
-    const t = setTimeout(() => playClip(), clipMs(env) + REPEAT_DELAY_MS); // repeat it once
-    return () => clearTimeout(t);
+    onPreload?.('native'); // warm the clip so the auto-play starts without a load stall
+    playClip(); // say it once
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
