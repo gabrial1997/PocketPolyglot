@@ -14,6 +14,7 @@ import {
   StubProgressService,
   StubPodcastService,
   StubProfileService,
+  StubBugReportService,
 } from '../services/stubs';
 import { useRecordingAllowed } from './useRecordingAllowed';
 
@@ -33,6 +34,7 @@ function makeServices(profile: ProfileService): ServiceBundle {
     podcast: new StubPodcastService(),
     profile,
     editor: { isEditor: async () => false, edit: async () => {} },
+    bugReport: new StubBugReportService(),
   };
 }
 

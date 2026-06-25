@@ -15,6 +15,7 @@ import {
   StubKnownWordsStore,
   StubProgressService,
   StubPodcastService,
+  StubBugReportService,
 } from '../services/stubs';
 import { OnboardingGate } from './OnboardingGate';
 
@@ -70,6 +71,7 @@ function makeServices(profile: ProfileService): ServiceBundle {
     podcast: new StubPodcastService(),
     profile,
     editor: { isEditor: async () => false, edit: async () => {} },
+    bugReport: new StubBugReportService(),
   };
 }
 

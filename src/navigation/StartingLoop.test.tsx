@@ -67,6 +67,7 @@ function fakeServices(
     podcast: { getEpisode: async () => ({ title: 'x', transcript: '', audioUrl: 'x' }) },
     profile: { getRecConsent: async () => false, setRecConsent: async () => {}, deleteRecordings: async () => {}, getProfile: async () => null, ensureProfile: async () => {}, setSeenDiacritics: async () => {}, setConsent: async () => {} },
     editor: { isEditor: async () => false, edit: async () => {} },
+    bugReport: { submit: async () => {} },
   };
 }
 

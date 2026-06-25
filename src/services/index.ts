@@ -72,6 +72,26 @@ export interface EditorService {
   edit(req: ContentEditRequest): Promise<void>;
 }
 
+/** A bug report filed from the in-app beta reporter (BugReportLayer). */
+export interface BugReportInput {
+  description: string;
+  /** Coarse screen tag the report was filed from (e.g. 'home', 'session', 'onboarding'). */
+  screen?: string;
+  appVersion?: string;
+  platform?: string;
+  osVersion?: string;
+  /** Local file uri of the captured screenshot; uploaded best-effort (optional). */
+  screenshotUri?: string;
+  /** Arbitrary extra diagnostics (jsonb). */
+  extra?: Record<string, unknown>;
+}
+
+/** Beta tooling: store a tester's bug report (note + optional screenshot + context). */
+export interface BugReportService {
+  /** Upload the optional screenshot, then insert the report row. Throws only on insert failure. */
+  submit(input: BugReportInput): Promise<void>;
+}
+
 /** A minimal projection of the user's profile row that onboarding needs. */
 export interface ProfileSnapshot {
   recConsent: boolean;
@@ -113,6 +133,8 @@ export interface ServiceBundle {
   profile: ProfileService;
   /** Founder-only content editor (Module F). */
   editor: EditorService;
+  /** Beta tooling: in-app bug reporter. */
+  bugReport: BugReportService;
 }
 
 export * from './stubs';

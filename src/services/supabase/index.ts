@@ -10,6 +10,7 @@ import { SupabasePodcastService } from './SupabasePodcastService';
 import { SupabaseProfileService } from './SupabaseProfileService';
 import { SupabaseRecordingUploader } from './SupabaseRecordingUploader';
 import { SupabaseEditorService } from './SupabaseEditorService';
+import { SupabaseBugReportService } from './SupabaseBugReportService';
 
 export * from './types';
 export * from './mappers';
@@ -21,6 +22,7 @@ export { SupabaseProfileService } from './SupabaseProfileService';
 export { SupabaseRecordingUploader } from './SupabaseRecordingUploader';
 export type { RecordingUploader } from './SupabaseRecordingUploader';
 export { SupabaseEditorService } from './SupabaseEditorService';
+export { SupabaseBugReportService } from './SupabaseBugReportService';
 
 /**
  * Build a ServiceBundle backed by Supabase for a given authenticated user.
@@ -49,5 +51,6 @@ export function createSupabaseServices(
     podcast: new SupabasePodcastService(client),
     profile,
     editor: new SupabaseEditorService(client, userId),
+    bugReport: new SupabaseBugReportService(client, userId),
   };
 }

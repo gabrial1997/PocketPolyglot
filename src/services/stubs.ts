@@ -13,6 +13,8 @@ import type {
   ProfileSnapshot,
   EditorService,
   ContentEditRequest,
+  BugReportService,
+  BugReportInput,
   ServiceBundle,
 } from './index';
 import type { ReviewItem } from '../types/reviewItem';
@@ -153,6 +155,14 @@ export class StubEditorService implements EditorService {
   }
 }
 
+export class StubBugReportService implements BugReportService {
+  /** Records the last submitted report so tests/dev can assert without a backend. */
+  public last: BugReportInput | null = null;
+  async submit(input: BugReportInput): Promise<void> {
+    this.last = input;
+  }
+}
+
 /** Default bundle of stubs for local dev / tests. */
 export function createStubServices(): ServiceBundle {
   return {
@@ -164,5 +174,6 @@ export function createStubServices(): ServiceBundle {
     podcast: new StubPodcastService(),
     profile: new StubProfileService(),
     editor: new StubEditorService(),
+    bugReport: new StubBugReportService(),
   };
 }
