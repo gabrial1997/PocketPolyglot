@@ -531,6 +531,7 @@ export class SupabaseSrsService implements SrsService {
         .from('review_state')
         .select('*')
         .eq('user_id', this.userId)
+        .eq('template', 'recognition')
         .order('due_at', { ascending: true })
         .limit(PRACTICE_BATCH);
       if (practiceErr) throw practiceErr;

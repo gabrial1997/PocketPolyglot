@@ -952,4 +952,61 @@ describe('SupabaseSrsService.getDueBatch — recognition-only filter (Task 4)', 
     expect(batch[0]!.id).toBe('lemma-new');
     expect(batch[0]!.stage).toBe('new');
   });
+
+  // Regression: free-practice fallback must also apply a recognition-only filter.
+  // A user who has accumulated pronunciation rows (normal after any word/say review) but has
+  // nothing due and no new items admitted hits the fallback path. Without the filter the fallback
+  // query returns BOTH recognition + pronunciation rows for the same lemma, and enrichAndReorder
+  // renders it TWICE. With .eq('template','recognition') added, the fallback returns only the
+  // recognition row and the item appears exactly once.
+  it('free-practice fallback applies recognition-only filter — lemma with both templates surfaces once', async () => {
+    // Both rows are due tomorrow (not yet due) so the primary due path skips them.
+    // lemma-1 is already introduced (has review_state rows) so lemmaCandidates excludes it.
+    // → selectBatch gets empty due + empty candidates → result.order.length === 0 → fallback fires.
+    const FUTURE = new Date(Date.now() + 86_400_000).toISOString();
+    const tables: Record<string, Row[]> = {
+      review_state: [
+        {
+          user_id: 'u1',
+          item_type: 'lemma',
+          item_id: 'lemma-1',
+          template: 'recognition',
+          stage: 'review',
+          reps: 5,
+          lapses: 0,
+          stability: 12,
+          difficulty: 5,
+          due_at: FUTURE,
+          last_review: null,
+        },
+        {
+          user_id: 'u1',
+          item_type: 'lemma',
+          item_id: 'lemma-1',
+          template: 'pronunciation',
+          stage: 'review',
+          reps: 2,
+          lapses: 0,
+          stability: 4,
+          difficulty: 5,
+          due_at: FUTURE,
+          last_review: null,
+        },
+      ],
+      lemmas: [contentRow('lemma-1', { envelope: [0.5], native_url: 'l1.mp3', utility_rank: 1 })],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const batch = await svc.getDueBatch();
+
+    // Without fix: fallback returns both rows → enrichAndReorder sees 2 orderedStates entries
+    // → lemma-1 pushed twice → batch.filter(i => i.id === 'lemma-1').length === 2. FAIL.
+    // With fix: .eq('template','recognition') on fallback query → only 1 row → length === 1. PASS.
+    expect(batch.filter((i) => i.id === 'lemma-1')).toHaveLength(1);
+  });
 });

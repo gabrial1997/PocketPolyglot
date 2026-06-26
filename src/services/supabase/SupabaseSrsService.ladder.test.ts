@@ -196,6 +196,7 @@ function stateRow(item_type: string, item_id: string): Row {
     user_id: 'u1',
     item_type,
     item_id,
+    template: 'recognition',
     stage: 'review',
     due_at: new Date(Date.now() - 5000).toISOString(), // always due
     stability: 10,
