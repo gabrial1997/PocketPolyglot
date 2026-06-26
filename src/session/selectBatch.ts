@@ -134,6 +134,9 @@ export function selectBatch(input: {
   // re-queue endlessly (the freeze regression).
   // -------------------------------------------------------------------------
   const dueIds = new Set(due.map((d) => d.id));
+  // NB: candidateIds is the RAW pre-cap candidate pool — a component here may still be dropped if the
+  // newAllowance cap is reached before it. That residual case is backstopped in sessionController's
+  // advance() (it won't re-queue a locked phrase whose component isn't actually ahead).
   const candidateIds = new Set(candidates.map((c) => c.id));
 
   // -------------------------------------------------------------------------
