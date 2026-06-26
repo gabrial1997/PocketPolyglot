@@ -330,6 +330,54 @@ export class SupabaseSrsService implements SrsService {
     return { rows: collectedRows, candidates };
   }
 
+  /**
+   * Seed perception-drill (minimal-pair) review_state rows so drills can enter the loop.
+   *
+   * Drills are the one item kind with no candidate path: lemmas/phrases are admitted as NEW from
+   * the content tables, but a pair surfaces ONLY when a review_state row makes it due — and nothing
+   * else creates one for a real user, so without this a learner would never see the L/Ļ or `ie`
+   * drills. We seed every QA'd, audio-bearing drill as a due first-exposure (stage='new' so it
+   * still renders as a drill/diphthong card; due_at in the past so the due query picks it up now).
+   *
+   * Content-driven (not hard-coded ids) and self-healing: gated on the user having ZERO pair rows,
+   * so it runs once per user, backfills existing accounts on their next batch, and never clobbers a
+   * drill already in progress. (A drill added AFTER a user is seeded won't reach them until we
+   * widen this; acceptable while the curated drill set is tiny — see core-loop review notes.)
+   */
+  private async ensureDrillsSeeded(now: Date): Promise<void> {
+    const { count, error: countErr } = await this.client
+      .from('review_state')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', this.userId)
+      .eq('item_type', 'pair');
+    if (countErr) throw countErr;
+    if ((count ?? 0) > 0) return; // already has drill rows — done.
+
+    const { data: drillData, error: drillErr } = await this.client
+      .from('minimal_pairs')
+      .select('*')
+      .eq('qa_status', 'native_ok');
+    if (drillErr) throw drillErr;
+    const drills = ((drillData ?? []) as MinimalPairRow[]).filter((d) => d.audio_url != null);
+    if (drills.length === 0) return;
+
+    // due_at 1 min in the past so getDueBatch's `.lte('due_at', now)` admits it immediately.
+    const dueIso = new Date(now.getTime() - 60_000).toISOString();
+    const rows = drills.map((d) => ({
+      user_id: this.userId,
+      item_type: 'pair' as const,
+      item_id: d.id,
+      stage: 'new' as const,
+      reps: 0,
+      lapses: 0,
+      due_at: dueIso,
+    }));
+    const { error: upErr } = await this.client
+      .from('review_state')
+      .upsert(rows, { onConflict: 'user_id,item_type,item_id', ignoreDuplicates: true });
+    if (upErr) throw upErr;
+  }
+
   // -------------------------------------------------------------------------
   // Main public method — rewritten for B2.
   // -------------------------------------------------------------------------
@@ -337,6 +385,13 @@ export class SupabaseSrsService implements SrsService {
   async getDueBatch(): Promise<ReviewItem[]> {
     const now = this.now();
     const nowIso = now.toISOString();
+
+    // ------------------------------------------------------------------
+    // 0. Make sure perception drills can enter the loop. Unlike lemmas/phrases, minimal-pair
+    //    drills have NO candidate path — they surface ONLY via a review_state row, and nothing else
+    //    creates one for a real user. So seed them here (idempotent; backfills existing users).
+    // ------------------------------------------------------------------
+    await this.ensureDrillsSeeded(now);
 
     // ------------------------------------------------------------------
     // 1. Fetch due items: review_state WHERE due_at <= now (drop stage='new' clause).

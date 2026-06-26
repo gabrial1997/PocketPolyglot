@@ -165,6 +165,23 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
       const sorted = applyOrder(filtered, orderBys);
       return { data: sorted[0] ?? null, error: null };
     },
+    upsert: async (newRows: Row | Row[], opts?: { onConflict?: string; ignoreDuplicates?: boolean }) => {
+      const arr = Array.isArray(newRows) ? newRows : [newRows];
+      const keyCols = (opts?.onConflict ?? 'id').split(',').map((c) => c.trim());
+      const existing = (tables[table] ??= []);
+      const keyOf = (r: Row) => keyCols.map((c) => String(r[c])).join('|');
+      const seen = new Set(existing.map(keyOf));
+      for (const r of arr) {
+        if (seen.has(keyOf(r))) {
+          if (opts?.ignoreDuplicates) continue;
+          existing[existing.findIndex((e) => keyOf(e) === keyOf(r))] = r;
+        } else {
+          existing.push(r);
+          seen.add(keyOf(r));
+        }
+      }
+      return { error: null };
+    },
     then: (resolve: (v: { data: Row[] | null; error: null; count: number | null }) => unknown) =>
       resolve(resolved()),
   };
@@ -788,5 +805,69 @@ describe('SupabaseSrsService.submit() — E2 recording_id linkage', () => {
     const inserted = (client as { _getLastLogInsert: () => Row | null })._getLastLogInsert();
     expect(inserted).not.toBeNull();
     expect(inserted!.recording_id).toBeNull();
+  });
+});
+
+// --- Drill seeding (perception drills have no candidate path; seed them so they can surface) ---
+describe('SupabaseSrsService drill seeding', () => {
+  const drillRow = (id: string): Row => ({
+    id,
+    a: 'lieta',
+    b: 'lēta',
+    correct: 'a',
+    audio_url: `${id}.mp3`,
+    envelope: [0.4, 0.8, 0.5],
+    contrast_type: 'diphthong',
+    qa_status: 'native_ok',
+  });
+  const emptyContent = () => ({
+    lemmas: [] as Row[],
+    phrases: [] as Row[],
+    phrase_components: [] as Row[],
+    review_log: [] as Row[],
+    known_lemmas: [] as Row[],
+    profiles: [] as Row[],
+  });
+
+  it('seeds a QA’d drill for a user with no pair rows, and it surfaces in the batch', async () => {
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      minimal_pairs: [drillRow('drill-1')],
+      ...emptyContent(),
+    };
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+
+    const batch = await svc.getDueBatch();
+
+    // A review_state pair row was created: stage='new' (first exposure) with a past due_at.
+    const seeded = (tables.review_state ?? []).find((r) => r.item_type === 'pair' && r.item_id === 'drill-1');
+    expect(seeded).toBeTruthy();
+    expect(seeded!.stage).toBe('new');
+    expect(seeded!.due_at).toBeTruthy();
+    // And it actually reaches the learner.
+    expect(batch.map((i) => i.id)).toContain('drill-1');
+  });
+
+  it('does not clobber a drill already in progress, and adds no duplicate', async () => {
+    const inProgress: Row = {
+      user_id: 'u1', item_type: 'pair', item_id: 'drill-1',
+      stage: 'review', reps: 3, lapses: 0,
+      stability: 6, difficulty: 5,
+      due_at: new Date(Date.now() + 86_400_000).toISOString(), // due tomorrow — not yet due
+      last_review: new Date(Date.now() - 86_400_000).toISOString(),
+    };
+    const tables: Record<string, Row[]> = {
+      review_state: [{ ...inProgress }],
+      minimal_pairs: [drillRow('drill-1')],
+      ...emptyContent(),
+    };
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+
+    await svc.getDueBatch();
+
+    const pairRows = (tables.review_state ?? []).filter((r) => r.item_type === 'pair' && r.item_id === 'drill-1');
+    expect(pairRows).toHaveLength(1); // no duplicate
+    expect(pairRows[0]!.stage).toBe('review'); // FSRS progress untouched
+    expect(pairRows[0]!.reps).toBe(3);
   });
 });
