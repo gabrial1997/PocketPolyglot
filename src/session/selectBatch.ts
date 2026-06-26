@@ -121,11 +121,14 @@ export function selectBatch(input: {
 
   // -------------------------------------------------------------------------
   // Step 1: Review-eligibility filter.
-  // Keep every due ref where hasAudioEnvelope || hasImage.
-  // Audio-less + image-less due items are dropped (not re-surfaced until backfilled).
+  // Words and phrases are reviewable via their WRITTEN form (the cards show the word/phrase with a
+  // silent play orb until audio is backfilled), so they stay eligible for review regardless of
+  // audio — otherwise the ~majority of audio-less items never come back for review. Pairs
+  // (perception drills) genuinely need the clip, so audio-less pairs are still dropped.
+  // (The cards are unchanged — this only controls which due items are surfaced.)
   // Reviews are never throttled — all eligible ones are always returned.
   // -------------------------------------------------------------------------
-  const due = rawDue.filter(d => d.hasAudioEnvelope || d.hasImage);
+  const due = rawDue.filter(d => (d.kind === 'pair' ? d.hasAudioEnvelope : true));
 
   // -------------------------------------------------------------------------
   // Step 1b: Build id sets for satisfiability checks (used in phrase gate below).

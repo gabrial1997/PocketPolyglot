@@ -464,7 +464,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     expect(batch.length).toBeGreaterThan(0);
   });
 
-  it('audio-less + image-less due items are NOT re-surfaced in the batch', async () => {
+  it('audio-less + image-less WORD due items ARE re-surfaced (reviewable via the written word)', async () => {
     // One due item with no audio and no image, one with audio
     const dueStates: Row[] = [
       {
@@ -535,9 +535,9 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     const batch = await svc.getDueBatch();
 
     const ids = batch.map(i => i.id);
-    // Audio-less + image-less item must NOT appear
-    expect(ids).not.toContain('no-audio-lemma');
-    // Audio item MUST appear
+    // Both surface now: words/phrases are reviewable via their written form (the card shows the
+    // word + a silent play orb until audio is backfilled). Only audio-less PAIRS are still dropped.
+    expect(ids).toContain('no-audio-lemma');
     expect(ids).toContain('has-audio-lemma');
   });
 
