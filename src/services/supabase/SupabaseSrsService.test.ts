@@ -317,6 +317,33 @@ describe('SupabaseSrsService.getDueBatch — MC distractors', () => {
     expect(choices.find((c) => c.correct)!.value).toBe('w-a');
     expect(new Set(choices.map((c) => c.value))).toEqual(new Set(['w-a', 'kabata', 'kazas', 'kakls']));
   });
+
+  it('builds phrase choices from get_phrase_distractors: correct meaning + distractors, order-independent', async () => {
+    const tables: Record<string, Row[]> = {
+      review_state: [{ ...stateRow('phrase', 'p-a', 0), stage: 'review' }] as unknown as Row[],
+      lemmas: [],
+      phrases: [contentRow('p-a', { envelope: [0.5] })], // contentRow sets gloss_en/gloss/target = id
+      phrase_components: [],
+      minimal_pairs: [], review_log: [], known_lemmas: [], profiles: [],
+    };
+    const distractors = [
+      { id: 'd1', target: 'X', gloss_en: 'hello' },
+      { id: 'd2', target: 'Y', gloss_en: 'thank you' },
+      { id: 'd3', target: 'Z', gloss_en: 'see you' },
+    ];
+    const svc = new SupabaseSrsService(
+      fakeClient(tables, { get_phrase_distractors: distractors }, new Date(1_900_000_000_000 + 1_000_000_000)),
+      'u1',
+    );
+    const batch = await svc.getDueBatch();
+    const item = batch.find((i) => i.id === 'p-a');
+    expect(item?.choices).toBeDefined();
+    const choices = item!.choices!;
+    expect(choices).toHaveLength(4);
+    expect(choices.filter((c) => c.correct)).toHaveLength(1);
+    expect(choices.find((c) => c.correct)!.gloss).toBe('p-a'); // contentRow gloss = id
+    expect(new Set(choices.map((c) => c.gloss))).toEqual(new Set(['p-a', 'hello', 'thank you', 'see you']));
+  });
 });
 
 // ---------------------------------------------------------------------------

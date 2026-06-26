@@ -79,6 +79,17 @@ const PRODUCTION_CARD_KINDS = new Set(['word/say', 'phrase/sayit', 'pron']);
 // Private pure helpers
 // ---------------------------------------------------------------------------
 
+/** In-place Fisher–Yates shuffle (so the correct MC option isn't always first). */
+function shuffleInPlace<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = arr[i]!;
+    arr[i] = arr[j]!;
+    arr[j] = tmp;
+  }
+  return arr;
+}
+
 /**
  * Start of the local calendar day containing `now` (midnight local time) as a Date.
  * Injectable clock: pass `now` explicitly for testability (no Date.now() reads inside).
@@ -580,16 +591,9 @@ export class SupabaseSrsService implements SrsService {
               correct: false,
             })),
           ];
-          // Shuffle so the correct answer isn't always the first option (Fisher–Yates). Done once
-          // per fetch; the card renders this fixed order (positions stay stable across wrong-pick
-          // re-renders). With 0 distractors this is a harmless no-op on a single-element array.
-          for (let i = choices.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            const tmp = choices[i]!;
-            choices[i] = choices[j]!;
-            choices[j] = tmp;
-          }
-          item.choices = choices;
+          // Shuffle so the correct answer isn't always the first option. Done once per fetch;
+          // the card renders this fixed order (positions stay stable across wrong-pick re-renders).
+          item.choices = shuffleInPlace(choices);
         } catch {
           // Leave choices undefined; cards degrade gracefully.
         }
@@ -604,6 +608,24 @@ export class SupabaseSrsService implements SrsService {
           .eq('phrase_id', row.id);
         if (components) {
           item.componentLemmaIds = (components as { lemma_id: string }[]).map((c) => c.lemma_id);
+        }
+        // Meaning-quiz distractors (graceful fallback on error).
+        try {
+          const { data: pdist } = await this.client.rpc('get_phrase_distractors', {
+            target_id: row.id,
+            n: 3,
+          });
+          const choices = [
+            { value: item.id, gloss: item.gloss, correct: true },
+            ...((pdist ?? []) as Array<{ id: string; gloss_en: string }>).map((d) => ({
+              value: d.id,
+              gloss: d.gloss_en,
+              correct: false,
+            })),
+          ];
+          item.choices = shuffleInPlace(choices);
+        } catch {
+          // Leave choices undefined; the card degrades gracefully.
         }
         items.push(item);
       } else if (s.item_type === 'pair') {
