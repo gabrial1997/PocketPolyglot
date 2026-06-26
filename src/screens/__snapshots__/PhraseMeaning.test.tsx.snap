@@ -51,16 +51,7 @@ exports[`PhraseMeaning renders the choices from item data (snapshot) 1`] = `
           ]
         }
       >
-        NEW PHRASE 
-        <Text
-          style={
-            {
-              "color": "#2C5E8C",
-            }
-          }
-        >
-          · IDIOM
-        </Text>
+        WHICH MEANING?
       </Text>
       <View
         style={

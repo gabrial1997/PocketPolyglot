@@ -57,7 +57,7 @@ export function PhraseMeaning({ item, onPlay, onStop, onPreload, onAnswer, onCom
     <Screen>
       <View style={styles.body}>
         <Text style={[styles.eyebrow, { color: T.faint }]}>
-          NEW PHRASE <Text style={{ color: T.primary }}>· IDIOM</Text>
+          WHICH MEANING?{item.isIdiom ? <Text style={{ color: T.primary }}> · IDIOM</Text> : null}
         </Text>
 
         <View style={{ marginTop: 20, alignItems: 'center' }}>
@@ -92,8 +92,8 @@ export function PhraseMeaning({ item, onPlay, onStop, onPreload, onAnswer, onCom
         </View>
 
         <Text style={[styles.feedback, { color: solved ? T.sub : T.record }]}>{feedback}</Text>
-        {/* literal word-for-word reading, revealed once the idiom is solved (usage note shown above) */}
-        {solved ? <LiteralNote literal={item.literal} usageNote={undefined} /> : null}
+        {/* literal word-for-word reading, revealed once solved — only when a literal reading is authored */}
+        {solved && item.literal ? <LiteralNote literal={item.literal} usageNote={undefined} /> : null}
       </View>
 
       <View style={styles.footer}>

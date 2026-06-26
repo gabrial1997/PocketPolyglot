@@ -133,6 +133,20 @@ describe('PhraseMeaning', () => {
     expect(u.queryByText('Good morning!')).toBeNull();
   });
 
+  it('a non-idiom phrase shows no IDIOM tag', () => {
+    const u = renderCard({ isIdiom: false, literal: undefined });
+    expect(u.queryByText(/IDIOM/i)).toBeNull();
+  });
+
+  it('an idiom phrase shows the IDIOM tag', () => {
+    const u = renderCard({ isIdiom: true });
+    expect(u.getByText(/IDIOM/i)).toBeTruthy();
+  });
+
+  it('renders with no audio without crashing', () => {
+    expect(() => renderCard({ audio: undefined })).not.toThrow();
+  });
+
   it('reveals the literal reading + usage note once solved', () => {
     const u = renderCard({ literal: 'good-morning!', usageNote: 'said before noon' });
     fireEvent.press(u.getByText('Good morning!')); // correct
