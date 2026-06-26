@@ -80,7 +80,9 @@ the canonical keys for analytics and deep links — **keep them stable**.
   (the dedicated integration guide) when implementing. (New 2026-06-15.)
 - **Copy / brand:** no time claims ("ten minutes a day", "10 min") anywhere; lead with "the first
   1,000 words," not audio; calm/restrained aesthetic but **never the literal word "quiet"** in
-  user-facing copy; Home greeting name is **"Gabrial"**; tone serious/respectful/literate,
+  user-facing copy; Home greeting name is **derived from the signed-in user** (never
+  hard-coded — `displayName()` in `src/navigation/index.tsx`, falling back to the email
+  local-part); tone serious/respectful/literate,
   encouraging on errors, never gamified.
 - **NOT gamified.** No streaks, no confetti, no XP. Calm, premium, restrained. (One earned
   unlock moment for phrases — the soft chime — is the *only* celebratory beat.) Do not add
