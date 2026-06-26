@@ -24,8 +24,6 @@ export interface BaseCardProps {
   /** Optional: current slow-speed selection, surfaced by SpeedChip. */
   speed?: Speed;
   onSpeedChange?: (s: Speed) => void;
-  /** The "next review in N days" label handed back by the controller (cards only display it). */
-  nextReviewLabel?: string | null;
 }
 
 /** Cards that capture a recording (pic-review, say, sayit, drill, pron). */

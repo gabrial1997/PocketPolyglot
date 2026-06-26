@@ -16,7 +16,6 @@ import type {
 } from './types';
 import {
   cardResultToRating,
-  evaluateRung,
   itemTypeToDbType,
   lemmaRowToReviewItem,
   nextReviewLabel,
@@ -347,7 +346,7 @@ export class SupabaseSrsService implements SrsService {
       .from('review_state')
       .select('*')
       .eq('user_id', this.userId)
-      .or(`due_at.lte.${nowIso}`)
+      .lte('due_at', nowIso)
       .order('due_at', { ascending: true, nullsFirst: false })
       .order('item_id', { ascending: true });
     if (dueErr) throw dueErr;
@@ -479,7 +478,7 @@ export class SupabaseSrsService implements SrsService {
       if (practiceRows.length === 0) return [];
       // Build a minimal batch from practice rows (review-only, no new candidates).
       // We reuse the existing enrichment path below by re-routing through `rows`.
-      return this.enrichAndReorder(practiceRows, now, nowIso);
+      return this.enrichAndReorder(practiceRows, now);
     }
 
     // ------------------------------------------------------------------
@@ -512,7 +511,7 @@ export class SupabaseSrsService implements SrsService {
       }
     }
 
-    return this.enrichAndReorder(orderedStates, now, nowIso, {
+    return this.enrichAndReorder(orderedStates, now, {
       dueLemmaMap,
       duePhraseMap,
       duePairMap,
@@ -529,7 +528,6 @@ export class SupabaseSrsService implements SrsService {
   private async enrichAndReorder(
     orderedStates: ReviewStateRow[],
     now: Date,
-    nowIso: string,
     prefetched?: {
       dueLemmaMap: Map<string, LemmaRow>;
       duePhraseMap: Map<string, PhraseRow>;
@@ -538,8 +536,6 @@ export class SupabaseSrsService implements SrsService {
       candidatePhraseRows: PhraseRow[];
     },
   ): Promise<ReviewItem[]> {
-    void nowIso; // unused directly; kept for signature clarity
-
     // Build content maps: merge prefetched + fetch any missing ids.
     const lemmaMap = new Map<string, LemmaRow>(prefetched?.dueLemmaMap ?? []);
     const phraseMap = new Map<string, PhraseRow>(prefetched?.duePhraseMap ?? []);
@@ -686,7 +682,7 @@ export class SupabaseSrsService implements SrsService {
   }
 
   async submit(result: CardResult): Promise<{ nextReviewLabel: string; rung: import('../../session/ladder').Rung }> {
-    const now = new Date();
+    const now = this.now();
     const itemType = cardKindToDbType(result.cardKind);
     const rating = cardResultToRating(result);
 
@@ -765,30 +761,23 @@ export class SupabaseSrsService implements SrsService {
         }
       }
     }
-    const currentRung = evaluateRung(receptiveReps, productiveReps);
+    const currentRung = computeRung(receptiveReps, productiveReps);
 
     return { nextReviewLabel: label, rung: currentRung };
   }
 
   async getDueSummary(): Promise<{ newCount: number; reviewCount: number }> {
-    const nowIso = new Date().toISOString();
-
-    const { count: newCount, error: newErr } = await this.client
-      .from('review_state')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', this.userId)
-      .eq('stage', 'new');
-    if (newErr) throw newErr;
-
-    // "Due" = scheduled (not new) with due_at in the past.
-    const { count: reviewCount, error: dueErr } = await this.client
-      .from('review_state')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', this.userId)
-      .neq('stage', 'new')
-      .lte('due_at', nowIso);
-    if (dueErr) throw dueErr;
-
-    return { newCount: newCount ?? 0, reviewCount: reviewCount ?? 0 };
+    // Derive the Home preview from the SAME batch the session will run, so the two never disagree.
+    // (A stage='new' COUNT on review_state is wrong here: the core loop sources new words from the
+    // content tables and never persists a stage='new' row, so that count is effectively always 0.)
+    // new = distinct words being introduced today (un-expanded); review = everything FSRS-due.
+    const batch = await this.getDueBatch();
+    let newCount = 0;
+    let reviewCount = 0;
+    for (const it of batch) {
+      if (it.stage === 'new') newCount += 1;
+      else reviewCount += 1;
+    }
+    return { newCount, reviewCount };
   }
 }

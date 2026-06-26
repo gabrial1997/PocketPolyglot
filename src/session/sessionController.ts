@@ -19,8 +19,6 @@ export interface SessionState {
   /** 1-based position for the SessionTop progress dots. */
   step: number;
   total: number;
-  /** Last "next review in N days" label handed back by SRS (cards display this). */
-  lastReviewLabel: string | null;
   /** Submit a card's result, post to SRS, advance to the next item. */
   submit: (result: CardResult) => Promise<void>;
   /**
@@ -43,7 +41,6 @@ export function useSession(): SessionState {
   const [queue, setQueue] = useState<ReviewItem[]>([]);
   const [pos, setPos] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [lastReviewLabel, setLastReviewLabel] = useState<string | null>(null);
   // Phrase ids seen LOCKED this session. A later available render of the same phrase becomes the
   // one-time 'phrase/unlock' reveal. A ref (not state) — recording it must not trigger a re-render.
   const seenLocked = useRef<Set<string>>(new Set());
@@ -52,6 +49,10 @@ export function useSession(): SessionState {
   // Optimistic in-session known overlay (lemma ids learned THIS session). Lets "learn a word"
   // change a later phrase's lock state without a network round-trip.
   const learned = useRef<Set<string>>(new Set());
+  // Idempotency latch: true once an advance has fired for the CURRENT position, so a double-tapped
+  // Continue (submit/advance firing twice on the same card before it re-renders) can't skip an item
+  // or double-post. Reset whenever `pos` changes (i.e. a fresh card is shown).
+  const advancing = useRef(false);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -70,6 +71,11 @@ export function useSession(): SessionState {
   }, [reload]);
 
   const item = queue[pos];
+
+  // A fresh card is up — re-arm the advance latch so its Continue works.
+  useEffect(() => {
+    advancing.current = false;
+  }, [pos]);
 
   // The known-word set the gate sees = the persisted store UNION the in-session overlay. Recomputed
   // on every position change — `learned`/`revealed` are refs that mutate between renders, and a
@@ -96,6 +102,9 @@ export function useSession(): SessionState {
 
   const submit = useCallback(
     async (result: CardResult) => {
+      // Idempotency: a double-tapped Continue must not advance twice or post twice (see `advancing`).
+      if (advancing.current) return;
+      advancing.current = true;
       // Only a word answered CORRECTLY counts toward unlocking phrases — the intro/learn cards emit
       // no `correct` (exposure ≠ learned); recall cards emit correct:!missed. Exposure alone must
       // not unlock.
@@ -106,8 +115,7 @@ export function useSession(): SessionState {
       // lands; a failed post is logged, not surfaced — the item just stays due and re-surfaces.
       setPos((p) => p + 1);
       try {
-        const { nextReviewLabel } = await srs.submit(result);
-        setLastReviewLabel(nextReviewLabel);
+        await srs.submit(result);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.warn('[session] srs.submit failed; deck already advanced', err);
@@ -116,9 +124,12 @@ export function useSession(): SessionState {
     [srs, item],
   );
 
-  // Gate advance (locked/unlock): NO srs.submit and no lastReviewLabel update — these produce no
-  // CardResult (BACKEND_INTEGRATION §4). Re-queue the phrase so it re-surfaces at the right spot.
+  // Gate advance (locked/unlock): NO srs.submit — these produce no CardResult (BACKEND_INTEGRATION
+  // §4). Re-queue the phrase so it re-surfaces at the right spot.
   const advance = useCallback(() => {
+    // Same idempotency latch as submit() — a double-tapped gate Continue must only step once.
+    if (advancing.current) return;
+    advancing.current = true;
     if (item && item.type === 'phrase' && kind === 'phrase/locked') {
       // Re-surface after the last component word still ahead in the queue — but ONLY if a component
       // word is actually ahead. If no component is ahead this session, re-queueing would append the
@@ -150,7 +161,6 @@ export function useSession(): SessionState {
     current,
     step: Math.min(pos + 1, queue.length || 1),
     total: queue.length,
-    lastReviewLabel,
     submit,
     advance,
     reload,

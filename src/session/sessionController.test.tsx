@@ -140,6 +140,25 @@ it('advance() steps to the next item WITHOUT posting a review to SRS', async () 
   expect(submit).not.toHaveBeenCalled();
 });
 
+it('ignores a double-fired onComplete on the same card (no skip, no double-post)', async () => {
+  // A double-tapped Continue fires submit() twice on the SAME card closure before any re-render.
+  // Without an idempotency guard this advanced pos by 2 (an item is never shown) AND posted the
+  // same result twice (double FSRS advance + duplicate review_log).
+  const wordC: ReviewItem = { ...wordA, id: 'c', target: 'c', gloss: 'c' };
+  const { result, submit } = renderSessionHook([wordA, wordB, wordC], new Set());
+  await settleHook(() => expect(result.current.current?.item.id).toBe('a'));
+
+  await act(async () => {
+    const r = { itemId: 'a', cardKind: 'word/hear' as const, correct: true, spoke: false };
+    void result.current.submit(r);
+    void result.current.submit(r);
+  });
+
+  // Advanced by exactly one (to 'b', not 'c') and posted exactly once.
+  await settleHook(() => expect(result.current.current?.item.id).toBe('b'));
+  expect(submit).toHaveBeenCalledTimes(1);
+});
+
 it('advances the deck even when srs.submit rejects (no dead-Continue hang — bug 4)', async () => {
   const { result, submit } = renderSessionHook([wordA, wordB], new Set());
   // The SRS post fails (e.g. a network blip). The learner must still move on, not be stranded on a

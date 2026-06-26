@@ -12,8 +12,6 @@ import type {
   PhraseRow,
   ReviewStateRow,
 } from './types';
-import { computeRung } from '../../session/ladder';
-import type { Rung } from '../../session/ladder';
 
 // ---------------------------------------------------------------------------
 // Row -> ReviewItem
@@ -164,16 +162,12 @@ export function pairRowToReviewItem(
  * Rule (first match wins):
  *   1. correct === false           -> Again   (an explicit miss always demotes)
  *   2. selfRating === 'again'      -> Again
- *   3. selfRating === 'good'       -> Good
- *   4. correct === true            -> Good
- *   5. otherwise (learn/pron cards: no correctness, no self rating) -> Good
- *      (showing/practicing the card counts as a successful exposure)
+ *   3. otherwise -> Good   (a correct answer, a 'good' self-rating, or a learn/pron card with no
+ *      correctness at all — showing/practicing the card counts as a successful exposure)
  */
 export function cardResultToRating(result: CardResult): Rating.Again | Rating.Good {
   if (result.correct === false) return Rating.Again;
   if (result.selfRating === 'again') return Rating.Again;
-  if (result.selfRating === 'good') return Rating.Good;
-  if (result.correct === true) return Rating.Good;
   return Rating.Good;
 }
 
@@ -336,19 +330,3 @@ export function itemTypeToDbType(type: ReviewItem['type']): 'lemma' | 'phrase' |
   return type === 'word' ? 'lemma' : type;
 }
 
-// ---------------------------------------------------------------------------
-// Module C4 — graduation floor evaluation
-// ---------------------------------------------------------------------------
-
-/**
- * Pure: given the cumulative receptive/productive correct counts INCLUDING this retrieval,
- * return the derived rung. Thin wrapper over computeRung kept here so submit()'s post-write
- * step reads as "evaluate floors", and is unit-testable without I/O.
- *
- * Not a re-implementation — delegates entirely to computeRung (session/ladder.ts).
- * Kept in mappers.ts so the service layer can call it by name ("evaluateRung") and the
- * floor-evaluation block in submit() is self-documenting.
- */
-export function evaluateRung(receptiveReps: number, productiveReps: number): Rung {
-  return computeRung(receptiveReps, productiveReps);
-}

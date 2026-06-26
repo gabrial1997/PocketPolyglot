@@ -95,7 +95,6 @@ export function CardHost({
   kind,
   submit,
   advance,
-  nextReviewLabel,
   recConsent,
 }: {
   item: ReviewItem;
@@ -103,7 +102,6 @@ export function CardHost({
   submit: (result: CardResult) => void | Promise<void>;
   /** Gate-card advance (phrase/locked, phrase/unlock) — steps the deck WITHOUT posting a review. */
   advance: () => void;
-  nextReviewLabel: string | null;
   /** GDPR record gate sourced from ProfileService once per session; pure cards receive the value. */
   recConsent: boolean;
 }): React.JSX.Element {
@@ -112,7 +110,7 @@ export function CardHost({
   // (onAdvance) and phrase/unlock (onUnlocked); other cards simply ignore the extra callbacks.
   const handlers = useReviewCardHandlers(item, submit, advance);
   const Card = CARD_REGISTRY[kind];
-  return <Card item={item} {...handlers} nextReviewLabel={nextReviewLabel} recConsent={recConsent} />;
+  return <Card item={item} {...handlers} recConsent={recConsent} />;
 }
 
 /** Neutral full-screen placeholder for loading / between cards (NOT the prog coverage screen). */
@@ -251,7 +249,6 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
           kind={session.current.kind}
           submit={session.submit}
           advance={session.advance}
-          nextReviewLabel={session.lastReviewLabel}
           recConsent={recConsent}
         />
       </GlideViewport>
