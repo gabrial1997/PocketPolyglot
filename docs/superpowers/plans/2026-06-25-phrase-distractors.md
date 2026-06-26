@@ -168,7 +168,7 @@ In the phrase branch (`else if (s.item_type === 'phrase')`, ~line 597), after at
         // Meaning-quiz distractors (graceful fallback on error).
         try {
           const { data: pdist } = await this.client.rpc('get_phrase_distractors', {
-            target: row.id,
+            target_id: row.id,
             n: 3,
           });
           const choices = [
