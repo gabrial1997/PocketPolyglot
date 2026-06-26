@@ -299,6 +299,46 @@ it('a CORRECT answer on a component word lets its phrase unlock', async () => {
   await settleHook(() => expect(result.current.current?.kind).not.toBe('phrase/locked'));
 });
 
+// --- Fix B regression: phrase/locked with no component ahead must NOT re-queue (infinite loop) ---
+it('phrase/locked with no component ahead: advance() does not re-queue the phrase (no infinite loop)', async () => {
+  // Reproduces the "Lūdzu!" freeze: a phrase whose only unknown component is not in the queue.
+  // Without Fix B, advance() would call requeuePhraseAfterComponents which appends to the end
+  // (since lastCompIdx === -1) -> queue grows as fast as pos -> session never finishes.
+  // With Fix B, advance() detects no component ahead and just steps pos -> session finishes.
+  const phraseLoner: ReviewItem = {
+    id: 'ph-loner',
+    type: 'phrase',
+    stage: 'review',  // stage:review avoids expandLearningSteps expansion noise
+    reps: 3,
+    target: 'Lūdzu!',
+    gloss: 'Please!',
+    componentLemmaIds: ['ludzu'],  // 'ludzu' is unknown (not in known set, no word item in batch)
+    receptiveReps: 3,
+    productiveReps: 1,
+    translationVisibility: 'auto',
+  };
+  // Empty known set -> 'ludzu' is unknown -> phrase renders phrase/locked.
+  // No word with id 'ludzu' in the batch -> no component ahead in queue.
+  const { result } = renderSessionHook([phraseLoner], new Set());
+
+  await settleHook(() => {
+    expect(result.current.loading).toBe(false);
+    expect(result.current.current?.kind).toBe('phrase/locked');
+  });
+
+  const initialTotal = result.current.total; // 1 (just the phrase)
+
+  // advance() — this is what triggered the infinite loop without the fix
+  await act(async () => {
+    result.current.advance();
+  });
+
+  // Queue must NOT have grown: the phrase was NOT re-queued (no component ahead)
+  expect(result.current.total).toBeLessThanOrEqual(initialTotal);
+  // Session must now be done (pos advanced past the only item)
+  expect(result.current.done).toBe(true);
+});
+
 it('phrase/locked enriches the item with the live "N words to go — learn X" hint', async () => {
   const labdien = newWord('labdien'),
     es = newWord('es'),

@@ -120,14 +120,21 @@ export function useSession(): SessionState {
   // CardResult (BACKEND_INTEGRATION §4). Re-queue the phrase so it re-surfaces at the right spot.
   const advance = useCallback(() => {
     if (item && item.type === 'phrase' && kind === 'phrase/locked') {
-      // Re-surface after the last component word still ahead in the queue.
-      setQueue((q) => requeuePhraseAfterComponents(q, pos, item));
+      // Re-surface after the last component word still ahead in the queue — but ONLY if a component
+      // word is actually ahead. If no component is ahead this session, re-queueing would append the
+      // phrase to the end forever (the component never appears -> infinite loop / freeze).
+      const compIds = new Set(item.componentLemmaIds ?? []);
+      const componentAhead = queue.slice(pos + 1).some((q) => compIds.has(q.id));
+      if (componentAhead) {
+        setQueue((q) => requeuePhraseAfterComponents(q, pos, item));
+      }
+      // else: no component ahead this session — do NOT re-queue (it would loop forever); just advance.
     } else if (item && item.type === 'phrase' && kind === 'phrase/unlock') {
       // Re-surface immediately as the first SRS exposure (phrase/hear).
       setQueue((q) => requeueNext(q, pos, item));
     }
     setPos((p) => p + 1);
-  }, [item, kind, pos]);
+  }, [item, kind, pos, queue]);
 
   const done = !loading && pos >= queue.length;
 

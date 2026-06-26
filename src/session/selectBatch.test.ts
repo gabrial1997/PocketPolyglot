@@ -314,11 +314,13 @@ describe('selectBatch', () => {
         componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // only C unknown
         anchorLemmaId: 'anchor1',
       });
+      // lemma-C must also be in this session's candidates (satisfiability gate):
+      // a phrase is only admitted when its unknown components will appear this session.
+      const componentC = makeWord('lemma-C', 2);
 
-      const result = selectBatch({ due: [], candidates: [oneUnknown], ctx });
+      const result = selectBatch({ due: [], candidates: [oneUnknown, componentC], ctx });
 
-      expect(result.admittedNew).toHaveLength(1);
-      expect(result.admittedNew[0]?.id).toBe('p1');
+      expect(result.admittedNew.some(c => c.id === 'p1')).toBe(true);
     });
 
     it('rejects a phrase whose anchor lemma has no successful recall', () => {
@@ -424,11 +426,13 @@ describe('selectBatch', () => {
         componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // only C unknown (≤ tolerance)
         anchorLemmaId: 'anchor1',
       });
+      // lemma-C must also be in this session's candidates (satisfiability gate):
+      // a phrase is only admitted when its unknown components will appear this session.
+      const componentC = makeWord('lemma-C', 2);
 
-      const result = selectBatch({ due: [], candidates: [audiolessPhrase], ctx });
+      const result = selectBatch({ due: [], candidates: [audiolessPhrase, componentC], ctx });
 
-      expect(result.admittedNew).toHaveLength(1);
-      expect(result.admittedNew[0]?.id).toBe('p1');
+      expect(result.admittedNew.some(c => c.id === 'p1')).toBe(true);
     });
 
     it('DOES admit an audio-less word', () => {
@@ -630,6 +634,70 @@ describe('selectBatch', () => {
       expect(lemmaIdx).toBeGreaterThanOrEqual(0);
       expect(pairIdx).toBeGreaterThanOrEqual(0);
       expect(Math.abs(lemmaIdx - pairIdx)).toBe(1);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 16. Satisfiability gate (regression: phrase whose unknown component is
+  //     absent from this session must NOT be admitted — it would lock forever
+  //     because its component word never appears, triggering an infinite requeue)
+  // -------------------------------------------------------------------------
+  describe('satisfiability gate', () => {
+    it('rejects a phrase whose unknown component is not in due or candidates this session', () => {
+      // 'lemma-C' is unknown but no due item and no candidate has id 'lemma-C'.
+      // Without this gate, the phrase would be admitted, render phrase/locked, get
+      // re-queued to the end forever (the component never appears -> infinite loop).
+      const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
+      const recalledLemmaIds = new Set(['anchor1']);
+      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+
+      const phrase = makePhrase('p1', 1, {
+        componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // C is the unknown, not in session
+        anchorLemmaId: 'anchor1',
+      });
+
+      // No due items, no word candidate with id 'lemma-C' -> not satisfiable this session
+      const result = selectBatch({ due: [], candidates: [phrase], ctx });
+
+      expect(result.admittedNew).toHaveLength(0);
+    });
+
+    it('admits a phrase whose unknown component IS a candidate this session', () => {
+      // 'lemma-C' is unknown but a word candidate with id 'lemma-C' will appear this session.
+      // The phrase CAN unlock this session -> it should be admitted.
+      const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
+      const recalledLemmaIds = new Set(['anchor1']);
+      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+
+      const phrase = makePhrase('p1', 1, {
+        componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // C is unknown
+        anchorLemmaId: 'anchor1',
+      });
+      const componentWord = makeWord('lemma-C', 2); // C IS in this session's candidates
+
+      const result = selectBatch({ due: [], candidates: [phrase, componentWord], ctx });
+
+      const admittedIds = result.admittedNew.map(c => c.id);
+      expect(admittedIds).toContain('p1');
+    });
+
+    it('admits a phrase whose unknown component is a due review item this session', () => {
+      // 'lemma-C' is unknown but there is a due review item with id 'lemma-C' this session.
+      // The phrase CAN unlock this session -> it should be admitted.
+      const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
+      const recalledLemmaIds = new Set(['anchor1']);
+      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+
+      const phrase = makePhrase('p1', 1, {
+        componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // C is unknown
+        anchorLemmaId: 'anchor1',
+      });
+      const dueComp = makeDueRef('lemma-C', { hasAudioEnvelope: true }); // C IS a due review
+
+      const result = selectBatch({ due: [dueComp], candidates: [phrase], ctx });
+
+      const admittedIds = result.admittedNew.map(c => c.id);
+      expect(admittedIds).toContain('p1');
     });
   });
 });

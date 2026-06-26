@@ -128,6 +128,15 @@ export function selectBatch(input: {
   const due = rawDue.filter(d => d.hasAudioEnvelope || d.hasImage);
 
   // -------------------------------------------------------------------------
+  // Step 1b: Build id sets for satisfiability checks (used in phrase gate below).
+  // A phrase is only admitted if EVERY unknown component will actually appear this
+  // session — otherwise it would lock forever (its component never shows) and
+  // re-queue endlessly (the freeze regression).
+  // -------------------------------------------------------------------------
+  const dueIds = new Set(due.map((d) => d.id));
+  const candidateIds = new Set(candidates.map((c) => c.id));
+
+  // -------------------------------------------------------------------------
   // Step 2: New cap based on account age.
   // -------------------------------------------------------------------------
   let newCap: number =
@@ -200,6 +209,15 @@ export function selectBatch(input: {
         !candidate.anchorLemmaId ||
         !ctx.recalledLemmaIds.has(candidate.anchorLemmaId)
       ) {
+        continue;
+      }
+      // A phrase locks until its unknown components are learned. Only admit it if every unknown
+      // component will actually appear THIS session (a new candidate or a due review) — otherwise it
+      // would lock forever (its component never shows) and re-queue endlessly. (i+1 must be reachable.)
+      const unknownIds = (candidate.componentLemmaIds ?? []).filter(
+        (id) => !ctx.knownLemmaIds.has(id),
+      );
+      if (!unknownIds.every((id) => dueIds.has(id) || candidateIds.has(id))) {
         continue;
       }
     }
