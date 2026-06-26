@@ -109,6 +109,12 @@ that row's rep counts (`ladder.ts`). Model B requires a **per-template** schedul
 
 (Exact DDL and the `SupabaseSrsService` / mapper changes are for the implementation plan.)
 
+> **Plan B caution (from Plan A review):** the `pron` card kind maps to template
+> `'pronunciation'` but DB `item_type` `'pair'`, the same item space perception drills
+> (`'recognition'`) occupy. A `pair`'s pronunciation row and its recognition row are *semantically
+> different cards* sharing `(item_type, item_id)` and distinguished only by `template` — when Plan B
+> makes rendering template-aware, do not treat them as "one drill, two schedules."
+
 ## 6. Logic changes (where the work lands)
 
 - `renderFor.ts` / `ladder.ts`: onboarding becomes a **deterministic ordered sequence** on
