@@ -94,6 +94,7 @@ function reviewState(overrides: Partial<ReviewStateRow> = {}): ReviewStateRow {
     difficulty: 5,
     due_at: '2026-06-20T00:00:00Z',
     last_review: '2026-06-10T00:00:00Z',
+    template: 'recognition',
     ...overrides,
   };
 }

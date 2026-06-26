@@ -6,6 +6,7 @@
 // actually touch are typed below (plus enough context to be self-documenting).
 
 import type { ReviewExample, ReviewGlide, ReviewMnemonic } from '../../types/reviewItem';
+import type { ReviewTemplate } from './cardTemplate';
 
 /** review_state.item_type / review_log.item_type. NB: DB 'lemma' <-> contract type 'word'. */
 export type DbItemType = 'lemma' | 'phrase' | 'pair' | 'wordform';
@@ -95,6 +96,7 @@ export interface ReviewStateRow {
   difficulty: number | null;
   due_at: string | null;
   last_review: string | null;
+  template: ReviewTemplate;
 }
 
 /** public.podcast_episodes — Tier-B listening. */
