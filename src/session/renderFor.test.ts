@@ -113,11 +113,11 @@ describe('renderFor', () => {
     it('new phrase (with audio) -> phrase/hear', () => {
       expect(renderFor(audioItem({ type: 'phrase', stage: 'new' }))).toBe('phrase/hear');
     });
-    // Rung-based routing: non-idiom phrase, below production floor -> phrase/hear (receptive)
-    it('non-new non-idiom phrase (with audio, productiveReps:0, below production floor) -> phrase/hear', () => {
+    // Rung-based routing: non-idiom phrase, below production floor -> phrase/meaning (recognition quiz)
+    it('non-new non-idiom phrase (with audio, productiveReps:0, below production floor) -> phrase/meaning', () => {
       expect(
         renderFor(audioItem({ type: 'phrase', stage: 'review', productiveReps: 0 })),
-      ).toBe('phrase/hear');
+      ).toBe('phrase/meaning');
     });
     // Rung-based routing: non-idiom phrase, at production floor (productiveReps:6) -> phrase/sayit
     it('non-new non-idiom phrase (with audio, productiveReps:6, at production floor) -> phrase/sayit', () => {
@@ -130,31 +130,51 @@ describe('renderFor', () => {
         renderFor(audioItem({ type: 'phrase', stage: 'review', productiveReps: 0, isIdiom: true })),
       ).toBe('phrase/meaning');
     });
-    it('idiom phrase at production rung (with audio) -> phrase/meaning (idioms always meaning check)', () => {
+    it('idiom phrase at production rung (with audio) -> phrase/sayit (is_idiom no longer special; production rung routes to sayit)', () => {
       expect(
         renderFor(audioItem({ type: 'phrase', stage: 'mature', productiveReps: 6, isIdiom: true })),
-      ).toBe('phrase/meaning');
+      ).toBe('phrase/sayit');
     });
   });
 
-  describe('audio-less phrase routing (exposure card, not phrase/meaning)', () => {
-    it('audio-less new phrase -> phrase/hear (exposure card; phrase/meaning is out of scope for phrases)', () => {
+  // Task 4: new routing — new→hear, recognition→meaning, production(audio)→sayit
+  it('a new phrase routes to phrase/hear (first exposure)', () => {
+    const item = { id: 'p', type: 'phrase' as const, stage: 'new' as const, reps: 0, target: 'labrīt', gloss: 'good morning',
+      receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' as const };
+    expect(renderFor(item)).toBe('phrase/hear');
+  });
+
+  it('a phrase recognition review routes to phrase/meaning (the meaning quiz)', () => {
+    const item = { id: 'p', type: 'phrase' as const, stage: 'review' as const, reps: 2, target: 'labrīt', gloss: 'good morning',
+      receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto' as const };
+    expect(renderFor(item)).toBe('phrase/meaning');
+  });
+
+  it('a phrase at production rung WITH audio routes to phrase/sayit', () => {
+    const item = { id: 'p', type: 'phrase' as const, stage: 'review' as const, reps: 9, target: 'labrīt', gloss: 'good morning',
+      audio: { envelope: [0.5] }, receptiveReps: 3, productiveReps: 6, translationVisibility: 'auto' as const };
+    expect(renderFor(item)).toBe('phrase/sayit');
+  });
+
+  describe('audio-less phrase routing (recognition quiz is audio-optional)', () => {
+    it('audio-less new phrase -> phrase/hear (first exposure; stage=new always routes to hear)', () => {
       const result = renderFor(noAudioItem({ type: 'phrase', stage: 'new' }));
       expect(result).toBe('phrase/hear');
       expect(result).not.toBe('phrase/meaning');
     });
-    it('audio-less non-idiom phrase -> phrase/hear (never phrase/sayit)', () => {
+    // Non-new audio-less phrases now route to phrase/meaning (recognition quiz is audio-optional).
+    it('audio-less non-idiom phrase (review) -> phrase/meaning (recognition quiz, never phrase/sayit)', () => {
       const result = renderFor(noAudioItem({ type: 'phrase', stage: 'review', reps: 1 }));
-      expect(result).toBe('phrase/hear');
+      expect(result).toBe('phrase/meaning');
       expect(result).not.toBe('phrase/sayit');
-      expect(result).not.toBe('phrase/meaning');
+      expect(result).not.toBe('phrase/hear');
     });
-    it('audio-less mature phrase -> phrase/hear (never phrase/sayit or phrase/meaning)', () => {
+    it('audio-less mature phrase -> phrase/meaning (recognition quiz; never phrase/sayit since production requires audio)', () => {
       const result = renderFor(noAudioItem({ type: 'phrase', stage: 'mature', reps: 5 }));
-      expect(result).toBe('phrase/hear');
-      expect(result).not.toMatch(/phrase\/sayit|phrase\/meaning/);
+      expect(result).toBe('phrase/meaning');
+      expect(result).not.toBe('phrase/sayit');
     });
-    it('an audio-less phrase routes to phrase/hear (not the choice-less phrase/meaning)', () => {
+    it('an audio-less NEW phrase routes to phrase/hear (stage=new always hear, not meaning)', () => {
       const item = { id: 'p', type: 'phrase' as const, stage: 'new' as const, reps: 0, target: 'labrīt', gloss: 'good morning',
         receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' as const };
       expect(renderFor(item)).toBe('phrase/hear');

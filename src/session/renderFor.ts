@@ -7,8 +7,8 @@
 //  - picture words run the full loop via 'word/pic-review'.
 //  - non-picture words: receptive ('hear') until computeRung reaches 'production' (productiveReps
 //    >= PRODUCTION_GRADUATION_FLOOR); at/above that rung, production ('say').
-//  - non-idiom phrases: same rung check — 'phrase/hear' below production, 'phrase/sayit' at/above.
-//    Idioms always route to 'phrase/meaning'. New phrases (stage==='new') get 'phrase/hear' first.
+//  - phrases: new → 'phrase/hear'; recognition rung → 'phrase/meaning' (audio-optional meaning quiz,
+//    has choices from Task 2); production rung + audio → 'phrase/sayit'. is_idiom no longer special.
 //  - phrase / drill / pron route by item.type.
 //  - 'phrase/locked' / 'phrase/unlock' are NOT returned here — the controller decides lock
 //    state from the known-word set (BACKEND_INTEGRATION §4); this returns the *review* kind.
@@ -42,18 +42,15 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
     return 'word/hear';
   }
 
-  // Phrase reviews. (locked/unlock handled by the controller, not here.)
+  // Phrase reviews. (locked/unlock handled by the controller, not here.) All phrases now get the
+  // meaning-quiz (phrase/meaning) for recognition — it's audio-optional and has choices (Task 2).
   if (item.type === 'phrase') {
-    // Audio-less phrases use the exposure card (written phrase + silent orb). phrase/meaning is NOT
-    // used — it renders from item.choices, which phrases don't have. (Restoring it = separate task.)
-    if (!hasAudio) return 'phrase/hear';
-    if (item.stage === 'new') return 'phrase/hear'; // first exposure
-    // idiom (literal != actual) → meaning check always.
-    if (item.isIdiom) return 'phrase/meaning';
-    // non-idiom: route by ladder rung — production ('sayit') only once at/above production floor.
-    return computeRung(item.receptiveReps ?? 0, item.productiveReps ?? 0) === 'production'
-      ? 'phrase/sayit'
-      : 'phrase/hear';
+    if (item.stage === 'new') return 'phrase/hear'; // first exposure: hear/see the phrase
+    // Production (sayit) compares against native audio, so it needs audio.
+    if (hasAudio && computeRung(item.receptiveReps ?? 0, item.productiveReps ?? 0) === 'production') {
+      return 'phrase/sayit';
+    }
+    return 'phrase/meaning'; // recognition meaning-quiz
   }
 
   // Minimal-pair perception drill — a gliding combination (ie) gets the diphthong card.
