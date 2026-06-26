@@ -218,6 +218,7 @@ function stateRow(item_type: string, item_id: string, dueOffsetSec: number | nul
     user_id: 'u1',
     item_type,
     item_id,
+    template: 'recognition' as const,
     stage: 'new',
     due_at,
     stability: null,
@@ -405,6 +406,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       user_id: 'u1',
       item_type: 'lemma',
       item_id: `due-lemma-${k}`,
+      template: 'recognition',
       stage: 'review',
       due_at: new Date(Date.now() - 1000 * (k + 1)).toISOString(), // all in the past
       stability: 10,
@@ -488,6 +490,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
         user_id: 'u1',
         item_type: 'lemma',
         item_id: 'no-audio-lemma',
+        template: 'recognition',
         stage: 'review',
         due_at: new Date(Date.now() - 5000).toISOString(),
         stability: 10,
@@ -500,6 +503,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
         user_id: 'u1',
         item_type: 'lemma',
         item_id: 'has-audio-lemma',
+        template: 'recognition',
         stage: 'review',
         due_at: new Date(Date.now() - 4000).toISOString(),
         stability: 10,
@@ -642,6 +646,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       user_id: 'u1',
       item_type: 'lemma',
       item_id: `lemma-${k + 1}`,
+      template: 'recognition',
       stage: 'review',
       due_at: new Date('2099-01-01').toISOString(), // not yet due
       stability: 10,
@@ -851,6 +856,7 @@ describe('SupabaseSrsService drill seeding', () => {
   it('does not clobber a drill already in progress, and adds no duplicate', async () => {
     const inProgress: Row = {
       user_id: 'u1', item_type: 'pair', item_id: 'drill-1',
+      template: 'recognition',
       stage: 'review', reps: 3, lapses: 0,
       stability: 6, difficulty: 5,
       due_at: new Date(Date.now() + 86_400_000).toISOString(), // due tomorrow — not yet due
@@ -869,5 +875,81 @@ describe('SupabaseSrsService drill seeding', () => {
     expect(pairRows).toHaveLength(1); // no duplicate
     expect(pairRows[0]!.stage).toBe('review'); // FSRS progress untouched
     expect(pairRows[0]!.reps).toBe(3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 4: getDueBatch renders recognition schedule only (non-breaking).
+// When the review_state table contains BOTH a 'recognition' and a 'pronunciation'
+// row for the same item (both due), the batch must surface that item exactly ONCE
+// via the recognition schedule. Pronunciation rows accumulate silently.
+// ---------------------------------------------------------------------------
+
+describe('SupabaseSrsService.getDueBatch — recognition-only filter (Task 4)', () => {
+  it('renders only the recognition schedule when both templates are due (non-breaking)', async () => {
+    const PAST = new Date(Date.now() - 5000).toISOString();
+    const tables: Record<string, Row[]> = {
+      review_state: [
+        {
+          user_id: 'u1',
+          item_type: 'lemma',
+          item_id: 'lemma-1',
+          template: 'recognition',
+          stage: 'review',
+          reps: 4,
+          lapses: 0,
+          stability: 8,
+          difficulty: 5,
+          due_at: PAST,
+          last_review: null,
+        },
+        {
+          user_id: 'u1',
+          item_type: 'lemma',
+          item_id: 'lemma-1',
+          template: 'pronunciation',
+          stage: 'review',
+          reps: 2,
+          lapses: 0,
+          stability: 4,
+          difficulty: 5,
+          due_at: PAST,
+          last_review: null,
+        },
+      ],
+      lemmas: [contentRow('lemma-1', { envelope: [0.5], native_url: 'l1.mp3', utility_rank: 1 })],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const batch = await svc.getDueBatch();
+
+    // Without the filter: both template rows produce two DueRefs → item appears twice. FAIL.
+    // With the filter: only recognition row passes → item appears exactly once. PASS.
+    expect(batch.filter((i) => i.id === 'lemma-1')).toHaveLength(1);
+  });
+
+  it('synthesises new-item rows with template recognition', async () => {
+    // No review_state rows → item is a brand-new candidate.
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [contentRow('lemma-new', { envelope: [0.5], native_url: 'ln.mp3', utility_rank: 1 })],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const batch = await svc.getDueBatch();
+
+    expect(batch).toHaveLength(1);
+    expect(batch[0]!.id).toBe('lemma-new');
+    expect(batch[0]!.stage).toBe('new');
   });
 });

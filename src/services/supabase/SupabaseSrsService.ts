@@ -368,6 +368,7 @@ export class SupabaseSrsService implements SrsService {
       user_id: this.userId,
       item_type: 'pair' as const,
       item_id: d.id,
+      template: 'recognition' as const,
       stage: 'new' as const,
       reps: 0,
       lapses: 0,
@@ -375,7 +376,7 @@ export class SupabaseSrsService implements SrsService {
     }));
     const { error: upErr } = await this.client
       .from('review_state')
-      .upsert(rows, { onConflict: 'user_id,item_type,item_id', ignoreDuplicates: true });
+      .upsert(rows, { onConflict: 'user_id,item_type,item_id,template', ignoreDuplicates: true });
     if (upErr) throw upErr;
   }
 
@@ -407,7 +408,10 @@ export class SupabaseSrsService implements SrsService {
       .order('item_id', { ascending: true });
     if (dueErr) throw dueErr;
 
-    const dueStates: ReviewStateRow[] = (dueStateData ?? []) as ReviewStateRow[];
+    // Plan A: render only the recognition schedule. Pronunciation rows are written by submit() but
+    // not surfaced until Plan B/2 makes rendering template-aware. Keeps the loop behaviour identical.
+    const dueStates: ReviewStateRow[] = ((dueStateData ?? []) as ReviewStateRow[])
+      .filter((r) => r.template === 'recognition');
 
     const stateByKey = new Map<string, ReviewStateRow>();
     for (const s of dueStates) { stateByKey.set(`${s.item_type}:${s.item_id}`, s); }
@@ -556,6 +560,7 @@ export class SupabaseSrsService implements SrsService {
           user_id: this.userId,
           item_type: dbType,
           item_id: entry.id,
+          template: 'recognition',
           stage: 'new',
           reps: 0,
           lapses: 0,
