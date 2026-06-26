@@ -154,9 +154,17 @@ describe('PhraseMeaning', () => {
     expect(u.getByText(/good-morning!/)).toBeTruthy(); // literal reading via LiteralNote
   });
 
-  it('falls back to the generic idiom feedback when no usage note is authored', () => {
-    const u = renderCard();
+  it('falls back to the generic idiom feedback when no usage note is authored (idiom)', () => {
+    const u = renderCard({ isIdiom: true });
     fireEvent.press(u.getByText('Good morning!'));
     expect(u.getByText('That’s it — the words don’t add up literally.')).toBeTruthy();
+  });
+
+  it('a non-idiom phrase with no usageNote shows calm confirmation, not the idiom fallback', () => {
+    // The card now serves all phrases; non-idioms must not leak the idiom-specific line.
+    const u = renderCard({ isIdiom: false, usageNote: undefined });
+    fireEvent.press(u.getByText('Good morning!')); // correct pick
+    expect(u.getByText('That’s right.')).toBeTruthy();
+    expect(u.queryByText(/don’t add up literally/)).toBeNull();
   });
 });

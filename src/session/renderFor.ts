@@ -50,7 +50,9 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
     if (hasAudio && computeRung(item.receptiveReps ?? 0, item.productiveReps ?? 0) === 'production') {
       return 'phrase/sayit';
     }
-    return 'phrase/meaning'; // recognition meaning-quiz
+    // A meaning quiz needs real options; if distractors failed to load (or none), fall back to the
+    // exposure card rather than stranding the learner on a choice-less, un-completable quiz.
+    return (item.choices?.length ?? 0) >= 2 ? 'phrase/meaning' : 'phrase/hear';
   }
 
   // Minimal-pair perception drill — a gliding combination (ie) gets the diphthong card.

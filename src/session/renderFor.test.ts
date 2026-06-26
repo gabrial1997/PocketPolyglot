@@ -116,7 +116,8 @@ describe('renderFor', () => {
     // Rung-based routing: non-idiom phrase, below production floor -> phrase/meaning (recognition quiz)
     it('non-new non-idiom phrase (with audio, productiveReps:0, below production floor) -> phrase/meaning', () => {
       expect(
-        renderFor(audioItem({ type: 'phrase', stage: 'review', productiveReps: 0 })),
+        renderFor(audioItem({ type: 'phrase', stage: 'review', productiveReps: 0,
+          choices: [{ value: 'a', gloss: 'x', correct: true }, { value: 'b', gloss: 'y', correct: false }] })),
       ).toBe('phrase/meaning');
     });
     // Rung-based routing: non-idiom phrase, at production floor (productiveReps:6) -> phrase/sayit
@@ -127,7 +128,8 @@ describe('renderFor', () => {
     });
     it('non-new idiom phrase (with audio) -> phrase/meaning (comprehension check)', () => {
       expect(
-        renderFor(audioItem({ type: 'phrase', stage: 'review', productiveReps: 0, isIdiom: true })),
+        renderFor(audioItem({ type: 'phrase', stage: 'review', productiveReps: 0, isIdiom: true,
+          choices: [{ value: 'a', gloss: 'x', correct: true }, { value: 'b', gloss: 'y', correct: false }] })),
       ).toBe('phrase/meaning');
     });
     it('idiom phrase at production rung (with audio) -> phrase/sayit (is_idiom no longer special; production rung routes to sayit)', () => {
@@ -146,7 +148,8 @@ describe('renderFor', () => {
 
   it('a phrase recognition review routes to phrase/meaning (the meaning quiz)', () => {
     const item = { id: 'p', type: 'phrase' as const, stage: 'review' as const, reps: 2, target: 'labrīt', gloss: 'good morning',
-      receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto' as const };
+      receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto' as const,
+      choices: [{ value: 'a', gloss: 'x', correct: true as const }, { value: 'b', gloss: 'y', correct: false as const }] };
     expect(renderFor(item)).toBe('phrase/meaning');
   });
 
@@ -164,13 +167,15 @@ describe('renderFor', () => {
     });
     // Non-new audio-less phrases now route to phrase/meaning (recognition quiz is audio-optional).
     it('audio-less non-idiom phrase (review) -> phrase/meaning (recognition quiz, never phrase/sayit)', () => {
-      const result = renderFor(noAudioItem({ type: 'phrase', stage: 'review', reps: 1 }));
+      const result = renderFor(noAudioItem({ type: 'phrase', stage: 'review', reps: 1,
+        choices: [{ value: 'a', gloss: 'x', correct: true }, { value: 'b', gloss: 'y', correct: false }] }));
       expect(result).toBe('phrase/meaning');
       expect(result).not.toBe('phrase/sayit');
       expect(result).not.toBe('phrase/hear');
     });
     it('audio-less mature phrase -> phrase/meaning (recognition quiz; never phrase/sayit since production requires audio)', () => {
-      const result = renderFor(noAudioItem({ type: 'phrase', stage: 'mature', reps: 5 }));
+      const result = renderFor(noAudioItem({ type: 'phrase', stage: 'mature', reps: 5,
+        choices: [{ value: 'a', gloss: 'x', correct: true }, { value: 'b', gloss: 'y', correct: false }] }));
       expect(result).toBe('phrase/meaning');
       expect(result).not.toBe('phrase/sayit');
     });
@@ -178,6 +183,27 @@ describe('renderFor', () => {
       const item = { id: 'p', type: 'phrase' as const, stage: 'new' as const, reps: 0, target: 'labrīt', gloss: 'good morning',
         receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' as const };
       expect(renderFor(item)).toBe('phrase/hear');
+    });
+  });
+
+  describe('phrase/meaning choices guard — fewer than 2 choices falls back to phrase/hear', () => {
+    it('non-new phrase WITH >=2 choices -> phrase/meaning (normal production state)', () => {
+      const result = renderFor(item({ type: 'phrase', stage: 'review', reps: 2,
+        choices: [{ value: 'a', gloss: 'x', correct: true }, { value: 'b', gloss: 'y', correct: false }] }));
+      expect(result).toBe('phrase/meaning');
+    });
+
+    it('non-new phrase with NO choices (distractors failed to load) -> phrase/hear (soft-lock guard)', () => {
+      const result = renderFor(item({ type: 'phrase', stage: 'review', reps: 2, choices: undefined }));
+      expect(result).toBe('phrase/hear');
+      expect(result).not.toBe('phrase/meaning');
+    });
+
+    it('non-new phrase with only 1 choice -> phrase/hear (insufficient for a meaningful quiz)', () => {
+      const result = renderFor(item({ type: 'phrase', stage: 'review', reps: 2,
+        choices: [{ value: 'a', gloss: 'x', correct: true }] }));
+      expect(result).toBe('phrase/hear');
+      expect(result).not.toBe('phrase/meaning');
     });
   });
 

@@ -48,7 +48,7 @@ export function PhraseMeaning({ item, onPlay, onStop, onPreload, onAnswer, onCom
   // Once solved, the usage note (the functional "what it really means" nuance) becomes the
   // feedback line; the literal word-for-word reading is shown below it via LiteralNote.
   const feedback = solved
-    ? (item.usageNote ?? 'That’s it — the words don’t add up literally.')
+    ? (item.usageNote ?? (item.isIdiom ? 'That’s it — the words don’t add up literally.' : 'That’s right.'))
     : wrongValue
       ? 'Not quite — give it another try.'
       : '';
