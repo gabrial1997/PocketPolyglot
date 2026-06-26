@@ -25,6 +25,7 @@ import {
   rowToPrior,
   schedule,
 } from './mappers';
+import { cardKindToTemplate } from './cardTemplate';
 import {
   DAY_ONE_NEW_CAP,
   RETENTION_MINIMUM_SAMPLE,
@@ -739,6 +740,7 @@ export class SupabaseSrsService implements SrsService {
   async submit(result: CardResult): Promise<{ nextReviewLabel: string; rung: import('../../session/ladder').Rung }> {
     const now = this.now();
     const itemType = cardKindToDbType(result.cardKind);
+    const template = cardKindToTemplate(result.cardKind);
     const rating = cardResultToRating(result);
 
     // Load the prior schedule (may be absent for a brand-new item).
@@ -748,6 +750,7 @@ export class SupabaseSrsService implements SrsService {
       .eq('user_id', this.userId)
       .eq('item_type', itemType)
       .eq('item_id', result.itemId)
+      .eq('template', template)
       .maybeSingle();
     if (prevErr) throw prevErr;
 
@@ -762,6 +765,7 @@ export class SupabaseSrsService implements SrsService {
         user_id: this.userId,
         item_type: itemType,
         item_id: result.itemId,
+        template,
         stage: next.stage,
         reps: next.reps,
         lapses: next.lapses,
@@ -770,7 +774,7 @@ export class SupabaseSrsService implements SrsService {
         due_at: next.due.toISOString(),
         last_review: next.last_review.toISOString(),
       },
-      { onConflict: 'user_id,item_type,item_id' },
+      { onConflict: 'user_id,item_type,item_id,template' },
     );
     if (upsertErr) throw upsertErr;
 
