@@ -2,6 +2,7 @@
 // this class is the I/O wrapper: it queries review_state + content rows, runs the mappers,
 // and persists review_state + review_log.
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Rating } from 'ts-fsrs';
 import type { SrsService } from '../index';
 import type { ReviewItem } from '../../types/reviewItem';
 import type { CardResult } from '../../types/cardResult';
@@ -25,7 +26,7 @@ import {
   rowToPrior,
   schedule,
 } from './mappers';
-import { cardKindToTemplate } from './cardTemplate';
+import { cardKindToTemplate, type ReviewTemplate } from './cardTemplate';
 import {
   DAY_ONE_NEW_CAP,
   RETENTION_MINIMUM_SAMPLE,
@@ -743,26 +744,29 @@ export class SupabaseSrsService implements SrsService {
     return items;
   }
 
-  async submit(result: CardResult): Promise<{ nextReviewLabel: string; rung: import('../../session/ladder').Rung }> {
-    const now = this.now();
-    const itemType = cardKindToDbType(result.cardKind);
-    const template = cardKindToTemplate(result.cardKind);
-    const rating = cardResultToRating(result);
-
-    // Load the prior schedule (may be absent for a brand-new item).
+  /**
+   * Read the prior schedule for one (item, template) row, advance it via FSRS, and upsert the
+   * result. Split out of submit() because a production-card grade must schedule TWO rows (see
+   * submit()'s comment on the recognition companion write).
+   */
+  private async scheduleTemplateRow(
+    itemType: DbItemType,
+    itemId: string,
+    template: ReviewTemplate,
+    rating: Rating.Again | Rating.Good,
+    now: Date,
+  ): Promise<{ label: string }> {
     const { data: prevRow, error: prevErr } = await this.client
       .from('review_state')
       .select('*')
       .eq('user_id', this.userId)
       .eq('item_type', itemType)
-      .eq('item_id', result.itemId)
+      .eq('item_id', itemId)
       .eq('template', template)
       .maybeSingle();
     if (prevErr) throw prevErr;
 
-    const prevState = prevRow as ReviewStateRow | null;
-    const prior = rowToPrior(prevState);
-
+    const prior = rowToPrior(prevRow as ReviewStateRow | null);
     const next = schedule(prior, rating, now);
     const label = nextReviewLabel(next.due, now);
 
@@ -770,7 +774,7 @@ export class SupabaseSrsService implements SrsService {
       {
         user_id: this.userId,
         item_type: itemType,
-        item_id: result.itemId,
+        item_id: itemId,
         template,
         stage: next.stage,
         reps: next.reps,
@@ -783,6 +787,30 @@ export class SupabaseSrsService implements SrsService {
       { onConflict: 'user_id,item_type,item_id,template' },
     );
     if (upsertErr) throw upsertErr;
+
+    return { label };
+  }
+
+  async submit(result: CardResult): Promise<{ nextReviewLabel: string; rung: import('../../session/ladder').Rung }> {
+    const now = this.now();
+    const itemType = cardKindToDbType(result.cardKind);
+    const template = cardKindToTemplate(result.cardKind);
+    const rating = cardResultToRating(result);
+
+    const { label } = await this.scheduleTemplateRow(itemType, result.itemId, template, rating, now);
+
+    // getDueBatch() renders (and known_lemmas gates) off the recognition template ONLY (Plan A).
+    // renderFor() permanently switches a graduated item to its production card (word/say /
+    // phrase/sayit) once productiveReps clears the floor, so a pronunciation-template grade is the
+    // ONLY review event that item will ever receive again. Without this companion write, the
+    // recognition row's due_at freezes at whatever it was pre-graduation, lapses into the past, and
+    // the item is re-admitted as "due" every session forever even though the learner keeps passing
+    // it. Advance recognition's own schedule (independent stability/difficulty) alongside it so
+    // due-ness keeps tracking real review activity, matching the single-row behaviour this
+    // migration is meant to preserve until Plan B/C make rendering template-aware.
+    if (template !== 'recognition') {
+      await this.scheduleTemplateRow(itemType, result.itemId, 'recognition', rating, now);
+    }
 
     // E2: upload the recording (if present + consent given) BEFORE writing review_log.
     // Returns null on any failure so the session still advances.

@@ -419,7 +419,7 @@ async function seed(manifest, db, envelopes, client, voice) {
   if (stateRows.length) {
     const { error } = await db
       .from('review_state')
-      .upsert(stateRows, { onConflict: 'user_id,item_type,item_id' });
+      .upsert(stateRows, { onConflict: 'user_id,item_type,item_id,template' });
     if (error) throw error;
     counts.review_state = stateRows.length;
   }

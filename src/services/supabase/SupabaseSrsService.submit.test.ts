@@ -4,7 +4,10 @@
 // Scenarios:
 //   A. word/say result → reads + upserts the 'pronunciation' row;
 //      payload has template:'pronunciation'; onConflict is 'user_id,item_type,item_id,template'
-//   B. word/hear result → payload has template:'recognition'
+//   B. word/hear result → payload has template:'recognition' (single write; no companion)
+//   C. word/say ALSO advances the 'recognition' row's own schedule (regression: without this,
+//      renderFor() permanently switches a graduated item to word/say, so the recognition row's
+//      due_at would freeze at its pre-graduation value and stay due forever)
 
 import { SupabaseSrsService } from './SupabaseSrsService';
 import type { CardResult } from '../../types/cardResult';
@@ -14,8 +17,10 @@ type Row = Record<string, unknown>;
 // ---------------------------------------------------------------------------
 // Instrumented fake client — extends the pattern from SupabaseSrsService.C4submit.test.ts
 // but additionally captures:
-//   • select-chain eq filters on review_state (to assert template is passed to the read)
-//   • upsert payload + onConflict on review_state (to assert template is persisted)
+//   • every select-chain's eq filters on review_state (to assert template is passed to each read)
+//   • every upsert payload + onConflict on review_state (to assert template is persisted)
+// One submit() call can now issue TWO review_state select+upsert round-trips (the graded
+// template, plus a recognition companion write), so captures are arrays, not "last write wins".
 // ---------------------------------------------------------------------------
 
 interface CapturedUpsert {
@@ -25,25 +30,25 @@ interface CapturedUpsert {
 
 interface TemplateTestFake {
   client: never; // typed as `never` so SupabaseSrsService accepts it
-  lastReviewStateSelect: Row;
-  lastReviewStateUpsert: CapturedUpsert;
+  reviewStateSelects: Row[];
+  reviewStateUpserts: CapturedUpsert[];
 }
 
 function makeFakeClientForTemplateTest(opts: {
-  priorState: Row | null;
+  priorStateByTemplate: { recognition?: Row | null; pronunciation?: Row | null };
   existingLogRows?: Row[];
 }): TemplateTestFake {
   const reviewLog: Row[] = [...(opts.existingLogRows ?? [])];
 
-  let capturedSelectFilters: Row = {};
-  let capturedUpsert: CapturedUpsert = { payload: {}, onConflict: '' };
+  const reviewStateSelects: Row[] = [];
+  const reviewStateUpserts: CapturedUpsert[] = [];
 
   const fromTable = (table: string) => {
     if (table === 'review_state') {
       return makeInstrumentedReviewStateBuilder(
-        opts.priorState,
-        (filters) => { capturedSelectFilters = { ...filters }; },
-        (payload, onConflict) => { capturedUpsert = { payload, onConflict }; },
+        opts.priorStateByTemplate,
+        (filters) => { reviewStateSelects.push(filters); },
+        (payload, onConflict) => { reviewStateUpserts.push({ payload, onConflict }); },
       );
     }
     if (table === 'review_log') {
@@ -56,8 +61,8 @@ function makeFakeClientForTemplateTest(opts: {
   // the client object itself (the `from` proxy is the only public surface),
   // so we return them as part of the wrapper and read them after await.
   const wrapper = {
-    get lastReviewStateSelect() { return capturedSelectFilters; },
-    get lastReviewStateUpsert() { return capturedUpsert; },
+    get reviewStateSelects() { return reviewStateSelects; },
+    get reviewStateUpserts() { return reviewStateUpserts; },
     client: { from: fromTable } as never,
   };
 
@@ -65,7 +70,7 @@ function makeFakeClientForTemplateTest(opts: {
 }
 
 function makeInstrumentedReviewStateBuilder(
-  priorState: Row | null,
+  priorStateByTemplate: { recognition?: Row | null; pronunciation?: Row | null },
   onSelect: (filters: Row) => void,
   onUpsert: (payload: Row, onConflict: string) => void,
 ) {
@@ -90,12 +95,15 @@ function makeInstrumentedReviewStateBuilder(
       return { error: null };
     },
     maybeSingle: async () => {
-      // Fire the capture once the chain resolves.
+      // Fire the capture once the chain resolves, then serve the prior matching the
+      // template that was actually selected on (each template has its own independent prior).
       onSelect({ ...eqFilters });
+      const template = eqFilters.template as 'recognition' | 'pronunciation' | undefined;
       inSelectChain = false;
-      return { data: priorState, error: null };
+      const prior = template ? priorStateByTemplate[template] ?? null : null;
+      return { data: prior, error: null };
     },
-    then: (resolve: (v: unknown) => unknown) => resolve({ data: priorState, error: null }),
+    then: (resolve: (v: unknown) => unknown) => resolve({ data: null, error: null }),
   };
   return builder;
 }
@@ -168,33 +176,67 @@ function cardResult(itemId: string, cardKind: string, correct: boolean): CardRes
 
 describe('SupabaseSrsService.submit — per-template (Task 3)', () => {
   it('A: word/say reads + upserts the pronunciation row', async () => {
-    const fake = makeFakeClientForTemplateTest({ priorState: priorStateRow('lemma-1') });
+    const fake = makeFakeClientForTemplateTest({
+      priorStateByTemplate: { pronunciation: priorStateRow('lemma-1') },
+    });
     const svc = new SupabaseSrsService(fake.client, 'user-1');
 
     await svc.submit(cardResult('lemma-1', 'word/say', true));
 
     // The select chain that loaded prior state must include template:'pronunciation'
-    expect(fake.lastReviewStateSelect).toMatchObject({
-      item_type: 'lemma',
-      item_id: 'lemma-1',
-      template: 'pronunciation',
-    });
+    expect(fake.reviewStateSelects).toContainEqual(
+      expect.objectContaining({ item_type: 'lemma', item_id: 'lemma-1', template: 'pronunciation' }),
+    );
 
     // The upsert payload must carry template:'pronunciation'
-    expect(fake.lastReviewStateUpsert.payload).toMatchObject({ template: 'pronunciation' });
+    const pronUpsert = fake.reviewStateUpserts.find(u => u.payload.template === 'pronunciation');
+    expect(pronUpsert).toBeDefined();
 
     // The conflict target must include template
-    expect(fake.lastReviewStateUpsert.onConflict).toBe('user_id,item_type,item_id,template');
+    expect(pronUpsert!.onConflict).toBe('user_id,item_type,item_id,template');
   });
 
-  it('B: word/hear uses the recognition row', async () => {
-    const fake = makeFakeClientForTemplateTest({ priorState: priorStateRow('lemma-1') });
+  it('B: word/hear uses only the recognition row (no companion write)', async () => {
+    const fake = makeFakeClientForTemplateTest({
+      priorStateByTemplate: { recognition: priorStateRow('lemma-1') },
+    });
     const svc = new SupabaseSrsService(fake.client, 'user-1');
 
     await svc.submit(cardResult('lemma-1', 'word/hear', true));
 
-    expect(fake.lastReviewStateSelect).toMatchObject({ template: 'recognition' });
-    expect(fake.lastReviewStateUpsert.payload).toMatchObject({ template: 'recognition' });
-    expect(fake.lastReviewStateUpsert.onConflict).toBe('user_id,item_type,item_id,template');
+    // Recognition is already the graded template, so there is nothing to mirror — exactly one
+    // review_state upsert should happen (the pre-existing, single-row behaviour).
+    expect(fake.reviewStateUpserts).toHaveLength(1);
+    const [onlyUpsert] = fake.reviewStateUpserts;
+    expect(onlyUpsert!.payload).toMatchObject({ template: 'recognition' });
+    expect(onlyUpsert!.onConflict).toBe('user_id,item_type,item_id,template');
+  });
+
+  it('C: word/say ALSO advances the recognition row\'s own schedule (regression)', async () => {
+    // The recognition row is stale — its due_at is already in the past, as it would be for a
+    // lemma that graduated to the production rung a while ago and has only received word/say
+    // grades since. Without the companion write, this row's due_at never moves and the item
+    // stays "due" forever even though the learner keeps passing word/say.
+    const staleRecognitionPrior = priorStateRow('lemma-1');
+    const fake = makeFakeClientForTemplateTest({
+      priorStateByTemplate: { recognition: staleRecognitionPrior, pronunciation: null },
+    });
+    const svc = new SupabaseSrsService(fake.client, 'user-1');
+
+    await svc.submit(cardResult('lemma-1', 'word/say', true));
+
+    // Both rows get an independent select + upsert.
+    expect(fake.reviewStateSelects).toContainEqual(
+      expect.objectContaining({ item_type: 'lemma', item_id: 'lemma-1', template: 'recognition' }),
+    );
+    const recogUpsert = fake.reviewStateUpserts.find(u => u.payload.template === 'recognition');
+    const pronUpsert = fake.reviewStateUpserts.find(u => u.payload.template === 'pronunciation');
+    expect(recogUpsert).toBeDefined();
+    expect(pronUpsert).toBeDefined();
+
+    // The recognition row's due_at must move into the future — a correct review of any kind
+    // must un-stick a stale recognition schedule, not leave it permanently due.
+    expect(new Date(recogUpsert!.payload.due_at as string).getTime()).toBeGreaterThan(Date.now());
+    expect(recogUpsert!.onConflict).toBe('user_id,item_type,item_id,template');
   });
 });
