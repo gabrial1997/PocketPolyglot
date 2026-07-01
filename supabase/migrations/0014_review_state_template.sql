@@ -10,6 +10,12 @@ alter table public.review_state
   check (template in ('recognition', 'pronunciation'));
 
 -- Widen the primary key to include template so (item) can carry independent schedules.
+-- NB: this rebuilds the PK index under an ACCESS EXCLUSIVE lock (a plain ADD CONSTRAINT ...
+-- PRIMARY KEY, not `CREATE INDEX CONCURRENTLY`, which cannot run inside a transaction block —
+-- and Supabase applies each migration file as one transaction). Acceptable now: review_state is
+-- still beta-scale (a handful of test accounts). Before this ever runs against a large/live
+-- table, do the widening out-of-band instead: `create unique index concurrently` on the new key,
+-- then `alter table ... add constraint ... primary key using index` to swap onto it (brief lock).
 alter table public.review_state drop constraint review_state_pkey;
 alter table public.review_state
   add constraint review_state_pkey

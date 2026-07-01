@@ -26,7 +26,7 @@ import {
   rowToPrior,
   schedule,
 } from './mappers';
-import { cardKindToTemplate, type ReviewTemplate } from './cardTemplate';
+import { cardKindToTemplate, PRODUCTION_CARD_KINDS, type ReviewTemplate } from './cardTemplate';
 import {
   DAY_ONE_NEW_CAP,
   RETENTION_MINIMUM_SAMPLE,
@@ -70,11 +70,6 @@ export function cardKindToDbType(cardKind: string): DbItemType {
 // items so it is never empty. This bounds a single session's LENGTH, not how many sessions you may
 // start — sessions stay unlimited (no cap).
 const PRACTICE_BATCH = 20;
-
-// Module C2: card_kinds that count toward productiveReps (the production sub-track).
-// All others (word/hear, word/pic-review, phrase/meaning, phrase/hear, drill, diphthong, …) count
-// toward receptiveReps. Split is stable and intentional — do not change without updating pacing.ts.
-const PRODUCTION_CARD_KINDS = new Set(['word/say', 'phrase/sayit', 'pron']);
 
 // ---------------------------------------------------------------------------
 // Private pure helpers
@@ -341,17 +336,22 @@ export class SupabaseSrsService implements SrsService {
    * drills. We seed every QA'd, audio-bearing drill as a due first-exposure (stage='new' so it
    * still renders as a drill/diphthong card; due_at in the past so the due query picks it up now).
    *
-   * Content-driven (not hard-coded ids) and self-healing: gated on the user having ZERO pair rows,
-   * so it runs once per user, backfills existing accounts on their next batch, and never clobbers a
-   * drill already in progress. (A drill added AFTER a user is seeded won't reach them until we
-   * widen this; acceptable while the curated drill set is tiny — see core-loop review notes.)
+   * Content-driven (not hard-coded ids) and self-healing: gated on the user having ZERO
+   * recognition-template pair rows, so it runs once per user, backfills existing accounts on
+   * their next batch, and never clobbers a drill already in progress. (A drill added AFTER a
+   * user is seeded won't reach them until we widen this; acceptable while the curated drill set
+   * is tiny — see core-loop review notes.) The gate is scoped to template='recognition' — pairs
+   * can also carry a 'pronunciation'-template row (from a graded 'pron' card, per cardTemplate.ts),
+   * and counting those would falsely report drills as already seeded for a user who has never
+   * received one, permanently starving them of the L/Ļ / `ie` drills.
    */
   private async ensureDrillsSeeded(now: Date): Promise<void> {
     const { count, error: countErr } = await this.client
       .from('review_state')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', this.userId)
-      .eq('item_type', 'pair');
+      .eq('item_type', 'pair')
+      .eq('template', 'recognition');
     if (countErr) throw countErr;
     if ((count ?? 0) > 0) return; // already has drill rows — done.
 

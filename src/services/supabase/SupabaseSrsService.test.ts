@@ -876,6 +876,35 @@ describe('SupabaseSrsService drill seeding', () => {
     expect(pairRows[0]!.stage).toBe('review'); // FSRS progress untouched
     expect(pairRows[0]!.reps).toBe(3);
   });
+
+  it('a pronunciation-only pair row does not block recognition drill seeding (regression)', async () => {
+    // A 'pron' card grade can write a (pair, pronunciation) row (cardTemplate.ts) with no
+    // matching (pair, recognition) row ever having been seeded. The "already seeded" gate must
+    // be scoped to template='recognition', or this row makes ensureDrillsSeeded() think drills
+    // were already seeded and the user never gets the L/Ļ / `ie` drills.
+    const pronunciationOnly: Row = {
+      user_id: 'u1', item_type: 'pair', item_id: 'other-pair',
+      template: 'pronunciation',
+      stage: 'review', reps: 1, lapses: 0,
+      stability: 2, difficulty: 5,
+      due_at: new Date(Date.now() + 86_400_000).toISOString(),
+      last_review: new Date(Date.now() - 86_400_000).toISOString(),
+    };
+    const tables: Record<string, Row[]> = {
+      review_state: [pronunciationOnly],
+      minimal_pairs: [drillRow('drill-1')],
+      ...emptyContent(),
+    };
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+
+    const batch = await svc.getDueBatch();
+
+    const seeded = (tables.review_state ?? []).find(
+      (r) => r.item_type === 'pair' && r.item_id === 'drill-1' && r.template === 'recognition',
+    );
+    expect(seeded).toBeTruthy();
+    expect(batch.map((i) => i.id)).toContain('drill-1');
+  });
 });
 
 // ---------------------------------------------------------------------------
