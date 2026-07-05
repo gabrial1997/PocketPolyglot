@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useServices } from '../services/ServiceProvider';
 import { decideKind } from './decideKind';
-import { requeuePhraseAfterComponents, requeueNext, lockHint } from './requeue';
+import { requeuePhraseAfterComponents, requeueArcNext, lockHint } from './requeue';
 import { expandLearningSteps } from './learningSteps';
 import { LEARNING_STEP_GROUP_SIZE } from './pacing';
 import type { ReviewItem } from '../types/reviewItem';
@@ -58,7 +58,7 @@ export function useSession(): SessionState {
     setLoading(true);
     await known.refresh();
     const items = await srs.getDueBatch();
-    setQueue(expandLearningSteps(items, LEARNING_STEP_GROUP_SIZE));
+    setQueue(expandLearningSteps(items, LEARNING_STEP_GROUP_SIZE, known.all()));
     setPos(0);
     seenLocked.current = new Set();
     revealed.current = new Set();
@@ -141,8 +141,10 @@ export function useSession(): SessionState {
       }
       // else: no component ahead this session — do NOT re-queue (it would loop forever); just advance.
     } else if (item && item.type === 'phrase' && kind === 'phrase/unlock') {
-      // Re-surface immediately as the first SRS exposure (phrase/hear).
-      setQueue((q) => requeueNext(q, pos, item));
+      // Re-surface as the full teach->MC->speak arc, same as a batch-admitted phrase gets from
+      // expandLearningSteps (the unlock-gated item in the queue may already carry a retest
+      // marker from a prior encounter — requeueArcNext normalizes the inserted intro copy).
+      setQueue((q) => requeueArcNext(q, pos, item));
     }
     setPos((p) => p + 1);
   }, [item, kind, pos, queue]);

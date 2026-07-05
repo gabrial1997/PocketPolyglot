@@ -17,10 +17,21 @@ export function requeuePhraseAfterComponents(
   return [...queue.slice(0, insertAt), phrase, ...queue.slice(insertAt)];
 }
 
-/** Insert `phrase` as the very next item after `fromPos`. Returns a new array (pure). */
-export function requeueNext(queue: ReviewItem[], fromPos: number, phrase: ReviewItem): ReviewItem[] {
+/** Insert the phrase's full learning arc (hear → MC → speak) immediately after `fromPos`.
+ *  Used by the unlock path: the freshly-unlocked phrase gets the same teach→MC→speak arc
+ *  a batch-admitted phrase gets from expandLearningSteps. Returns a new array (pure). */
+export function requeueArcNext(
+  queue: ReviewItem[],
+  fromPos: number,
+  phrase: ReviewItem,
+): ReviewItem[] {
+  const arc: ReviewItem[] = [
+    { ...phrase, retest: undefined },
+    { ...phrase, retest: 'mc' },
+    { ...phrase, retest: 'speak' },
+  ];
   const at = fromPos + 1;
-  return [...queue.slice(0, at), phrase, ...queue.slice(at)];
+  return [...queue.slice(0, at), ...arc, ...queue.slice(at)];
 }
 
 /** Lock-card hint: how many component words remain unknown, and the lemma TEXT of the next one to

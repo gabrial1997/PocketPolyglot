@@ -394,3 +394,68 @@ it('phrase/locked enriches the item with the live "N words to go — learn X" hi
     expect(result.current.current?.item.lockLemma).toBe('labdien');
   });
 });
+
+// --- Task 5: unlock inserts the FULL hear->mc->speak arc (requeueArcNext), not a single re-queue ---
+it('unlock inserts the full arc: advancing walks phrase/hear -> phrase/meaning -> phrase/sayit', async () => {
+  const wordA: ReviewItem = {
+    id: 'a', type: 'word', stage: 'review', reps: 1, target: 'a', gloss: 'a',
+    wordClass: 'concrete', receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto',
+  };
+  const phraseP: ReviewItem = {
+    id: 'p',
+    type: 'phrase',
+    stage: 'new',
+    reps: 0,
+    target: 'p',
+    gloss: 'p',
+    audio: { nativeUrl: 'p.mp3' },
+    // choices so the mc retest copy routes to phrase/meaning (not the no-choices phrase/hear fallback).
+    choices: [
+      { value: 'p', gloss: 'p', correct: true },
+      { value: 'x', gloss: 'x', correct: false },
+    ],
+    componentLemmaIds: ['a'],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
+  };
+  const { result } = renderSessionHook([phraseP, wordA], new Set());
+
+  // Phrase starts locked ('a' unknown).
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
+  await act(async () => {
+    result.current.advance();
+  });
+
+  // Answer the component word CORRECTLY -> enters the in-session known overlay.
+  await settleHook(() => expect(result.current.current?.item.id).toBe('a'));
+  await act(async () => {
+    await result.current.submit({ itemId: 'a', cardKind: 'word/hear', correct: true, spoke: false });
+  });
+
+  // Phrase re-surfaces as the one-time unlock reveal.
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/unlock'));
+  await act(async () => {
+    result.current.advance();
+  });
+
+  // requeueArcNext must have inserted [hear, mc, speak] — walk all three and record the kinds.
+  const kinds: string[] = [];
+
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/hear'));
+  kinds.push(result.current.current!.kind);
+  await act(async () => {
+    await result.current.submit({ itemId: 'p', cardKind: 'phrase/hear', correct: true, spoke: false });
+  });
+
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/meaning'));
+  kinds.push(result.current.current!.kind);
+  await act(async () => {
+    await result.current.submit({ itemId: 'p', cardKind: 'phrase/meaning', correct: true, spoke: false });
+  });
+
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/sayit'));
+  kinds.push(result.current.current!.kind);
+
+  expect(kinds).toEqual(['phrase/hear', 'phrase/meaning', 'phrase/sayit']);
+});
