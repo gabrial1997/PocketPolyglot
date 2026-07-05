@@ -12,6 +12,7 @@
 // + image-less due items are NOT re-surfaced.
 import { SupabaseSrsService } from './SupabaseSrsService';
 import type { ReviewStateRow } from './types';
+import { DAY_ONE_NEW_CAP } from '../../session/pacing';
 
 type Row = Record<string, unknown>;
 type OrderBy = { col: string; ascending: boolean; nullsFirst: boolean };
@@ -455,7 +456,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     const now = new Date();
     const tables: Record<string, Row[]> = {
       review_state: [],
-      // 30 candidate lemmas — more than DAY_ONE_NEW_CAP=20
+      // 30 candidate lemmas — more than DAY_ONE_NEW_CAP
       lemmas: Array.from({ length: 30 }, (_, k) => ({
         id: `new-lemma-${k}`,
         lemma: `word-${k}`,
@@ -477,10 +478,10 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     const svc = new SupabaseSrsService(fakeClient(tables, {}, now), 'u1');
     const batch = await svc.getDueBatch();
 
-    // Must not exceed DAY_ONE_NEW_CAP = 20 new items
-    expect(batch.length).toBeLessThanOrEqual(20);
-    // Must have at least some items
-    expect(batch.length).toBeGreaterThan(0);
+    // Must not exceed DAY_ONE_NEW_CAP new items (words are the only budgeted unit)
+    expect(batch.length).toBeLessThanOrEqual(DAY_ONE_NEW_CAP);
+    // Exact: with 30 gate-passing word candidates the function must fill the whole cap
+    expect(batch.length).toBe(DAY_ONE_NEW_CAP);
   });
 
   it('audio-less + image-less WORD due items ARE re-surfaced (reviewable via the written word)', async () => {
@@ -606,7 +607,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     const threeDaysAgo = new Date(now.getTime() - 3 * 86_400_000).toISOString();
 
     // profiles row has `id` matching userId but NO `user_id` column — faithful to real schema.
-    // Old code queried `.eq('user_id', userId)` → returned null → age=0 → DAY_ONE_NEW_CAP(20).
+    // Old code queried `.eq('user_id', userId)` → returned null → age=0 → DAY_ONE_NEW_CAP.
     // Fixed code queries `.eq('id', userId)` → returns this row → age=3 → STEADY_STATE_NEW_CAP(5).
     const tables: Record<string, Row[]> = {
       review_state: [],
@@ -634,7 +635,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     const batch = await svc.getDueBatch();
 
     // With the fix: accountAgeDays = 3 (≥1) → STEADY_STATE_NEW_CAP = 5
-    // Without the fix: profile not found (wrong column) → age=0 → DAY_ONE_NEW_CAP = 20
+    // Without the fix: profile not found (wrong column) → age=0 → DAY_ONE_NEW_CAP
     expect(batch.length).toBeLessThanOrEqual(5);
     expect(batch.length).toBeGreaterThan(0);
   });

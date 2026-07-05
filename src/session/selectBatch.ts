@@ -13,6 +13,7 @@ import {
   DUE_FLOOD_MULTIPLIER,
   RETENTION_GATE_THRESHOLD,
   I_PLUS_ONE_UNKNOWN_TOLERANCE,
+  PHRASE_INTRO_CAP,
 } from './pacing';
 
 // ---------------------------------------------------------------------------
@@ -131,18 +132,6 @@ export function selectBatch(input: {
   const due = rawDue.filter(d => (d.kind === 'pair' ? d.hasAudioEnvelope : true));
 
   // -------------------------------------------------------------------------
-  // Step 1b: Build id sets for satisfiability checks (used in phrase gate below).
-  // A phrase is only admitted if EVERY unknown component will actually appear this
-  // session — otherwise it would lock forever (its component never shows) and
-  // re-queue endlessly (the freeze regression).
-  // -------------------------------------------------------------------------
-  const dueIds = new Set(due.map((d) => d.id));
-  // NB: candidateIds is the RAW pre-cap candidate pool — a component here may still be dropped if the
-  // newAllowance cap is reached before it. That residual case is backstopped in sessionController's
-  // advance() (it won't re-queue a locked phrase whose component isn't actually ahead).
-  const candidateIds = new Set(candidates.map((c) => c.id));
-
-  // -------------------------------------------------------------------------
   // Step 2: New cap based on account age.
   // -------------------------------------------------------------------------
   let newCap: number =
@@ -174,168 +163,96 @@ export function selectBatch(input: {
   const newAllowance = Math.max(0, newCap - ctx.introducedToday);
 
   // -------------------------------------------------------------------------
-  // Step 6: Admit candidates in utilityRank order, applying gates A–C.
-  // Phoneme-block mini-sets (D) are tracked for step 7.
+  // Step 6: Admit new items.
+  // Pass 1 — WORDS in utilityRank order against newAllowance (the budget unit).
   // -------------------------------------------------------------------------
-  const admittedNew: Candidate[] = [];
-  // Mutable copy so we don't mutate caller's Set
   const admittedFields = new Set<string>(ctx.todaysSemanticFields);
-
-  // Sort defensively (spec says pre-sorted, but defend anyway)
   const sorted = [...candidates].sort((a, b) => a.utilityRank - b.utilityRank);
 
-  // Count of admitted non-pair candidates (words/phrases = the budgeted "units").
-  // Pairs are part of a lemma's mini-set and do NOT consume a newAllowance slot.
-  let admittedNonPairCount = 0;
-
-  // Track admitted non-pair ids so we can sweep for associated pairs afterward.
-  const admittedNonPairIds = new Set<string>();
-
+  const admittedWords: Candidate[] = [];
+  const admittedWordIds = new Set<string>();
   for (const candidate of sorted) {
-    if (candidate.kind === 'pair') {
-      // Pairs are handled in a second pass below — skip during the main loop.
-      continue;
-    }
-
-    if (admittedNonPairCount >= newAllowance) break;
-
-    // ------------------------------------------------------------------
-    // Gate (b): i+1 phrase gate (phrases only)
-    // ------------------------------------------------------------------
-    if (candidate.kind === 'phrase') {
-      const componentIds = candidate.componentLemmaIds ?? [];
-      const unknown = componentIds.filter(
-        id => !ctx.knownLemmaIds.has(id),
-      ).length;
-      if (unknown > I_PLUS_ONE_UNKNOWN_TOLERANCE) {
-        continue;
-      }
-      // Anchor must have been recalled at least once
-      if (
-        !candidate.anchorLemmaId ||
-        !ctx.recalledLemmaIds.has(candidate.anchorLemmaId)
-      ) {
-        continue;
-      }
-      // A phrase locks until its unknown components are learned. Only admit it if every unknown
-      // component will actually appear THIS session (a new candidate or a due review) — otherwise it
-      // would lock forever (its component never shows) and re-queue endlessly. (i+1 must be reachable.)
-      const unknownIds = (candidate.componentLemmaIds ?? []).filter(
-        (id) => !ctx.knownLemmaIds.has(id),
-      );
-      if (!unknownIds.every((id) => dueIds.has(id) || candidateIds.has(id))) {
-        continue;
-      }
-    }
-
-    // ------------------------------------------------------------------
-    // Gate (c): Semantic-cluster exclusion
-    // ------------------------------------------------------------------
-    if (candidate.semanticField && admittedFields.has(candidate.semanticField)) {
-      continue;
-    }
-
-    // ------------------------------------------------------------------
-    // Admit the word/phrase
-    // ------------------------------------------------------------------
-    admittedNew.push(candidate);
-    admittedNonPairIds.add(candidate.id);
-    if (candidate.semanticField) {
-      admittedFields.add(candidate.semanticField);
-    }
-    admittedNonPairCount++;
+    if (candidate.kind !== 'word') continue;
+    if (admittedWords.length >= newAllowance) break;
+    if (candidate.semanticField && admittedFields.has(candidate.semanticField)) continue;
+    admittedWords.push(candidate);
+    admittedWordIds.add(candidate.id);
+    if (candidate.semanticField) admittedFields.add(candidate.semanticField);
   }
 
-  // Second pass: admit pairs whose blocksLemmaId is among the admitted non-pairs
-  // (or among due refs — orphaned pairs). Pairs go through the audio gate only.
-  // They are inserted into admittedNew after their blocked lemma (if present),
-  // or appended. We collect them in a separate list first and splice in order.
-  //
-  // Strategy: iterate sorted in order; for each pair, if it passes the audio gate
-  // and its blocksLemmaId is in admittedNonPairIds, admit it. We also admit
-  // "orphaned" pairs — pairs whose blocksLemmaId is NOT in admittedNonPairIds
-  // (e.g. the blocked lemma is a review item). Orphaned pairs still require audio
-  // and still count as admittedNew (but not against newAllowance).
-  const pairsToEmbed: Candidate[] = [];
-  const orphanedPairs: Candidate[] = [];
+  // -------------------------------------------------------------------------
+  // Pass 2 — PHRASES: building blocks. Admissible iff the anchor has been
+  // recalled AND either (a) zero unknown components (fully known), or (b)
+  // exactly one unknown component whose word is admitted THIS batch (pass 1).
+  // Capped at PHRASE_INTRO_CAP; phrases do NOT consume newAllowance.
+  // -------------------------------------------------------------------------
+  const fullyKnownPhrases: Candidate[] = [];
+  const oneAwayByWordId = new Map<string, Candidate[]>();
+  let phrasesAdmitted = 0;
+  for (const candidate of sorted) {
+    if (candidate.kind !== 'phrase') continue;
+    if (phrasesAdmitted >= PHRASE_INTRO_CAP) break;
+    if (!candidate.anchorLemmaId || !ctx.recalledLemmaIds.has(candidate.anchorLemmaId)) {
+      continue;
+    }
+    const unknown = (candidate.componentLemmaIds ?? []).filter(
+      (id) => !ctx.knownLemmaIds.has(id),
+    );
+    if (unknown.length === 0) {
+      fullyKnownPhrases.push(candidate);
+      phrasesAdmitted++;
+    } else if (
+      unknown.length <= I_PLUS_ONE_UNKNOWN_TOLERANCE &&
+      unknown[0] !== undefined &&
+      admittedWordIds.has(unknown[0])
+    ) {
+      const arr = oneAwayByWordId.get(unknown[0]) ?? [];
+      arr.push(candidate);
+      oneAwayByWordId.set(unknown[0], arr);
+      phrasesAdmitted++;
+    }
+  }
 
+  // -------------------------------------------------------------------------
+  // Pass 3 — PAIRS (unchanged rules): audio-gated; embedded after their blocked
+  // lemma when it was admitted, otherwise standalone (orphaned).
+  // -------------------------------------------------------------------------
+  const pairsByBlockedLemma = new Map<string, Candidate[]>();
+  const orphanedPairs: Candidate[] = [];
   for (const candidate of sorted) {
     if (candidate.kind !== 'pair') continue;
-    // Audio gate for pairs
     if (!candidate.hasAudioEnvelope) continue;
-
-    if (candidate.blocksLemmaId && admittedNonPairIds.has(candidate.blocksLemmaId)) {
-      pairsToEmbed.push(candidate);
-    }
-    // Orphaned pairs (blocksLemmaId not in admittedNonPairIds) are admitted only
-    // if they were explicitly passed as a candidate — they are part of the lesson
-    // design (e.g. the drilled lemma is a review item). We admit them standalone.
-    // NOTE: We do NOT auto-admit pairs for review items by default; pairs reach
-    // the candidate list because the caller explicitly included them.
-    // Since the caller passed them, we admit them:
-    else {
+    if (candidate.blocksLemmaId && admittedWordIds.has(candidate.blocksLemmaId)) {
+      const arr = pairsByBlockedLemma.get(candidate.blocksLemmaId) ?? [];
+      arr.push(candidate);
+      pairsByBlockedLemma.set(candidate.blocksLemmaId, arr);
+    } else {
       orphanedPairs.push(candidate);
     }
   }
 
-  // Insert embedded pairs right after their blocked lemma in admittedNew
-  // (maintains the original utility order of non-pairs).
-  const pairsByBlockedLemmaForEmbed = new Map<string, Candidate[]>();
-  for (const p of pairsToEmbed) {
-    const key = p.blocksLemmaId as string;
-    const arr = pairsByBlockedLemmaForEmbed.get(key) ?? [];
-    arr.push(p);
-    pairsByBlockedLemmaForEmbed.set(key, arr);
-  }
-
-  // Rebuild admittedNew with embedded pairs inserted after their blocked lemma,
-  // followed by orphaned pairs appended at the end.
-  const admittedNewWithPairs: Candidate[] = [];
-  for (const c of admittedNew) {
-    admittedNewWithPairs.push(c);
-    const embeddablePairs = pairsByBlockedLemmaForEmbed.get(c.id);
-    if (embeddablePairs) {
-      admittedNewWithPairs.push(...embeddablePairs);
-    }
-  }
-  admittedNewWithPairs.push(...orphanedPairs);
-
-  // Replace admittedNew contents
-  admittedNew.length = 0;
-  admittedNew.push(...admittedNewWithPairs);
-
   // -------------------------------------------------------------------------
-  // Step 7: Assemble final order via interleave, keeping phoneme-block
-  // mini-sets (pair + its blocked lemma) contiguous.
-  //
-  // After Step 6, admittedNew already has pairs inserted immediately after their
-  // blocked lemma (or appended as orphans). We just need to group each lemma with
-  // its immediately following pair(s) into a NewUnit array for interleave.
+  // Step 7: Assemble units and the final admittedNew list.
+  // Unit shape per word: [one-away teaser phrase(s)…, word, pair(s)…] — the
+  // teaser precedes its word (locked → learn → chime), pairs follow it.
+  // Fully-known phrases follow all word units; orphaned pairs go last.
   // -------------------------------------------------------------------------
-
   const newUnits: NewUnit[] = [];
-  let i = 0;
-  while (i < admittedNew.length) {
-    const candidate = admittedNew[i] as Candidate;
-    if (candidate.kind !== 'pair') {
-      // Collect any immediately following pairs that block this lemma
-      const miniSet: Candidate[] = [candidate];
-      let j = i + 1;
-      while (
-        j < admittedNew.length &&
-        (admittedNew[j] as Candidate).kind === 'pair' &&
-        (admittedNew[j] as Candidate).blocksLemmaId === candidate.id
-      ) {
-        miniSet.push(admittedNew[j] as Candidate);
-        j++;
-      }
-      newUnits.push(miniSet.length === 1 ? miniSet[0] as Candidate : miniSet);
-      i = j;
-    } else {
-      // Orphaned pair (or pair whose blocked lemma is not adjacent): emit standalone
-      newUnits.push(candidate);
-      i++;
-    }
+  const admittedNew: Candidate[] = [];
+  for (const w of admittedWords) {
+    const teasers = oneAwayByWordId.get(w.id) ?? [];
+    const pairs = pairsByBlockedLemma.get(w.id) ?? [];
+    const unit = [...teasers, w, ...pairs];
+    newUnits.push(unit.length === 1 ? w : unit);
+    admittedNew.push(...unit);
+  }
+  for (const p of fullyKnownPhrases) {
+    newUnits.push(p);
+    admittedNew.push(p);
+  }
+  for (const p of orphanedPairs) {
+    newUnits.push(p);
+    admittedNew.push(p);
   }
 
   const order = interleave(due, newUnits);

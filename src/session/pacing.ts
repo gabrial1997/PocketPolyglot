@@ -3,8 +3,9 @@
 // literals anywhere in the loop. Tune values here; the loop reads them by name.
 // Defaults + ranges from the design spec §10.1 (locked decisions §2).
 
-/** One-time first-day onboarding bolus: up to 20 new items on day 1. */
-export const DAY_ONE_NEW_CAP = 20 as const;
+/** One-time first-day onboarding bolus: up to 10 new WORDS on day 1 (3 cards each under the
+ *  teach→MC→speak arc ⇒ ~30-card first session). */
+export const DAY_ONE_NEW_CAP = 10 as const;
 /** Every day after day 1: fixed 5 new. No upward ramp, no unlockable ceiling. */
 export const STEADY_STATE_NEW_CAP = 5 as const;
 /** Reviews/day target; used ONLY by the due-flood gate (reviews themselves are uncapped). */
@@ -21,6 +22,10 @@ export const RECEPTIVE_GRADUATION_FLOOR = 3 as const;
 export const PRODUCTION_GRADUATION_FLOOR = 6 as const;
 /** Max unknown phrase components for a phrase to be i+1-admissible. */
 export const I_PLUS_ONE_UNKNOWN_TOLERANCE = 1 as const;
+
+/** Max phrases admitted per batch (building-block unlocks). Phrases do NOT consume the
+ *  new-word allowance — words are the budget unit; phrases enter as their blocks complete. */
+export const PHRASE_INTRO_CAP = 2 as const;
 
 /** Min graded-mature reviews before rolling retention is defined (fewer → no throttle). */
 export const RETENTION_MINIMUM_SAMPLE = 10 as const;

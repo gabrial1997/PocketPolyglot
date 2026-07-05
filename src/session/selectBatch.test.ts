@@ -127,7 +127,7 @@ describe('selectBatch', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 2. Day-1 (accountAgeDays: 0, introducedToday: 0) → admittedNew.length <= 20
+  // 2. Day-1 (accountAgeDays: 0, introducedToday: 0) → admittedNew.length <= DAY_ONE_NEW_CAP (10)
   // -------------------------------------------------------------------------
   describe('Day-1 new cap', () => {
     it(`admits up to ${DAY_ONE_NEW_CAP} new items on day 1`, () => {
@@ -168,7 +168,7 @@ describe('selectBatch', () => {
     it('collapses newCap to 0 when dueToday exceeds DUE_FLOOD_MULTIPLIER * REVIEW_BUDGET', () => {
       const ctx = baseCtx({
         dueToday: DUE_FLOOD_MULTIPLIER * REVIEW_BUDGET + 1,
-        accountAgeDays: 0, // day 1, would otherwise get 20
+        accountAgeDays: 0, // day 1, would otherwise get DAY_ONE_NEW_CAP
         introducedToday: 0,
       });
       const candidates: Candidate[] = Array.from({ length: 5 }, (_, i) =>
@@ -200,7 +200,7 @@ describe('selectBatch', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 5. rollingRetention < 0.85 → new halved (Day-1 cap 20 → ≤10; exact floor).
+  // 5. rollingRetention < 0.85 → new halved (Day-1 cap 10 → ≤5; exact floor).
   // -------------------------------------------------------------------------
   describe('retention gate', () => {
     it(`halves newCap when rollingRetention < ${RETENTION_GATE_THRESHOLD}`, () => {
@@ -215,7 +215,7 @@ describe('selectBatch', () => {
 
       const result = selectBatch({ due: [], candidates, ctx });
 
-      // DAY_ONE_NEW_CAP = 20 → floor(20/2) = 10
+      // DAY_ONE_NEW_CAP = 10 → floor(10/2) = 5
       const expectedCap = Math.floor(DAY_ONE_NEW_CAP / 2);
       expect(result.newAllowance).toBe(expectedCap);
       // Exact: with 30 gate-passing candidates the function must fill the whole cap
@@ -464,7 +464,7 @@ describe('selectBatch', () => {
   describe('phoneme-block mini-set contiguity', () => {
     it('keeps a lemma and its admitted minimal-pair drill adjacent in the final order', () => {
       const ctx = baseCtx({
-        accountAgeDays: 0, // day 1, cap 20
+        accountAgeDays: 0, // day 1, cap 10
         introducedToday: 0,
       });
 
@@ -619,6 +619,88 @@ describe('selectBatch', () => {
   });
 
   // -------------------------------------------------------------------------
+  // 17. Building-block phrase admission (Task 3): phrases no longer compete
+  //     with words on utilityRank. Words are admitted first against
+  //     newAllowance; phrases are admitted second under PHRASE_INTRO_CAP,
+  //     only when fully known or exactly one-away with that word ADMITTED
+  //     this same batch (not merely due/present).
+  // -------------------------------------------------------------------------
+  describe('selectBatch — building-block phrases', () => {
+    const wordCand = (id: string, rank: number): Candidate => ({
+      id, kind: 'word', utilityRank: rank, hasAudioEnvelope: false,
+    });
+    const phraseCand = (id: string, comps: string[], anchor: string, rank = 1): Candidate => ({
+      id, kind: 'phrase', utilityRank: rank, hasAudioEnvelope: false,
+      componentLemmaIds: comps, anchorLemmaId: anchor,
+    });
+    const ctx = (over: Partial<SelectContext> = {}): SelectContext => ({
+      accountAgeDays: 5, introducedToday: 0, dueToday: 0, rollingRetention: undefined,
+      knownLemmaIds: new Set(), recalledLemmaIds: new Set(), todaysSemanticFields: new Set(),
+      ...over,
+    });
+
+    it('rejects a phrase whose final unknown word is NOT admitted this batch', () => {
+      // w9 exists in the pool but is beyond the allowance (steady cap 5, ranks 1-5 fill it)
+      const words = [1, 2, 3, 4, 5, 9].map((r) => wordCand(`w${r}`, r));
+      const p = phraseCand('p', ['k1', 'w9'], 'k1');
+      const res = selectBatch({ due: [], candidates: [...words, p], ctx: ctx({
+        knownLemmaIds: new Set(['k1']), recalledLemmaIds: new Set(['k1']),
+      }) });
+      expect(res.admittedNew.map((c) => c.id)).not.toContain('p');
+    });
+
+    it('admits a one-away phrase and places it immediately BEFORE its word', () => {
+      const words = [1, 2, 3].map((r) => wordCand(`w${r}`, r));
+      const p = phraseCand('p', ['k1', 'w2'], 'k1');
+      const res = selectBatch({ due: [], candidates: [...words, p], ctx: ctx({
+        knownLemmaIds: new Set(['k1']), recalledLemmaIds: new Set(['k1']),
+      }) });
+      const ids = res.order.map((o) => o.id);
+      expect(ids.indexOf('p')).toBe(ids.indexOf('w2') - 1); // teaser directly before its word
+    });
+
+    it('rejects phrases with 2+ unknown components', () => {
+      const words = [1, 2].map((r) => wordCand(`w${r}`, r));
+      const p = phraseCand('p', ['w1', 'w2'], 'w1');
+      const res = selectBatch({ due: [], candidates: [...words, p], ctx: ctx({
+        recalledLemmaIds: new Set(['w1']),
+      }) });
+      expect(res.admittedNew.map((c) => c.id)).not.toContain('p');
+    });
+
+    it('admits a fully-known phrase without a teaser, AFTER the word units', () => {
+      const p = phraseCand('p', ['k1', 'k2'], 'k1');
+      const w = wordCand('w1', 1);
+      const res = selectBatch({ due: [], candidates: [p, w], ctx: ctx({
+        knownLemmaIds: new Set(['k1', 'k2']), recalledLemmaIds: new Set(['k1']),
+      }) });
+      const ids = res.order.map((o) => o.id);
+      expect(ids.indexOf('p')).toBeGreaterThan(ids.indexOf('w1'));
+      expect(res.admittedNew.map((c) => c.id)).toContain('p');
+    });
+
+    it('caps phrases at PHRASE_INTRO_CAP without consuming word allowance', () => {
+      const words = [1, 2, 3, 4, 5].map((r) => wordCand(`w${r}`, r));
+      const phrases = ['pa', 'pb', 'pc'].map((id, i) =>
+        phraseCand(id, ['k1'], 'k1', i + 1)); // all fully... k1 known → zero unknowns
+      const res = selectBatch({ due: [], candidates: [...words, ...phrases], ctx: ctx({
+        knownLemmaIds: new Set(['k1']), recalledLemmaIds: new Set(['k1']),
+      }) });
+      const admitted = res.admittedNew.map((c) => c.id);
+      expect(words.every((w) => admitted.includes(w.id))).toBe(true); // 5 words all admitted
+      expect(admitted.filter((id) => id.startsWith('p'))).toHaveLength(2); // pa, pb only
+    });
+
+    it('still requires the anchor to have been recalled', () => {
+      const p = phraseCand('p', ['k1'], 'k1');
+      const res = selectBatch({ due: [], candidates: [p], ctx: ctx({
+        knownLemmaIds: new Set(['k1']), recalledLemmaIds: new Set(), // known but never recalled
+      }) });
+      expect(res.admittedNew.map((c) => c.id)).not.toContain('p');
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // 15. Pair does NOT consume a newAllowance slot
   // -------------------------------------------------------------------------
   describe('pair does not consume a newAllowance slot', () => {
@@ -698,9 +780,11 @@ describe('selectBatch', () => {
       expect(admittedIds).toContain('p1');
     });
 
-    it('admits a phrase whose unknown component is a due review item this session', () => {
-      // 'lemma-C' is unknown but there is a due review item with id 'lemma-C' this session.
-      // The phrase CAN unlock this session -> it should be admitted.
+    it('rejects a phrase whose unknown component is only a due review item, not a word ADMITTED this batch', () => {
+      // Building-block admission (Task 3): a phrase's missing component must be a WORD
+      // actually admitted THIS batch (pass 1), not merely present/due. A due review item
+      // is already-known content coming back for review, not a new-word admission that
+      // "completes" the phrase's block this session — so it must NOT satisfy one-away.
       const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
       const recalledLemmaIds = new Set(['anchor1']);
       const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
@@ -709,12 +793,12 @@ describe('selectBatch', () => {
         componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // C is unknown
         anchorLemmaId: 'anchor1',
       });
-      const dueComp = makeDueRef('lemma-C', { hasAudioEnvelope: true }); // C IS a due review
+      const dueComp = makeDueRef('lemma-C', { hasAudioEnvelope: true }); // C is only a due review, not admitted new
 
       const result = selectBatch({ due: [dueComp], candidates: [phrase], ctx });
 
       const admittedIds = result.admittedNew.map(c => c.id);
-      expect(admittedIds).toContain('p1');
+      expect(admittedIds).not.toContain('p1');
     });
   });
 });

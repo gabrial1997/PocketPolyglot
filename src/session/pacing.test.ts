@@ -8,10 +8,11 @@ import {
   RECEPTIVE_GRADUATION_FLOOR,
   PRODUCTION_GRADUATION_FLOOR,
   I_PLUS_ONE_UNKNOWN_TOLERANCE,
+  PHRASE_INTRO_CAP,
 } from './pacing';
 
 test('pacing constants hold their locked values', () => {
-  expect(DAY_ONE_NEW_CAP).toBe(20);
+  expect(DAY_ONE_NEW_CAP).toBe(10);
   expect(STEADY_STATE_NEW_CAP).toBe(5);
   expect(REVIEW_BUDGET).toBe(70);
   expect(DUE_FLOOD_MULTIPLIER).toBe(2);
@@ -20,4 +21,5 @@ test('pacing constants hold their locked values', () => {
   expect(RECEPTIVE_GRADUATION_FLOOR).toBe(3);
   expect(PRODUCTION_GRADUATION_FLOOR).toBe(6);
   expect(I_PLUS_ONE_UNKNOWN_TOLERANCE).toBe(1);
+  expect(PHRASE_INTRO_CAP).toBe(2);
 });
