@@ -46,9 +46,16 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
   let notFilters: Record<string, unknown> = {};
   let lteFilters: Record<string, unknown> = {};
   let gteFilters: Record<string, unknown> = {};
+  let likeFilters: Record<string, string> = {};
   let limitVal: number | null = null;
   let rangeStart: number | null = null;
   let rangeEnd: number | null = null;
+
+  // Mimic Postgres LIKE: '%' is a wildcard, everything else matched literally.
+  const likeToRegExp = (pattern: string) =>
+    new RegExp(
+      '^' + pattern.split('%').map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$',
+    );
 
   const applyFilters = (source: Row[]) => {
     let r = [...source];
@@ -75,6 +82,11 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
         if (rv == null) return false;
         return rv >= (v as string);
       });
+    }
+    // like filters
+    for (const [k, v] of Object.entries(likeFilters)) {
+      const re = likeToRegExp(v);
+      r = r.filter(row => typeof row[k] === 'string' && re.test(row[k] as string));
     }
     // or filter: simulate 'due_at.lte.X,stage.eq.new'
     if (orFilter) {
@@ -125,6 +137,10 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
     },
     or: (filter: string) => {
       orFilter = filter;
+      return builder;
+    },
+    like: (col: string, pattern: string) => {
+      likeFilters = { ...likeFilters, [col]: pattern };
       return builder;
     },
     lte: (col: string, val: unknown) => {
@@ -835,23 +851,32 @@ describe('SupabaseSrsService drill seeding', () => {
     profiles: [] as Row[],
   });
 
-  it('seeds a QA’d drill for a user with no pair rows, and it surfaces in the batch', async () => {
+  it('seeds a QA’d drill for a user with no pair rows, due one day out so it does not surface today', async () => {
+    const now = new Date();
     const tables: Record<string, Row[]> = {
       review_state: [],
       minimal_pairs: [drillRow('drill-1')],
-      ...emptyContent(),
+      // A word candidate so selectBatch admits something and the free-practice fallback (which
+      // ignores due_at) doesn't fire — isolating the drill's own due_at from that fallback path.
+      lemmas: [contentRow('word-a')],
+      phrases: [] as Row[],
+      phrase_components: [] as Row[],
+      review_log: [] as Row[],
+      known_lemmas: [] as Row[],
+      profiles: [] as Row[],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, now), 'u1');
 
     const batch = await svc.getDueBatch();
 
-    // A review_state pair row was created: stage='new' (first exposure) with a past due_at.
+    // A review_state pair row was created: stage='new' (first exposure) due one day out.
     const seeded = (tables.review_state ?? []).find((r) => r.item_type === 'pair' && r.item_id === 'drill-1');
     expect(seeded).toBeTruthy();
     expect(seeded!.stage).toBe('new');
     expect(seeded!.due_at).toBeTruthy();
-    // And it actually reaches the learner.
-    expect(batch.map((i) => i.id)).toContain('drill-1');
+    expect(new Date(seeded!.due_at as string).getTime()).toBeGreaterThan(now.getTime());
+    // Day 0 is words, not drills — the seeded drill must NOT reach the learner yet.
+    expect(batch.map((i) => i.id)).not.toContain('drill-1');
   });
 
   it('does not clobber a drill already in progress, and adds no duplicate', async () => {
@@ -898,13 +923,14 @@ describe('SupabaseSrsService drill seeding', () => {
     };
     const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
 
-    const batch = await svc.getDueBatch();
+    await svc.getDueBatch();
 
+    // The regression under test is the seeding GATE (scoped to template='recognition'), not the
+    // due_at deferral — assert the recognition drill row now exists, due one day out per spec.
     const seeded = (tables.review_state ?? []).find(
       (r) => r.item_type === 'pair' && r.item_id === 'drill-1' && r.template === 'recognition',
     );
     expect(seeded).toBeTruthy();
-    expect(batch.map((i) => i.id)).toContain('drill-1');
   });
 });
 

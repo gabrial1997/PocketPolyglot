@@ -26,7 +26,7 @@ import {
   rowToPrior,
   schedule,
 } from './mappers';
-import { cardKindToTemplate, PRODUCTION_CARD_KINDS, type ReviewTemplate } from './cardTemplate';
+import { cardKindToTemplate, repKind, type ReviewTemplate } from './cardTemplate';
 import {
   DAY_ONE_NEW_CAP,
   RETENTION_MINIMUM_SAMPLE,
@@ -116,14 +116,16 @@ export class SupabaseSrsService implements SrsService {
   // Private helpers — one DB query each; all injectable through `this.client`.
   // -------------------------------------------------------------------------
 
-  /** Count introduction events today (word/learn-* or phrase/hear card_kind). */
+  /** Count introduction events today (word/learn-* card_kind). */
   private async introducedToday(now: Date): Promise<number> {
     const dayStart = startOfLocalDay(now).toISOString();
     const { data } = await this.client
       .from('review_log')
       .select('item_id')
       .eq('user_id', this.userId)
-      .or(`card_kind.like.word/learn-%,card_kind.eq.phrase/hear`)
+      // Words only: newAllowance budgets WORDS (phrases ride under PHRASE_INTRO_CAP in
+      // selectBatch), so phrase exposures must not shrink the word allowance.
+      .like('card_kind', 'word/learn-%')
       .gte('created_at', dayStart)
       .lte('created_at', now.toISOString());
     if (!data) return 0;
@@ -363,8 +365,9 @@ export class SupabaseSrsService implements SrsService {
     const drills = ((drillData ?? []) as MinimalPairRow[]).filter((d) => d.audio_url != null);
     if (drills.length === 0) return;
 
-    // due_at 1 min in the past so getDueBatch's `.lte('due_at', now)` admits it immediately.
-    const dueIso = new Date(now.getTime() - 60_000).toISOString();
+    // due_at 1 day out: a fresh (or freshly reset) account's day 0 is the teach→MC→speak
+    // word arc — perception drills join from the next session, not ahead of the first words.
+    const dueIso = new Date(now.getTime() + 86_400_000).toISOString();
     const rows = drills.map((d) => ({
       user_id: this.userId,
       item_type: 'pair' as const,
@@ -716,14 +719,11 @@ export class SupabaseSrsService implements SrsService {
         // Group counts per (item_type, item_id).
         const repsByKey = new Map<string, { receptive: number; productive: number }>();
         for (const row of logData as ReviewLogRow[]) {
-          if (row.correct !== true) continue; // only count correct retrievals
+          const kind = repKind(row.card_kind, row.correct);
+          if (kind === null) continue;
           const key = `${row.item_type}:${row.item_id}`;
           const counts = repsByKey.get(key) ?? { receptive: 0, productive: 0 };
-          if (PRODUCTION_CARD_KINDS.has(row.card_kind)) {
-            counts.productive += 1;
-          } else {
-            counts.receptive += 1;
-          }
+          counts[kind] += 1;
           repsByKey.set(key, counts);
         }
 
@@ -846,12 +846,9 @@ export class SupabaseSrsService implements SrsService {
     let productiveReps = 0;
     if (logData) {
       for (const row of logData as Array<{ card_kind: string; correct: boolean | null }>) {
-        if (row.correct !== true) continue;
-        if (PRODUCTION_CARD_KINDS.has(row.card_kind)) {
-          productiveReps += 1;
-        } else {
-          receptiveReps += 1;
-        }
+        const kind = repKind(row.card_kind, row.correct);
+        if (kind === 'productive') productiveReps += 1;
+        else if (kind === 'receptive') receptiveReps += 1;
       }
     }
     const currentRung = computeRung(receptiveReps, productiveReps);

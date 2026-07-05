@@ -43,11 +43,18 @@ function makeBuilder(table: string, tables: Record<string, Row[]>) {
   let notFilters: Record<string, unknown> = {};
   let lteFilters: Record<string, unknown> = {};
   let gteFilters: Record<string, unknown> = {};
+  let likeFilters: Record<string, string> = {};
   let limitVal: number | null = null;
   let rangeStart: number | null = null;
   let rangeEnd: number | null = null;
   let inIds: string[] | null = null;
   let inCol: string | null = null;
+
+  // Mimic Postgres LIKE: '%' is a wildcard, everything else matched literally.
+  const likeToRegExp = (pattern: string) =>
+    new RegExp(
+      '^' + pattern.split('%').map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$',
+    );
 
   const applyFilters = (source: Row[]) => {
     let r = [...source];
@@ -70,6 +77,10 @@ function makeBuilder(table: string, tables: Record<string, Row[]>) {
         if (rv == null) return false;
         return rv >= (v as string);
       });
+    }
+    for (const [k, v] of Object.entries(likeFilters)) {
+      const re = likeToRegExp(v);
+      r = r.filter(row => typeof row[k] === 'string' && re.test(row[k] as string));
     }
     if (orFilter) {
       const parts = orFilter.split(',');
@@ -123,6 +134,10 @@ function makeBuilder(table: string, tables: Record<string, Row[]>) {
     },
     or: (filter: string) => {
       orFilter = filter;
+      return builder;
+    },
+    like: (col: string, pattern: string) => {
+      likeFilters = { ...likeFilters, [col]: pattern };
       return builder;
     },
     lte: (col: string, val: unknown) => {
@@ -312,7 +327,7 @@ describe('SupabaseSrsService.getDueBatch — C2 ladder reps from review_log', ()
     expect(item!.translationVisibility).toBe('auto');
   });
 
-  it('D: correct===false rows are not counted toward either axis', async () => {
+  it('D: correct===false non-production rows are not counted, but a completed (incorrect) word/say still counts productive', async () => {
     const tables: Record<string, Row[]> = {
       review_state: [stateRow('lemma', 'word-d')],
       lemmas: [lemmaContent('word-d')],
@@ -321,7 +336,7 @@ describe('SupabaseSrsService.getDueBatch — C2 ladder reps from review_log', ()
       minimal_pairs: [],
       review_log: [
         logRow('lemma', 'word-d', 'word/hear', false),
-        logRow('lemma', 'word-d', 'word/say', false),
+        logRow('lemma', 'word-d', 'word/say', false), // speak cards don't grade pronunciation — counts on completion
         logRow('lemma', 'word-d', 'word/hear', null), // null correct also excluded
       ],
       known_lemmas: [],
@@ -332,8 +347,7 @@ describe('SupabaseSrsService.getDueBatch — C2 ladder reps from review_log', ()
     const item = batch.find(i => i.id === 'word-d');
     expect(item).toBeDefined();
     expect(item!.receptiveReps).toBe(0);
-    expect(item!.productiveReps).toBe(0);
-    expect(item!.translationVisibility).toBe('auto');
+    expect(item!.productiveReps).toBe(1);
   });
 
   it('phrase/sayit correct rows count toward productiveReps', async () => {
