@@ -94,3 +94,21 @@ it('Reset progress requires a second confirming tap', () => {
   fireEvent.press(u.getByText('Tap again to erase all progress'));
   expect(devProps.onResetProgress).toHaveBeenCalledTimes(1);
 });
+
+// Fix 4: the reset row must reflect a prior failure instead of looking like nothing happened.
+it('dev.resetError shows "Reset failed — tap to retry" and arms a retry on tap', () => {
+  const onResetProgress = jest.fn();
+  const { u } = setup({ dev: { ...devProps, onResetProgress, resetError: true } });
+  expect(u.queryByText('Reset progress')).toBeNull();
+  expect(u.getByText('Reset failed — tap to retry')).toBeTruthy();
+  fireEvent.press(u.getByText('Reset failed — tap to retry'));
+  expect(onResetProgress).not.toHaveBeenCalled(); // armed, not fired
+  fireEvent.press(u.getByText('Tap again to erase all progress'));
+  expect(onResetProgress).toHaveBeenCalledTimes(1);
+});
+
+it('without resetError, the reset row reads the normal "Reset progress" label', () => {
+  const { u } = setup({ dev: { ...devProps, resetError: false } });
+  expect(u.getByText('Reset progress')).toBeTruthy();
+  expect(u.queryByText('Reset failed — tap to retry')).toBeNull();
+});

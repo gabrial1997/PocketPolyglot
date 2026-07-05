@@ -71,6 +71,10 @@ export function cardKindToDbType(cardKind: string): DbItemType {
 // start — sessions stay unlimited (no cap).
 const PRACTICE_BATCH = 20;
 
+// One day, in ms — how far out a freshly-seeded drill's due_at is deferred (see
+// ensureDrillsSeeded): drills join from the next session, not the first-exposure day.
+const DRILL_SEED_DEFER_MS = 86_400_000;
+
 // ---------------------------------------------------------------------------
 // Private pure helpers
 // ---------------------------------------------------------------------------
@@ -369,7 +373,7 @@ export class SupabaseSrsService implements SrsService {
 
     // due_at 1 day out: a fresh (or freshly reset) account's day 0 is the teach→MC→speak
     // word arc — perception drills join from the next session, not ahead of the first words.
-    const dueIso = new Date(now.getTime() + 86_400_000).toISOString();
+    const dueIso = new Date(now.getTime() + DRILL_SEED_DEFER_MS).toISOString();
     const rows = drills.map((d) => ({
       user_id: this.userId,
       item_type: 'pair' as const,
@@ -538,6 +542,9 @@ export class SupabaseSrsService implements SrsService {
         .select('*')
         .eq('user_id', this.userId)
         .eq('template', 'recognition')
+        // A never-seen item (stage='new') is not "practice" — exclude freshly-seeded, future-dated
+        // drills (see ensureDrillsSeeded) so they don't leak into a same-day reopen with nothing due.
+        .neq('stage', 'new')
         .order('due_at', { ascending: true })
         .limit(PRACTICE_BATCH);
       if (practiceErr) throw practiceErr;
@@ -801,15 +808,14 @@ export class SupabaseSrsService implements SrsService {
 
     const { label } = await this.scheduleTemplateRow(itemType, result.itemId, template, rating, now);
 
-    // getDueBatch() renders (and known_lemmas gates) off the recognition template ONLY (Plan A).
-    // renderFor() permanently switches a graduated item to its production card (word/say /
-    // phrase/sayit) once productiveReps clears the floor, so a pronunciation-template grade is the
-    // ONLY review event that item will ever receive again. Without this companion write, the
-    // recognition row's due_at freezes at whatever it was pre-graduation, lapses into the past, and
-    // the item is re-admitted as "due" every session forever even though the learner keeps passing
-    // it. Advance recognition's own schedule (independent stability/difficulty) alongside it so
-    // due-ness keeps tracking real review activity, matching the single-row behaviour this
-    // migration is meant to preserve until Plan B/C make rendering template-aware.
+    // getDueBatch() renders (and known_lemmas gates) off the recognition template ONLY. Under the
+    // MC↔speak rotation, renderFor() can serve a 'speak' turn for a card whose only grade this
+    // round is a pronunciation-template rating — the recognition row itself never gets a grade of
+    // its own that turn. Without this companion write, the recognition row's due_at would freeze,
+    // lapse into the past, and the item would be re-admitted as "due" every session forever even
+    // though the learner keeps passing it via speak. Advance recognition's own schedule
+    // (independent stability/difficulty) alongside it so due-ness keeps tracking real review
+    // activity regardless of which turn (MC or speak) actually fired this round.
     if (template !== 'recognition') {
       await this.scheduleTemplateRow(itemType, result.itemId, 'recognition', rating, now);
     }
@@ -836,7 +842,9 @@ export class SupabaseSrsService implements SrsService {
     if (logErr) throw logErr;
 
     // graduation floors evaluated AFTER the FSRS state write (spec §6 C2)
-    // Load cumulative correct counts from review_log (split by production card-kind set).
+    // Load cumulative receptive/productive counts from review_log. repKind() is the single source
+    // of truth for the split (production card-kinds are completion-counted, not correctness-gated —
+    // see cardTemplate.ts), so classification happens there, not via an inline card-kind set here.
     // The rung is DERIVED — no rung/ladder column is written; review_state.stage is untouched.
     const { data: logData } = await this.client
       .from('review_log')

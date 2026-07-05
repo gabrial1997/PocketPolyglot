@@ -7,8 +7,8 @@
 // Visual: matches mockup word/hear choose stage (eyebrow, audio hero, choice list).
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, ChoiceButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, TryAgainNote, type Speed } from '../components';
-import { Eyebrow, Caption, CardBody } from '../components/cardChrome';
+import { Screen, PlayOrb, ChoiceButton, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, TryAgainNote, type Speed } from '../components';
+import { Eyebrow, Caption, CardBody, CardFooter, GlossLine } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import { shouldShowGloss } from './glossVisibility';
@@ -32,6 +32,13 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
   // For WordHear, choices ARE glosses. auto + hint always show choices (needed for gameplay).
   // on-demand hides choices behind "Show meaning" until the learner explicitly taps.
   const showChoices = mode !== 'on-demand' || shouldShowGloss(mode, missed, tappedReveal);
+  // Fix 3: get_distractors can fail (RPC error), leaving item.choices undefined/short. With < 2
+  // choices there is no playable MC — WordHear would otherwise render no options and have no other
+  // completion affordance (onComplete only fires from a correct pick). Degrade to an
+  // exposure-style card instead: show the word + gloss and a Continue CTA. This is NOT a graded
+  // retrieval — onComplete carries no `correct` field, so it neither counts as a rep
+  // (repKind requires correct===true) nor advances any recall/unlock gate.
+  const hasChoices = (item.choices?.length ?? 0) >= 2;
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
@@ -74,7 +81,9 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
         <PlayOrb size={64} playing={playing} onPress={replay} />
         <SpeedChip value={speed} onChange={changeSpeed} />
         <Caption>Tap to replay</Caption>
-        {showChoices ? (
+        {!hasChoices ? (
+          <GlossLine gloss={item.gloss ?? ''} pron={item.pron} />
+        ) : showChoices ? (
           <View style={styles.choices}>
             {(item.choices ?? []).map((c) => (
               <ChoiceButton
@@ -97,6 +106,14 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
         )}
         {wrongValue ? <TryAgainNote onRetry={() => setWrongValue(null)} /> : null}
       </CardBody>
+      {!hasChoices ? (
+        <CardFooter>
+          <CtaButton
+            title="Continue"
+            onPress={() => onComplete({ itemId: item.id, cardKind: 'word/hear', spoke: false })}
+          />
+        </CardFooter>
+      ) : null}
     </Screen>
   );
 }

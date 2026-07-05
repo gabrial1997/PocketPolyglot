@@ -256,4 +256,26 @@ describe('WordHear', () => {
     const orb = u.getByLabelText(/play|listen/i);
     expect(() => fireEvent.press(orb)).not.toThrow();
   });
+
+  // Fix 3: get_distractors can fail, leaving item.choices undefined or with a single entry — no
+  // playable MC. Without a fallback, the card renders no options and has no other completion
+  // affordance (onComplete only ever fired from a correct pick), hard-stucking the session.
+  describe('no choices (get_distractors failure) — exposure fallback', () => {
+    it('renders a Continue CTA showing word + gloss, and fires onComplete with no `correct` field', () => {
+      const u = renderCard({ choices: undefined });
+      // No MC options — the reveal affordance ("Show meaning") is not shown either.
+      expect(u.queryByText(/house/)).toBeTruthy(); // gloss still shown, just not as a choice button
+      const cta = u.getByText('Continue');
+      fireEvent.press(cta);
+      expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+      const result = (u.props.onComplete as jest.Mock).mock.calls[0][0];
+      expect(result).toEqual({ itemId: 'maja', cardKind: 'word/hear', spoke: false });
+      expect(result.correct).toBeUndefined();
+    });
+
+    it('also degrades when choices has fewer than 2 entries', () => {
+      const u = renderCard({ choices: [{ value: 'maja', gloss: 'house', correct: true }] });
+      expect(u.getByText('Continue')).toBeTruthy();
+    });
+  });
 });

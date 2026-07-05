@@ -49,6 +49,11 @@ export function SettingsHost(): React.JSX.Element {
     void loadClockOffset().then(setDevOffset);
   }, []);
 
+  // Surfaces a failed resetProgress() attempt in the dev UI (was a swallowed .catch — silently
+  // leaving the learner believing a reset happened when it didn't). Cleared on the next successful
+  // skip-day or reset.
+  const [resetError, setResetError] = useState(false);
+
   const dev = __DEV__
     ? {
         simulatedDateLabel:
@@ -57,13 +62,20 @@ export function SettingsHost(): React.JSX.Element {
             : `${devNow().toDateString()} (+${devOffset} day${devOffset === 1 ? '' : 's'})`,
         offsetDays: devOffset,
         onSkipDay: () => {
-          void skipDay().then(setDevOffset);
+          void skipDay().then((n) => {
+            setDevOffset(n);
+            setResetError(false);
+          });
         },
         onResetProgress: () => {
           void resetProgress(supabase)
-            .then(() => setDevOffset(getOffsetDays()))
-            .catch(() => {});
+            .then(() => {
+              setDevOffset(getOffsetDays());
+              setResetError(false);
+            })
+            .catch(() => setResetError(true));
         },
+        resetError,
       }
     : undefined;
 

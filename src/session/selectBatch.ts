@@ -141,7 +141,8 @@ export function selectBatch(input: {
   // Step 3: Due-flood gate.
   // If the queue is overwhelmingly large, stop introducing new items.
   // -------------------------------------------------------------------------
-  if (ctx.dueToday > DUE_FLOOD_MULTIPLIER * REVIEW_BUDGET) {
+  const dueFloodGateFired = ctx.dueToday > DUE_FLOOD_MULTIPLIER * REVIEW_BUDGET;
+  if (dueFloodGateFired) {
     newCap = 0;
   }
 
@@ -185,31 +186,41 @@ export function selectBatch(input: {
   // recalled AND either (a) zero unknown components (fully known), or (b)
   // exactly one unknown component whose word is admitted THIS batch (pass 1).
   // Capped at PHRASE_INTRO_CAP; phrases do NOT consume newAllowance.
+  //
+  // Skipped entirely when the due-flood gate fired: the gate's purpose is to
+  // fully stop new admissions while the review queue is overwhelmed, and
+  // fully-known phrases don't consume newAllowance so they would otherwise
+  // keep entering (and re-entering on every same-day reopen) despite the
+  // gate. A merely-spent daily allowance (newAllowance === 0, gate not fired)
+  // still runs this pass — a fully-known phrase's building-block unlock is
+  // meant to land the same day its last component word does.
   // -------------------------------------------------------------------------
   const fullyKnownPhrases: Candidate[] = [];
   const oneAwayByWordId = new Map<string, Candidate[]>();
   let phrasesAdmitted = 0;
-  for (const candidate of sorted) {
-    if (candidate.kind !== 'phrase') continue;
-    if (phrasesAdmitted >= PHRASE_INTRO_CAP) break;
-    if (!candidate.anchorLemmaId || !ctx.recalledLemmaIds.has(candidate.anchorLemmaId)) {
-      continue;
-    }
-    const unknown = (candidate.componentLemmaIds ?? []).filter(
-      (id) => !ctx.knownLemmaIds.has(id),
-    );
-    if (unknown.length === 0) {
-      fullyKnownPhrases.push(candidate);
-      phrasesAdmitted++;
-    } else if (
-      unknown.length <= I_PLUS_ONE_UNKNOWN_TOLERANCE &&
-      unknown[0] !== undefined &&
-      admittedWordIds.has(unknown[0])
-    ) {
-      const arr = oneAwayByWordId.get(unknown[0]) ?? [];
-      arr.push(candidate);
-      oneAwayByWordId.set(unknown[0], arr);
-      phrasesAdmitted++;
+  if (!dueFloodGateFired) {
+    for (const candidate of sorted) {
+      if (candidate.kind !== 'phrase') continue;
+      if (phrasesAdmitted >= PHRASE_INTRO_CAP) break;
+      if (!candidate.anchorLemmaId || !ctx.recalledLemmaIds.has(candidate.anchorLemmaId)) {
+        continue;
+      }
+      const unknown = (candidate.componentLemmaIds ?? []).filter(
+        (id) => !ctx.knownLemmaIds.has(id),
+      );
+      if (unknown.length === 0) {
+        fullyKnownPhrases.push(candidate);
+        phrasesAdmitted++;
+      } else if (
+        unknown.length <= I_PLUS_ONE_UNKNOWN_TOLERANCE &&
+        unknown[0] !== undefined &&
+        admittedWordIds.has(unknown[0])
+      ) {
+        const arr = oneAwayByWordId.get(unknown[0]) ?? [];
+        arr.push(candidate);
+        oneAwayByWordId.set(unknown[0], arr);
+        phrasesAdmitted++;
+      }
     }
   }
 

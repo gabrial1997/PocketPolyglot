@@ -246,7 +246,9 @@ it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', as
       await result.current.submit({ itemId: w, cardKind: 'word/hear', correct: true, spoke: false });
     });
   }
-  // Then submit the 3 speak steps (renderFor doesn't yet route these specially, so they appear as word cards)
+  // Then submit the 3 speak steps. renderFor DOES route retest:'speak' specially (word/say when the
+  // item has choices), but newWord() fixtures here have no `choices`, so hasChoices() is false and
+  // renderFor falls back to word/hear — same card kind as the MC step above.
   for (const w of ['labdien', 'es', 'esmu']) {
     await settleHook(() => {
       expect(result.current.current?.item.id).toBe(w);

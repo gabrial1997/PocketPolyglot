@@ -932,6 +932,34 @@ describe('SupabaseSrsService drill seeding', () => {
     );
     expect(seeded).toBeTruthy();
   });
+
+  // Regression (Fix 1): with zero candidates, nothing due, and freshly-seeded drills (due
+  // tomorrow, stage='new'), the free-practice fallback must NOT serve those future-dated drills —
+  // a never-seen item is not "practice". Without `.neq('stage', 'new')` on the fallback query
+  // (which has no due_at filter), the seeded drill leaks into a same-day reopen.
+  it('free-practice fallback does not leak freshly-seeded, future-dated drills', async () => {
+    const now = new Date();
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      minimal_pairs: [drillRow('drill-1')],
+      lemmas: [], // zero candidates → selectBatch admits nothing → fallback path fires
+      phrases: [],
+      phrase_components: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+    const svc = new SupabaseSrsService(fakeClient(tables, {}, now), 'u1');
+
+    const batch = await svc.getDueBatch();
+
+    // The drill WAS seeded (stage='new', due tomorrow)...
+    const seeded = (tables.review_state ?? []).find((r) => r.item_type === 'pair' && r.item_id === 'drill-1');
+    expect(seeded).toBeTruthy();
+    expect(seeded!.stage).toBe('new');
+    // ...but the fallback must not serve it: no due items, no candidates → empty batch.
+    expect(batch).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------

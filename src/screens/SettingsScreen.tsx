@@ -35,6 +35,10 @@ export interface SettingsScreenProps {
     offsetDays: number;
     onSkipDay: () => void;
     onResetProgress: () => void;
+    /** Set by the host when the last resetProgress() attempt failed; cleared on the next
+     *  successful skip-day or reset. Surfaced here (rather than a swallowed .catch) so the
+     *  learner isn't left believing a reset happened when it didn't. */
+    resetError?: boolean;
   };
 }
 
@@ -344,8 +348,14 @@ function DevSection({ dev }: { dev: NonNullable<SettingsScreenProps['dev']> }): 
           onPress={dev.onSkipDay}
         />
         <SettRow
-          title={armed ? 'Tap again to erase all progress' : 'Reset progress'}
-          danger={armed}
+          title={
+            armed
+              ? 'Tap again to erase all progress'
+              : dev.resetError
+                ? 'Reset failed — tap to retry'
+                : 'Reset progress'
+          }
+          danger={armed || dev.resetError}
           chevron={false}
           isLast
           onPress={() => {

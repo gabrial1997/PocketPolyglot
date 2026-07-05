@@ -701,6 +701,53 @@ describe('selectBatch', () => {
   });
 
   // -------------------------------------------------------------------------
+  // Fix 2: the due-flood gate must suppress phrase admission too. Fully-known
+  // phrases don't consume newAllowance, so without this guard they keep
+  // entering (and re-entering on every same-day reopen) even while the flood
+  // gate has fully stopped new-word admission.
+  // -------------------------------------------------------------------------
+  describe('due-flood gate suppresses phrase admission (Fix 2)', () => {
+    const wordCand = (id: string, rank: number): Candidate => ({
+      id, kind: 'word', utilityRank: rank, hasAudioEnvelope: false,
+    });
+    const phraseCand = (id: string, comps: string[], anchor: string, rank = 1): Candidate => ({
+      id, kind: 'phrase', utilityRank: rank, hasAudioEnvelope: false,
+      componentLemmaIds: comps, anchorLemmaId: anchor,
+    });
+
+    it('admits zero phrases when the due-flood gate fired, even with fully-known candidates', () => {
+      const p = phraseCand('p', ['k1', 'k2'], 'k1');
+      const ctx = baseCtx({
+        dueToday: DUE_FLOOD_MULTIPLIER * REVIEW_BUDGET + 1, // flood gate fires
+        knownLemmaIds: new Set(['k1', 'k2']),
+        recalledLemmaIds: new Set(['k1']),
+      });
+
+      const result = selectBatch({ due: [], candidates: [p], ctx });
+
+      expect(result.admittedNew.map((c) => c.id)).not.toContain('p');
+      expect(result.admittedNew).toHaveLength(0);
+    });
+
+    it('still admits a fully-known phrase when the daily allowance is merely spent (no flood)', () => {
+      const p = phraseCand('p', ['k1', 'k2'], 'k1');
+      const words = [1, 2, 3, 4, 5].map((r) => wordCand(`w${r}`, r));
+      const ctx = baseCtx({
+        dueToday: 0, // flood gate NOT fired
+        accountAgeDays: 1, // steady-state cap = 5
+        introducedToday: 5, // allowance spent — newAllowance === 0
+        knownLemmaIds: new Set(['k1', 'k2']),
+        recalledLemmaIds: new Set(['k1']),
+      });
+
+      const result = selectBatch({ due: [], candidates: [...words, p], ctx });
+
+      expect(result.newAllowance).toBe(0);
+      expect(result.admittedNew.map((c) => c.id)).toContain('p');
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // 15. Pair does NOT consume a newAllowance slot
   // -------------------------------------------------------------------------
   describe('pair does not consume a newAllowance slot', () => {

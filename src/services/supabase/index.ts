@@ -45,6 +45,9 @@ export function createSupabaseServices(
   );
   // Dev time travel: restore any persisted day offset and hand the SRS the dev clock.
   // Production builds pass no nowFn — the service runs real time.
+  // Fire-and-forget: this AsyncStorage read races the SRS calls made below, so devNow() may run
+  // real-time (offset 0) for the first fetch of a session. Dev-only and self-healing — the offset
+  // is in place by the next fetch, and there is no production impact.
   if (__DEV__) void loadClockOffset();
   return {
     audio: new ExpoAudioService(),

@@ -83,3 +83,29 @@ it('confirming Reset progress calls devTools.resetProgress with the supabase cli
   fireEvent.press(u.getByText('Tap again to erase all progress'));
   await waitFor(() => expect(mockResetProgress).toHaveBeenCalledTimes(1));
 });
+
+// Fix 4: a swallowed .catch() on resetProgress used to leave the learner staring at a normal
+// "Reset progress" row with no sign anything went wrong. The host must surface the failure.
+it('a failed Reset progress surfaces "Reset failed — tap to retry" instead of failing silently', async () => {
+  mockResetProgress.mockRejectedValueOnce(new Error('rpc failed'));
+  const u = renderHost();
+  await u.findByText('Today (real time)');
+  fireEvent.press(u.getByText('Reset progress'));
+  fireEvent.press(u.getByText('Tap again to erase all progress'));
+  await waitFor(() => expect(mockResetProgress).toHaveBeenCalledTimes(1));
+  expect(await u.findByText('Reset failed — tap to retry')).toBeTruthy();
+});
+
+it('a successful Reset progress after a prior failure clears the error state', async () => {
+  mockResetProgress.mockRejectedValueOnce(new Error('rpc failed'));
+  const u = renderHost();
+  await u.findByText('Today (real time)');
+  fireEvent.press(u.getByText('Reset progress'));
+  fireEvent.press(u.getByText('Tap again to erase all progress'));
+  await u.findByText('Reset failed — tap to retry');
+
+  fireEvent.press(u.getByText('Reset failed — tap to retry'));
+  fireEvent.press(u.getByText('Tap again to erase all progress'));
+  await waitFor(() => expect(mockResetProgress).toHaveBeenCalledTimes(2));
+  expect(await u.findByText('Reset progress')).toBeTruthy();
+});
