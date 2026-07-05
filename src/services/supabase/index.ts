@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ServiceBundle } from '../index';
 import { ExpoAudioService } from '../device/ExpoAudioService';
 import { ExpoRecorderService } from '../device/ExpoRecorderService';
+import { devNow, loadClockOffset } from '../devClock';
 import { SupabaseSrsService } from './SupabaseSrsService';
 import { SupabaseKnownWordsStore } from './SupabaseKnownWordsStore';
 import { SupabaseProgressService } from './SupabaseProgressService';
@@ -42,10 +43,13 @@ export function createSupabaseServices(
     userId,
     () => profile.getRecConsent(),
   );
+  // Dev time travel: restore any persisted day offset and hand the SRS the dev clock.
+  // Production builds pass no nowFn — the service runs real time.
+  if (__DEV__) void loadClockOffset();
   return {
     audio: new ExpoAudioService(),
     recorder: new ExpoRecorderService(),
-    srs: new SupabaseSrsService(client, userId, uploader),
+    srs: new SupabaseSrsService(client, userId, uploader, __DEV__ ? devNow : undefined),
     known: new SupabaseKnownWordsStore(client, userId),
     progress: new SupabaseProgressService(client, userId),
     podcast: new SupabasePodcastService(client),

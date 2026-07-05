@@ -15,6 +15,7 @@ module.exports = {
       testMatch: ['**/*.test.ts'],
       testPathIgnorePatterns: ['/node_modules/', '/supabase/functions/'],
       moduleNameMapper: mapper,
+      setupFiles: ['<rootDir>/jest.setup.logic.js'],
     },
     {
       displayName: 'components',

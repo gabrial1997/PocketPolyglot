@@ -99,9 +99,10 @@ function startOfLocalDay(now: Date): Date {
 // ---------------------------------------------------------------------------
 
 export class SupabaseSrsService implements SrsService {
-  // Injectable clock for testability. The client optionally carries `_now` (set by
-  // tests via fakeClient). Production code passes `new Date()`.
+  // Injectable clock. Precedence: explicit nowFn (dev time travel) → client._now
+  // (test hook set by fakeClient) → real time.
   private now(): Date {
+    if (this.nowFn) return this.nowFn();
     const c = this.client as unknown as { _now?: Date };
     return c._now instanceof Date ? c._now : new Date();
   }
@@ -110,6 +111,7 @@ export class SupabaseSrsService implements SrsService {
     private readonly client: SupabaseClient,
     private readonly userId: string,
     private readonly uploader?: RecordingUploader,
+    private readonly nowFn?: () => Date,
   ) {}
 
   // -------------------------------------------------------------------------
