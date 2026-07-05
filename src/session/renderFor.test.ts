@@ -56,17 +56,11 @@ describe('renderFor', () => {
         renderFor(audioItem({ stage: 'review', receptiveReps: 0, productiveReps: 0 })),
       ).toBe('word/hear');
     });
-    // Below production floor (productiveReps:5, floor=6) -> still word/hear
-    it('non-picture word, rung=recall (receptiveReps:5, productiveReps:5, not yet at production floor 6) -> word/hear', () => {
+    // No choices -> word/say's choose stage is uncompletable, so even/odd parity both fall back.
+    it('non-picture word, no choices, even total reps -> word/hear', () => {
       expect(
         renderFor(audioItem({ stage: 'review', receptiveReps: 5, productiveReps: 5 })),
       ).toBe('word/hear');
-    });
-    // At/above production floor (productiveReps:6) -> word/say
-    it('non-picture word, rung=production (receptiveReps:5, productiveReps:6) -> word/say', () => {
-      expect(
-        renderFor(audioItem({ stage: 'mature', receptiveReps: 5, productiveReps: 6 })),
-      ).toBe('word/say');
     });
     it('new picturable word still learns first (learn before pic-review)', () => {
       expect(
@@ -101,12 +95,6 @@ describe('renderFor', () => {
       expect(result).toBe('word/hear');
       expect(result).not.toBe('word/say');
     });
-    it('audio-less word, high reps -> word/hear (recognition quiz, not production)', () => {
-      // Without audio, word/say is never returned (production requires audio for compare).
-      const result = renderFor(noAudioItem({ stage: 'mature', reps: 10 }));
-      expect(result).toBe('word/hear');
-      expect(result).not.toBe('word/say');
-    });
   });
 
   describe('phrases', () => {
@@ -120,21 +108,15 @@ describe('renderFor', () => {
           choices: [{ value: 'a', gloss: 'x', correct: true }, { value: 'b', gloss: 'y', correct: false }] })),
       ).toBe('phrase/meaning');
     });
-    // Rung-based routing: non-idiom phrase, at production floor (productiveReps:6) -> phrase/sayit
-    it('non-new non-idiom phrase (with audio, productiveReps:6, at production floor) -> phrase/sayit', () => {
-      expect(
-        renderFor(audioItem({ type: 'phrase', stage: 'mature', productiveReps: 6 })),
-      ).toBe('phrase/sayit');
-    });
     it('non-new idiom phrase (with audio) -> phrase/meaning (comprehension check)', () => {
       expect(
         renderFor(audioItem({ type: 'phrase', stage: 'review', productiveReps: 0, isIdiom: true,
           choices: [{ value: 'a', gloss: 'x', correct: true }, { value: 'b', gloss: 'y', correct: false }] })),
       ).toBe('phrase/meaning');
     });
-    it('idiom phrase at production rung (with audio) -> phrase/sayit (is_idiom no longer special; production rung routes to sayit)', () => {
+    it('idiom phrase, odd total reps (with audio) -> phrase/sayit (is_idiom no longer special; parity routes to sayit)', () => {
       expect(
-        renderFor(audioItem({ type: 'phrase', stage: 'mature', productiveReps: 6, isIdiom: true })),
+        renderFor(audioItem({ type: 'phrase', stage: 'mature', receptiveReps: 0, productiveReps: 1, isIdiom: true })),
       ).toBe('phrase/sayit');
     });
   });
@@ -146,14 +128,14 @@ describe('renderFor', () => {
     expect(renderFor(item)).toBe('phrase/hear');
   });
 
-  it('a phrase recognition review routes to phrase/meaning (the meaning quiz)', () => {
+  it('a phrase review with even total reps routes to phrase/meaning (the meaning quiz)', () => {
     const item = { id: 'p', type: 'phrase' as const, stage: 'review' as const, reps: 2, target: 'labrīt', gloss: 'good morning',
-      receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto' as const,
+      receptiveReps: 2, productiveReps: 0, translationVisibility: 'auto' as const,
       choices: [{ value: 'a', gloss: 'x', correct: true as const }, { value: 'b', gloss: 'y', correct: false as const }] };
     expect(renderFor(item)).toBe('phrase/meaning');
   });
 
-  it('a phrase at production rung WITH audio routes to phrase/sayit', () => {
+  it('a phrase with odd total reps (audio present) routes to phrase/sayit', () => {
     const item = { id: 'p', type: 'phrase' as const, stage: 'review' as const, reps: 9, target: 'labrīt', gloss: 'good morning',
       audio: { envelope: [0.5] }, receptiveReps: 3, productiveReps: 6, translationVisibility: 'auto' as const };
     expect(renderFor(item)).toBe('phrase/sayit');
@@ -166,14 +148,15 @@ describe('renderFor', () => {
       expect(result).not.toBe('phrase/meaning');
     });
     // Non-new audio-less phrases now route to phrase/meaning (recognition quiz is audio-optional).
-    it('audio-less non-idiom phrase (review) -> phrase/meaning (recognition quiz, never phrase/sayit)', () => {
+    // Even total reps (default receptiveReps/productiveReps: 0) -> the MC step, not sayit.
+    it('audio-less non-idiom phrase (review), even total reps -> phrase/meaning', () => {
       const result = renderFor(noAudioItem({ type: 'phrase', stage: 'review', reps: 1,
         choices: [{ value: 'a', gloss: 'x', correct: true }, { value: 'b', gloss: 'y', correct: false }] }));
       expect(result).toBe('phrase/meaning');
       expect(result).not.toBe('phrase/sayit');
       expect(result).not.toBe('phrase/hear');
     });
-    it('audio-less mature phrase -> phrase/meaning (recognition quiz; never phrase/sayit since production requires audio)', () => {
+    it('audio-less mature phrase, even total reps -> phrase/meaning (parity picks the MC step, not audio)', () => {
       const result = renderFor(noAudioItem({ type: 'phrase', stage: 'mature', reps: 5,
         choices: [{ value: 'a', gloss: 'x', correct: true }, { value: 'b', gloss: 'y', correct: false }] }));
       expect(result).toBe('phrase/meaning');
@@ -272,10 +255,11 @@ describe('renderFor — learning-step retest + audio-optional recognition', () =
     expect(renderFor(item)).toBe('word/hear');
   });
 
-  it('an audio word at production rung routes to word/say', () => {
+  it('an odd-total-reps word with choices routes to word/say (audio not required)', () => {
     const item = {
       ...base, id: 'a', type: 'word' as const, stage: 'review' as const,
       audio: { envelope: [0.5] }, receptiveReps: 3, productiveReps: 6,
+      choices: [{ value: 'a', correct: true }, { value: 'b', correct: false }],
     };
     expect(renderFor(item)).toBe('word/say');
   });
@@ -283,5 +267,60 @@ describe('renderFor — learning-step retest + audio-optional recognition', () =
   it('a genuine new word (no retest) still routes to its learn card', () => {
     const item = { ...base, id: 'a', type: 'word' as const, stage: 'new' as const, wordClass: 'concrete' as const };
     expect(renderFor(item)).toBe('word/learn-concrete');
+  });
+});
+
+const twoChoices = [{ value: 'a', correct: true }, { value: 'b', correct: false }];
+const newWord: ReviewItem = { id: 'nw', type: 'word', stage: 'new', reps: 0, target: 'vārds', gloss: 'word',
+  receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' };
+const dueWord: ReviewItem = { id: 'dw', type: 'word', stage: 'review', reps: 3, target: 'vārds', gloss: 'word',
+  audio: { nativeUrl: 'a.mp3' }, receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' };
+const newPhrase: ReviewItem = { id: 'np', type: 'phrase', stage: 'new', reps: 0, target: 'labrīt', gloss: 'good morning',
+  receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' };
+const duePhrase: ReviewItem = { id: 'dp', type: 'phrase', stage: 'review', reps: 3, target: 'labrīt', gloss: 'good morning',
+  audio: { nativeUrl: 'p.mp3' }, receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' };
+
+describe('renderFor — retest step routing', () => {
+  it("routes a word retest:'mc' to word/hear", () => {
+    expect(renderFor({ ...newWord, retest: 'mc' })).toBe('word/hear');
+  });
+  it("routes a word retest:'speak' to word/say even without audio", () => {
+    const w = { ...newWord, retest: 'speak' as const, audio: undefined, choices: twoChoices };
+    expect(renderFor(w)).toBe('word/say');
+  });
+  it("routes a phrase retest:'mc' to phrase/meaning when choices exist", () => {
+    const p = { ...newPhrase, retest: 'mc' as const, choices: twoChoices };
+    expect(renderFor(p)).toBe('phrase/meaning');
+  });
+  it("falls back to phrase/hear for retest:'mc' with <2 choices", () => {
+    expect(renderFor({ ...newPhrase, retest: 'mc' as const, choices: [] })).toBe('phrase/hear');
+  });
+  it("routes a phrase retest:'speak' to phrase/sayit even without audio", () => {
+    expect(renderFor({ ...newPhrase, retest: 'speak' as const, audio: undefined })).toBe('phrase/sayit');
+  });
+});
+
+describe('renderFor — review rotation (MC ↔ speak by rep parity)', () => {
+  it('even totalReps → word/hear', () => {
+    const w = { ...dueWord, receptiveReps: 1, productiveReps: 1, choices: twoChoices };
+    expect(renderFor(w)).toBe('word/hear');
+  });
+  it('odd totalReps → word/say (audio not required)', () => {
+    const w = { ...dueWord, receptiveReps: 2, productiveReps: 1, audio: undefined, choices: twoChoices };
+    expect(renderFor(w)).toBe('word/say');
+  });
+  it('odd totalReps but <2 choices → word/hear (word/say needs its choose stage)', () => {
+    const w = { ...dueWord, receptiveReps: 2, productiveReps: 1, choices: [] };
+    expect(renderFor(w)).toBe('word/hear');
+  });
+  it('picture words always word/pic-review regardless of parity', () => {
+    const w = { ...dueWord, receptiveReps: 2, productiveReps: 1, media: { imageUrl: 'x' } };
+    expect(renderFor(w)).toBe('word/pic-review');
+  });
+  it('even totalReps → phrase/meaning; odd → phrase/sayit', () => {
+    const even = { ...duePhrase, receptiveReps: 2, productiveReps: 0, choices: twoChoices };
+    const odd = { ...duePhrase, receptiveReps: 2, productiveReps: 1, choices: twoChoices };
+    expect(renderFor(even)).toBe('phrase/meaning');
+    expect(renderFor(odd)).toBe('phrase/sayit');
   });
 });

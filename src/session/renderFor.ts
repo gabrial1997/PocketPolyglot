@@ -1,68 +1,57 @@
 // renderFor(item) — maps a ReviewItem to the CardKind to mount.
-// Ported exactly from BACKEND_INTEGRATION.md §2. The `id`+`k` strings (= CardKind) are the
-// stable analytics / deep-link keys (WIRING_MAP §1). This is the CI smoke test (renderFor.test.ts).
+// The `id`+`k` strings (= CardKind) are the stable analytics / deep-link keys.
 //
-// Routing notes (WIRING_MAP §2):
-//  - learn-* is shown once, only when stage === 'new'.
-//  - picture words run the full loop via 'word/pic-review'.
-//  - non-picture words: receptive ('hear') until computeRung reaches 'production' (productiveReps
-//    >= PRODUCTION_GRADUATION_FLOOR); at/above that rung, production ('say').
-//  - phrases: new → 'phrase/hear'; recognition rung → 'phrase/meaning' (audio-optional meaning quiz,
-//    has choices from Task 2); production rung + audio → 'phrase/sayit'. is_idiom no longer special.
-//  - phrase / drill / pron route by item.type.
-//  - 'phrase/locked' / 'phrase/unlock' are NOT returned here — the controller decides lock
-//    state from the known-word set (BACKEND_INTEGRATION §4); this returns the *review* kind.
+// Routing (core-loop reset, 2026-07-05 spec):
+//  - learn-* is shown once, only when stage === 'new' and no retest marker.
+//  - retest:'mc' → the MC step (word/hear, phrase/meaning); retest:'speak' → the
+//    production step (word/say, phrase/sayit). Say cards are audio-OPTIONAL (silent
+//    orb until audio is backfilled) but need ≥2 choices for their choose stage.
+//  - due reviews ROTATE modality by total-rep parity: even → MC, odd → speak.
+//    (Replaces the old production-rung gate, which was circular/unreachable.)
+//  - picture words always run word/pic-review (already a full loop).
+//  - 'phrase/locked' / 'phrase/unlock' are decided by the controller, not here.
 import type { ReviewItem } from '../types/reviewItem';
 import type { ReviewCardKind } from '../types/cardKind';
-import { computeRung } from './ladder';
+
+function hasChoices(item: ReviewItem): boolean {
+  return (item.choices?.length ?? 0) >= 2;
+}
+
+/** Even total reps → the MC/recognition step; odd → the speak/production step. */
+function speakTurn(item: ReviewItem): boolean {
+  return ((item.receptiveReps ?? 0) + (item.productiveReps ?? 0)) % 2 === 1;
+}
 
 export function renderFor(item: ReviewItem): ReviewCardKind {
-  // Audio gate. word/hear is now audio-OPTIONAL: it shows the written word, so audio-less words
-  // are still quizzable (the play orb is silent until audio exists). The kinds that still REQUIRE
-  // a precomputed amplitude envelope are word/say, phrase/hear, phrase/sayit, drill, diphthong
-  // (production compares against native audio; the perception drills need the clip).
-  const hasAudio = !!item.audio?.envelope;
-
   // New words: first exposure → the learn template chosen by word class.
-  // A `retest` copy is NOT a first exposure — it falls through to the recognition quiz below.
   if (item.stage === 'new' && item.type === 'word' && !item.retest) {
     if (item.wordClass === 'concrete') return 'word/learn-concrete';
     if (item.wordClass === 'abstract') return 'word/learn-abstract';
     if (item.wordClass === 'function') return 'word/learn-function';
   }
 
-  // Word reviews + retests. Recognition (word/hear) is audio-OPTIONAL — it shows the written
-  // word, so audio-less words are still quizzable (the play button is silent until audio exists).
   if (item.type === 'word') {
     if (item.media?.imageUrl) return 'word/pic-review'; // full loop on picturable words
-    // Production (word/say) compares the learner against native audio, so it requires audio.
-    if (hasAudio && computeRung(item.receptiveReps ?? 0, item.productiveReps ?? 0) === 'production') {
-      return 'word/say';
-    }
+    if (item.retest === 'speak') return hasChoices(item) ? 'word/say' : 'word/hear';
+    if (item.retest === 'mc') return 'word/hear';
+    // Due review: rotate MC ↔ speak. word/say needs choices for its choose stage.
+    if (speakTurn(item) && hasChoices(item)) return 'word/say';
     return 'word/hear';
   }
 
-  // Phrase reviews. (locked/unlock handled by the controller, not here.) All phrases now get the
-  // meaning-quiz (phrase/meaning) for recognition — it's audio-optional and has choices (Task 2).
   if (item.type === 'phrase') {
-    if (item.stage === 'new') return 'phrase/hear'; // first exposure: hear/see the phrase
-    // Production (sayit) compares against native audio, so it needs audio.
-    if (hasAudio && computeRung(item.receptiveReps ?? 0, item.productiveReps ?? 0) === 'production') {
-      return 'phrase/sayit';
-    }
-    // A meaning quiz needs real options; if distractors failed to load (or none), fall back to the
-    // exposure card rather than stranding the learner on a choice-less, un-completable quiz.
-    return (item.choices?.length ?? 0) >= 2 ? 'phrase/meaning' : 'phrase/hear';
+    if (item.retest === 'speak') return 'phrase/sayit';
+    if (item.retest === 'mc') return hasChoices(item) ? 'phrase/meaning' : 'phrase/hear';
+    if (item.stage === 'new') return 'phrase/hear'; // first exposure
+    if (speakTurn(item)) return 'phrase/sayit';
+    return hasChoices(item) ? 'phrase/meaning' : 'phrase/hear';
   }
 
   // Minimal-pair perception drill — a gliding combination (ie) gets the diphthong card.
-  // B3 guard: drill/diphthong require audio (pair should not reach here audio-less, but guard
-  // defensively per §10.2).
+  const hasAudio = !!item.audio?.envelope;
   if (item.type === 'pair' && hasAudio) return item.glide ? 'diphthong' : 'drill';
-  // audio-less pair is never selected (Module B gates pairs on audio); defensive non-gated fallback.
+  // audio-less pair is never selected (Module B gates pairs on audio); defensive fallback.
   if (item.type === 'pair') return 'word/learn-concrete';
 
-  // Fallback: pronunciation comparison.
-  // Only 'pron' items (type === 'pron') can reach here, and they always have audio (Module B gate).
   return 'pron';
 }
