@@ -261,4 +261,25 @@ describe('WordSay', () => {
       expect.objectContaining({ itemId: 'maja', cardKind: 'word/say', correct: true, spoke: true }),
     );
   });
+
+  // ── recConsent gate, beta fix 2026-07-05 ──────────────────────────────────────
+  // The gate must be HONEST: say why the mic is gone, and never offer a "You" playback that
+  // cannot exist (no recording was possible).
+
+  it('recConsent=false: speak stage explains that recording is off', () => {
+    const u = renderCard({}, { recConsent: false });
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm();
+    expect(u.getByText('Recording is off — turn it on in Settings to hear yourself.')).toBeTruthy();
+  });
+
+  it('recConsent=false: result stage hides the "You" row and Play back-to-back', () => {
+    const u = renderCard({}, { recConsent: false });
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm();
+    fireEvent.press(u.getByText('Continue')); // speak -> result
+    expect(u.queryByText('You')).toBeNull();
+    expect(u.queryByText('Play back-to-back')).toBeNull();
+    expect(u.getByText('Native')).toBeTruthy(); // the model stays available
+  });
 });

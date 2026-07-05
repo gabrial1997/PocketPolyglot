@@ -105,6 +105,29 @@ export function phraseRowToReviewItem(
   return item;
 }
 
+/**
+ * Per-word phrase breakdown for the intro card: align each component (by its
+ * phrase_components.position) with the corresponding whitespace-separated token of the
+ * phrase target (punctuation stripped, lowercased). A component whose position has no
+ * matching token is dropped — misaligned data degrades to a shorter list, never a crash.
+ * Pure; lets the learner recognize "nav" as a form of "būt" the moment the phrase arrives.
+ */
+export function buildComponentBreakdown(
+  target: string,
+  components: Array<{ position: number; lemma: string; gloss: string }>,
+): Array<{ surface: string; lemma: string; gloss: string }> {
+  const tokens = target
+    .split(/\s+/)
+    .map((t) => t.replace(/[!?.,:;"'()«»„“”]/g, '').toLowerCase())
+    .filter((t) => t.length > 0);
+  return [...components]
+    .sort((a, b) => a.position - b.position)
+    .flatMap((c) => {
+      const surface = tokens[c.position];
+      return surface ? [{ surface, lemma: c.lemma, gloss: c.gloss }] : [];
+    });
+}
+
 /** minimal-pair row -> ReviewItem (type:'pair'). */
 export function pairRowToReviewItem(
   row: MinimalPairRow,

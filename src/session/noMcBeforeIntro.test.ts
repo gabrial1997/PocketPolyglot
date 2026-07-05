@@ -1,8 +1,10 @@
-// Fix 6 — pins the headline guarantee of the core-loop reset: a learner is never quizzed on an
+// Pins the headline guarantee of the core-loop reset: a learner is never quizzed on an
 // item before they've seen it. Composes expandLearningSteps (which interleaves intro → MC → speak
-// for new words/fully-known phrases) with renderFor/decideKind (which picks the actual card kind)
-// over a representative day-0 batch, and asserts the FIRST rendered occurrence of every item id is
-// a non-quiz (first-exposure) kind. Pure-module test — no React, no clock, no services.
+// for new words) with renderFor/decideKind (which picks the actual card kind) over a
+// representative day-0 batch, and asserts the FIRST rendered occurrence of every item id is a
+// non-quiz (first-exposure) kind. Every new phrase's first render is the unlock reveal (or the
+// locked teaser) — its hear→mc→speak arc is inserted by the controller after the reveal.
+// Pure-module test — no React, no clock, no services.
 import { expandLearningSteps } from './learningSteps';
 import { renderFor } from './renderFor';
 import { decideKind } from './decideKind';
@@ -56,6 +58,7 @@ const NON_QUIZ_KINDS = new Set<CardKind>([
   'word/pic-review',
   'phrase/hear',
   'phrase/locked',
+  'phrase/unlock',
 ]);
 
 describe('headline guarantee: no MC/speak before first exposure (Fix 6)', () => {
@@ -73,7 +76,7 @@ describe('headline guarantee: no MC/speak before first exposure (Fix 6)', () => 
     const knownLemmaIds = new Set<string>(['already-known']);
     const batch: ReviewItem[] = [teaser, wc, wa, wf, wp, known];
 
-    const steps = expandLearningSteps(batch, LEARNING_STEP_GROUP_SIZE, knownLemmaIds);
+    const steps = expandLearningSteps(batch, LEARNING_STEP_GROUP_SIZE);
 
     // Sanity: expandLearningSteps must actually have produced retest copies (mc/speak) somewhere,
     // otherwise this test would trivially pass by having no quiz occurrences at all.
@@ -85,7 +88,7 @@ describe('headline guarantee: no MC/speak before first exposure (Fix 6)', () => 
       expect(first).toBeDefined();
       const kind: CardKind =
         first!.type === 'phrase' && first!.componentLemmaIds
-          ? decideKind(first!, knownLemmaIds, new Set(), new Set()).kind
+          ? decideKind(first!, knownLemmaIds, new Set()).kind
           : renderFor(first!);
       expect(NON_QUIZ_KINDS.has(kind)).toBe(true);
     }

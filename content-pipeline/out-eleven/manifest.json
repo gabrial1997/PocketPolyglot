@@ -1,0 +1,7149 @@
+{
+  "voice": "cgSgspJ2msm6clMCkdW9",
+  "model": "eleven_v3",
+  "speed": 0.85,
+  "stability": 1,
+  "language": "lv",
+  "items": [
+    {
+      "slug": "w001-es",
+      "type": "word",
+      "text": "es",
+      "meaning": "I",
+      "rank": 1
+    },
+    {
+      "slug": "w002-but",
+      "type": "word",
+      "text": "būt",
+      "meaning": "to be",
+      "rank": 2
+    },
+    {
+      "slug": "w003-vai",
+      "type": "word",
+      "text": "vai",
+      "meaning": "or/whether",
+      "rank": 3
+    },
+    {
+      "slug": "w004-tas",
+      "type": "word",
+      "text": "tas",
+      "meaning": "that/it",
+      "rank": 4
+    },
+    {
+      "slug": "w005-jus",
+      "type": "word",
+      "text": "jūs",
+      "meaning": "you (pl./formal)",
+      "rank": 5
+    },
+    {
+      "slug": "w006-varet",
+      "type": "word",
+      "text": "varēt",
+      "meaning": "to be able/can",
+      "rank": 6
+    },
+    {
+      "slug": "w007-labi",
+      "type": "word",
+      "text": "labi",
+      "meaning": "well/okay",
+      "rank": 7
+    },
+    {
+      "slug": "w008-tu",
+      "type": "word",
+      "text": "tu",
+      "meaning": "you (sg.)",
+      "rank": 8
+    },
+    {
+      "slug": "w009-gribet",
+      "type": "word",
+      "text": "gribēt",
+      "meaning": "to want",
+      "rank": 9
+    },
+    {
+      "slug": "w010-ludzu",
+      "type": "word",
+      "text": "lūdzu",
+      "meaning": "please",
+      "rank": 10
+    },
+    {
+      "slug": "w011-uz",
+      "type": "word",
+      "text": "uz",
+      "meaning": "to/on",
+      "rank": 11
+    },
+    {
+      "slug": "w012-iet",
+      "type": "word",
+      "text": "iet",
+      "meaning": "to go",
+      "rank": 12
+    },
+    {
+      "slug": "w013-ka",
+      "type": "word",
+      "text": "kā",
+      "meaning": "how/as",
+      "rank": 13
+    },
+    {
+      "slug": "w014-sis",
+      "type": "word",
+      "text": "šis",
+      "meaning": "this",
+      "rank": 14
+    },
+    {
+      "slug": "w015-laiks",
+      "type": "word",
+      "text": "laiks",
+      "meaning": "time",
+      "rank": 15
+    },
+    {
+      "slug": "w016-cik",
+      "type": "word",
+      "text": "cik",
+      "meaning": "how much/many",
+      "rank": 16
+    },
+    {
+      "slug": "w017-viens",
+      "type": "word",
+      "text": "viens",
+      "meaning": "one",
+      "rank": 17
+    },
+    {
+      "slug": "w018-kas",
+      "type": "word",
+      "text": "kas",
+      "meaning": "what/who",
+      "rank": 18
+    },
+    {
+      "slug": "w019-paldies",
+      "type": "word",
+      "text": "paldies",
+      "meaning": "thank you",
+      "rank": 19
+    },
+    {
+      "slug": "w020-par",
+      "type": "word",
+      "text": "par",
+      "meaning": "about/for",
+      "rank": 20
+    },
+    {
+      "slug": "w021-tikai",
+      "type": "word",
+      "text": "tikai",
+      "meaning": "only",
+      "rank": 21
+    },
+    {
+      "slug": "w022-no",
+      "type": "word",
+      "text": "no",
+      "meaning": "from",
+      "rank": 22
+    },
+    {
+      "slug": "w023-mans",
+      "type": "word",
+      "text": "mans",
+      "meaning": "my/mine",
+      "rank": 23
+    },
+    {
+      "slug": "w024-mes",
+      "type": "word",
+      "text": "mēs",
+      "meaning": "we",
+      "rank": 24
+    },
+    {
+      "slug": "w025-zinat",
+      "type": "word",
+      "text": "zināt",
+      "meaning": "to know",
+      "rank": 25
+    },
+    {
+      "slug": "w026-un",
+      "type": "word",
+      "text": "un",
+      "meaning": "and",
+      "rank": 26
+    },
+    {
+      "slug": "w027-kur",
+      "type": "word",
+      "text": "kur",
+      "meaning": "where",
+      "rank": 27
+    },
+    {
+      "slug": "w028-redzet",
+      "type": "word",
+      "text": "redzēt",
+      "meaning": "to see",
+      "rank": 28
+    },
+    {
+      "slug": "w029-ar",
+      "type": "word",
+      "text": "ar",
+      "meaning": "with",
+      "rank": 29
+    },
+    {
+      "slug": "w030-viss",
+      "type": "word",
+      "text": "viss",
+      "meaning": "all/everything",
+      "rank": 30
+    },
+    {
+      "slug": "w031-kurs",
+      "type": "word",
+      "text": "kurš",
+      "meaning": "which/who",
+      "rank": 31
+    },
+    {
+      "slug": "w032-ja",
+      "type": "word",
+      "text": "jā",
+      "meaning": "yes",
+      "rank": 32
+    },
+    {
+      "slug": "w033-vajadzet",
+      "type": "word",
+      "text": "vajadzēt",
+      "meaning": "to need/should",
+      "rank": 33
+    },
+    {
+      "slug": "w034-ne",
+      "type": "word",
+      "text": "nē",
+      "meaning": "no",
+      "rank": 34
+    },
+    {
+      "slug": "w035-ka",
+      "type": "word",
+      "text": "ka",
+      "meaning": "that",
+      "rank": 35
+    },
+    {
+      "slug": "w036-ta",
+      "type": "word",
+      "text": "tā",
+      "meaning": "so/that (f.)",
+      "rank": 36
+    },
+    {
+      "slug": "w037-pie",
+      "type": "word",
+      "text": "pie",
+      "meaning": "at/near/to",
+      "rank": 37
+    },
+    {
+      "slug": "w038-tagad",
+      "type": "word",
+      "text": "tagad",
+      "meaning": "now",
+      "rank": 38
+    },
+    {
+      "slug": "w039-saprast",
+      "type": "word",
+      "text": "saprast",
+      "meaning": "to understand",
+      "rank": 39
+    },
+    {
+      "slug": "w040-vins",
+      "type": "word",
+      "text": "viņš",
+      "meaning": "he",
+      "rank": 40
+    },
+    {
+      "slug": "w041-vel",
+      "type": "word",
+      "text": "vēl",
+      "meaning": "still/more",
+      "rank": 41
+    },
+    {
+      "slug": "w042-kad",
+      "type": "word",
+      "text": "kad",
+      "meaning": "when",
+      "rank": 42
+    },
+    {
+      "slug": "w043-bet",
+      "type": "word",
+      "text": "bet",
+      "meaning": "but",
+      "rank": 43
+    },
+    {
+      "slug": "w044-kads",
+      "type": "word",
+      "text": "kāds",
+      "meaning": "some/what kind",
+      "rank": 44
+    },
+    {
+      "slug": "w045-tad",
+      "type": "word",
+      "text": "tad",
+      "meaning": "then",
+      "rank": 45
+    },
+    {
+      "slug": "w046-loti",
+      "type": "word",
+      "text": "ļoti",
+      "meaning": "very",
+      "rank": 46
+    },
+    {
+      "slug": "w047-darit",
+      "type": "word",
+      "text": "darīt",
+      "meaning": "to do",
+      "rank": 47
+    },
+    {
+      "slug": "w048-seit",
+      "type": "word",
+      "text": "šeit",
+      "meaning": "here",
+      "rank": 48
+    },
+    {
+      "slug": "w049-tavs",
+      "type": "word",
+      "text": "tavs",
+      "meaning": "your (sg.)",
+      "rank": 49
+    },
+    {
+      "slug": "w050-vina",
+      "type": "word",
+      "text": "viņa",
+      "meaning": "she",
+      "rank": 50
+    },
+    {
+      "slug": "w051-runat",
+      "type": "word",
+      "text": "runāt",
+      "meaning": "talk/speak",
+      "rank": 51
+    },
+    {
+      "slug": "w052-jau",
+      "type": "word",
+      "text": "jau",
+      "meaning": "already",
+      "rank": 52
+    },
+    {
+      "slug": "w053-pa",
+      "type": "word",
+      "text": "pa",
+      "meaning": "along/by",
+      "rank": 53
+    },
+    {
+      "slug": "w054-lai",
+      "type": "word",
+      "text": "lai",
+      "meaning": "so that/let",
+      "rank": 54
+    },
+    {
+      "slug": "w055-ja",
+      "type": "word",
+      "text": "ja",
+      "meaning": "if",
+      "rank": 55
+    },
+    {
+      "slug": "w056-savs",
+      "type": "word",
+      "text": "savs",
+      "meaning": "one's own",
+      "rank": 56
+    },
+    {
+      "slug": "w057-tikt",
+      "type": "word",
+      "text": "tikt",
+      "meaning": "to get/reach",
+      "rank": 57
+    },
+    {
+      "slug": "w058-nakt",
+      "type": "word",
+      "text": "nākt",
+      "meaning": "to come",
+      "rank": 58
+    },
+    {
+      "slug": "w059-diena",
+      "type": "word",
+      "text": "diena",
+      "meaning": "day",
+      "rank": 59
+    },
+    {
+      "slug": "w060-teikt",
+      "type": "word",
+      "text": "teikt",
+      "meaning": "to say",
+      "rank": 60
+    },
+    {
+      "slug": "w061-ne",
+      "type": "word",
+      "text": "ne",
+      "meaning": "not/no",
+      "rank": 61
+    },
+    {
+      "slug": "w062-nu",
+      "type": "word",
+      "text": "nu",
+      "meaning": "well/now",
+      "rank": 62
+    },
+    {
+      "slug": "w063-te",
+      "type": "word",
+      "text": "te",
+      "meaning": "here",
+      "rank": 63
+    },
+    {
+      "slug": "w064-kaut",
+      "type": "word",
+      "text": "kaut",
+      "meaning": "some-/at least",
+      "rank": 64
+    },
+    {
+      "slug": "w065-labs",
+      "type": "word",
+      "text": "labs",
+      "meaning": "good",
+      "rank": 65
+    },
+    {
+      "slug": "w066-ari",
+      "type": "word",
+      "text": "arī",
+      "meaning": "also/too",
+      "rank": 66
+    },
+    {
+      "slug": "w067-vards",
+      "type": "word",
+      "text": "vārds",
+      "meaning": "word/name",
+      "rank": 67
+    },
+    {
+      "slug": "w068-tik",
+      "type": "word",
+      "text": "tik",
+      "meaning": "so/that much",
+      "rank": 68
+    },
+    {
+      "slug": "w069-domat",
+      "type": "word",
+      "text": "domāt",
+      "meaning": "to think",
+      "rank": 69
+    },
+    {
+      "slug": "w070-daudz",
+      "type": "word",
+      "text": "daudz",
+      "meaning": "much/many",
+      "rank": 70
+    },
+    {
+      "slug": "w071-maja",
+      "type": "word",
+      "text": "māja",
+      "meaning": "house/home",
+      "rank": 71
+    },
+    {
+      "slug": "w072-tur",
+      "type": "word",
+      "text": "tur",
+      "meaning": "there",
+      "rank": 72
+    },
+    {
+      "slug": "w073-varbut",
+      "type": "word",
+      "text": "varbūt",
+      "meaning": "maybe",
+      "rank": 73
+    },
+    {
+      "slug": "w074-lieta",
+      "type": "word",
+      "text": "lieta",
+      "meaning": "thing/matter",
+      "rank": 74
+    },
+    {
+      "slug": "w075-cilveks",
+      "type": "word",
+      "text": "cilvēks",
+      "meaning": "person/human",
+      "rank": 75
+    },
+    {
+      "slug": "w076-notikt",
+      "type": "word",
+      "text": "notikt",
+      "meaning": "to happen",
+      "rank": 76
+    },
+    {
+      "slug": "w077-darbs",
+      "type": "word",
+      "text": "darbs",
+      "meaning": "work/job",
+      "rank": 77
+    },
+    {
+      "slug": "w078-tads",
+      "type": "word",
+      "text": "tāds",
+      "meaning": "such",
+      "rank": 78
+    },
+    {
+      "slug": "w079-pec",
+      "type": "word",
+      "text": "pēc",
+      "meaning": "after",
+      "rank": 79
+    },
+    {
+      "slug": "w080-liels",
+      "type": "word",
+      "text": "liels",
+      "meaning": "big/large",
+      "rank": 80
+    },
+    {
+      "slug": "w081-kapec",
+      "type": "word",
+      "text": "kāpēc",
+      "meaning": "why",
+      "rank": 81
+    },
+    {
+      "slug": "w082-nekas",
+      "type": "word",
+      "text": "nekas",
+      "meaning": "nothing",
+      "rank": 82
+    },
+    {
+      "slug": "w083-kungs",
+      "type": "word",
+      "text": "kungs",
+      "meaning": "sir/gentleman",
+      "rank": 83
+    },
+    {
+      "slug": "w084-pats",
+      "type": "word",
+      "text": "pats",
+      "meaning": "oneself/very",
+      "rank": 84
+    },
+    {
+      "slug": "w085-gads",
+      "type": "word",
+      "text": "gads",
+      "meaning": "year",
+      "rank": 85
+    },
+    {
+      "slug": "w086-tacu",
+      "type": "word",
+      "text": "taču",
+      "meaning": "but/surely",
+      "rank": 86
+    },
+    {
+      "slug": "w087-pateikt",
+      "type": "word",
+      "text": "pateikt",
+      "meaning": "tell/say",
+      "rank": 87
+    },
+    {
+      "slug": "w088-gan",
+      "type": "word",
+      "text": "gan",
+      "meaning": "indeed/though",
+      "rank": 88
+    },
+    {
+      "slug": "w089-ak",
+      "type": "word",
+      "text": "ak",
+      "meaning": "oh",
+      "rank": 89
+    },
+    {
+      "slug": "w090-divi",
+      "type": "word",
+      "text": "divi",
+      "meaning": "two",
+      "rank": 90
+    },
+    {
+      "slug": "w091-patikt",
+      "type": "word",
+      "text": "patikt",
+      "meaning": "to like",
+      "rank": 91
+    },
+    {
+      "slug": "w092-draugs",
+      "type": "word",
+      "text": "draugs",
+      "meaning": "friend",
+      "rank": 92
+    },
+    {
+      "slug": "w093-piedot",
+      "type": "word",
+      "text": "piedot",
+      "meaning": "forgive",
+      "rank": 93
+    },
+    {
+      "slug": "w094-atrast",
+      "type": "word",
+      "text": "atrast",
+      "meaning": "to find",
+      "rank": 94
+    },
+    {
+      "slug": "w095-jo",
+      "type": "word",
+      "text": "jo",
+      "meaning": "because",
+      "rank": 95
+    },
+    {
+      "slug": "w096-lidz",
+      "type": "word",
+      "text": "līdz",
+      "meaning": "until/up to",
+      "rank": 96
+    },
+    {
+      "slug": "w097-aiziet",
+      "type": "word",
+      "text": "aiziet",
+      "meaning": "to leave/go away",
+      "rank": 97
+    },
+    {
+      "slug": "w098-cits",
+      "type": "word",
+      "text": "cits",
+      "meaning": "other/another",
+      "rank": 98
+    },
+    {
+      "slug": "w099-nauda",
+      "type": "word",
+      "text": "nauda",
+      "meaning": "money",
+      "rank": 99
+    },
+    {
+      "slug": "w100-saukt",
+      "type": "word",
+      "text": "saukt",
+      "meaning": "call/name",
+      "rank": 100
+    },
+    {
+      "slug": "w101-sodien",
+      "type": "word",
+      "text": "šodien",
+      "meaning": "today",
+      "rank": 101
+    },
+    {
+      "slug": "w102-dievs",
+      "type": "word",
+      "text": "dievs",
+      "meaning": "god",
+      "rank": 102
+    },
+    {
+      "slug": "w103-sveiks",
+      "type": "word",
+      "text": "sveiks",
+      "meaning": "hi/hello",
+      "rank": 103
+    },
+    {
+      "slug": "w104-vieta",
+      "type": "word",
+      "text": "vieta",
+      "meaning": "place",
+      "rank": 104
+    },
+    {
+      "slug": "w105-doma",
+      "type": "word",
+      "text": "doma",
+      "meaning": "thought/idea",
+      "rank": 105
+    },
+    {
+      "slug": "w106-doties",
+      "type": "word",
+      "text": "doties",
+      "meaning": "to set off/head",
+      "rank": 106
+    },
+    {
+      "slug": "w107-kopa",
+      "type": "word",
+      "text": "kopā",
+      "meaning": "together",
+      "rank": 107
+    },
+    {
+      "slug": "w108-tiesam",
+      "type": "word",
+      "text": "tiešām",
+      "meaning": "really",
+      "rank": 108
+    },
+    {
+      "slug": "w109-sacit",
+      "type": "word",
+      "text": "sacīt",
+      "meaning": "say",
+      "rank": 109
+    },
+    {
+      "slug": "w110-tapec",
+      "type": "word",
+      "text": "tāpēc",
+      "meaning": "therefore",
+      "rank": 110
+    },
+    {
+      "slug": "w111-nekad",
+      "type": "word",
+      "text": "nekad",
+      "meaning": "never",
+      "rank": 111
+    },
+    {
+      "slug": "w112-kartiba",
+      "type": "word",
+      "text": "kārtība",
+      "meaning": "order",
+      "rank": 112
+    },
+    {
+      "slug": "w113-neviens",
+      "type": "word",
+      "text": "neviens",
+      "meaning": "nobody/none",
+      "rank": 113
+    },
+    {
+      "slug": "w114-pat",
+      "type": "word",
+      "text": "pat",
+      "meaning": "even",
+      "rank": 114
+    },
+    {
+      "slug": "w115-protams",
+      "type": "word",
+      "text": "protams",
+      "meaning": "of course",
+      "rank": 115
+    },
+    {
+      "slug": "w116-vairs",
+      "type": "word",
+      "text": "vairs",
+      "meaning": "(not) anymore",
+      "rank": 116
+    },
+    {
+      "slug": "w117-palikt",
+      "type": "word",
+      "text": "palikt",
+      "meaning": "to stay/remain",
+      "rank": 117
+    },
+    {
+      "slug": "w118-jauns",
+      "type": "word",
+      "text": "jauns",
+      "meaning": "new/young",
+      "rank": 118
+    },
+    {
+      "slug": "w119-braukt",
+      "type": "word",
+      "text": "braukt",
+      "meaning": "drive/go/ride",
+      "rank": 119
+    },
+    {
+      "slug": "w120-palidzet",
+      "type": "word",
+      "text": "palīdzēt",
+      "meaning": "help",
+      "rank": 120
+    },
+    {
+      "slug": "w121-atpakal",
+      "type": "word",
+      "text": "atpakaļ",
+      "meaning": "back",
+      "rank": 121
+    },
+    {
+      "slug": "w122-prom",
+      "type": "word",
+      "text": "prom",
+      "meaning": "away",
+      "rank": 122
+    },
+    {
+      "slug": "w123-vien",
+      "type": "word",
+      "text": "vien",
+      "meaning": "just/only",
+      "rank": 123
+    },
+    {
+      "slug": "w124-dabut",
+      "type": "word",
+      "text": "dabūt",
+      "meaning": "get/obtain",
+      "rank": 124
+    },
+    {
+      "slug": "w125-berns",
+      "type": "word",
+      "text": "bērns",
+      "meaning": "child",
+      "rank": 125
+    },
+    {
+      "slug": "w126-skatities",
+      "type": "word",
+      "text": "skatīties",
+      "meaning": "watch/look",
+      "rank": 126
+    },
+    {
+      "slug": "w127-pirms",
+      "type": "word",
+      "text": "pirms",
+      "meaning": "before",
+      "rank": 127
+    },
+    {
+      "slug": "w128-pagaidit",
+      "type": "word",
+      "text": "pagaidīt",
+      "meaning": "wait",
+      "rank": 128
+    },
+    {
+      "slug": "w129-sevis",
+      "type": "word",
+      "text": "sevis",
+      "meaning": "oneself",
+      "rank": 129
+    },
+    {
+      "slug": "w130-pasaule",
+      "type": "word",
+      "text": "pasaule",
+      "meaning": "world",
+      "rank": 130
+    },
+    {
+      "slug": "w131-roka",
+      "type": "word",
+      "text": "roka",
+      "meaning": "hand/arm",
+      "rank": 131
+    },
+    {
+      "slug": "w132-tiesi",
+      "type": "word",
+      "text": "tieši",
+      "meaning": "exactly/just",
+      "rank": 132
+    },
+    {
+      "slug": "w133-dzirdet",
+      "type": "word",
+      "text": "dzirdēt",
+      "meaning": "hear",
+      "rank": 133
+    },
+    {
+      "slug": "w134-velns",
+      "type": "word",
+      "text": "velns",
+      "meaning": "devil",
+      "rank": 134
+    },
+    {
+      "slug": "w135-izdarit",
+      "type": "word",
+      "text": "izdarīt",
+      "meaning": "do/accomplish",
+      "rank": 135
+    },
+    {
+      "slug": "w136-likt",
+      "type": "word",
+      "text": "likt",
+      "meaning": "put/make",
+      "rank": 136
+    },
+    {
+      "slug": "w137-dzive",
+      "type": "word",
+      "text": "dzīve",
+      "meaning": "life",
+      "rank": 137
+    },
+    {
+      "slug": "w138-sakt",
+      "type": "word",
+      "text": "sākt",
+      "meaning": "start/begin",
+      "rank": 138
+    },
+    {
+      "slug": "w139-tevs",
+      "type": "word",
+      "text": "tēvs",
+      "meaning": "father",
+      "rank": 139
+    },
+    {
+      "slug": "w140-skist",
+      "type": "word",
+      "text": "šķist",
+      "meaning": "seem",
+      "rank": 140
+    },
+    {
+      "slug": "w141-atri",
+      "type": "word",
+      "text": "ātri",
+      "meaning": "quickly",
+      "rank": 141
+    },
+    {
+      "slug": "w142-milet",
+      "type": "word",
+      "text": "mīlēt",
+      "meaning": "love",
+      "rank": 142
+    },
+    {
+      "slug": "w143-vienmer",
+      "type": "word",
+      "text": "vienmēr",
+      "meaning": "always",
+      "rank": 143
+    },
+    {
+      "slug": "w144-pirmais",
+      "type": "word",
+      "text": "pirmais",
+      "meaning": "first",
+      "rank": 144
+    },
+    {
+      "slug": "w145-jauks",
+      "type": "word",
+      "text": "jauks",
+      "meaning": "nice / lovely",
+      "rank": 145
+    },
+    {
+      "slug": "w146-vienkarsi",
+      "type": "word",
+      "text": "vienkārši",
+      "meaning": "simply/just",
+      "rank": 146
+    },
+    {
+      "slug": "w147-izskatities",
+      "type": "word",
+      "text": "izskatīties",
+      "meaning": "look/seem",
+      "rank": 147
+    },
+    {
+      "slug": "w148-dot",
+      "type": "word",
+      "text": "dot",
+      "meaning": "give",
+      "rank": 148
+    },
+    {
+      "slug": "w149-veleties",
+      "type": "word",
+      "text": "vēlēties",
+      "meaning": "want/wish",
+      "rank": 149
+    },
+    {
+      "slug": "w150-nogalinat",
+      "type": "word",
+      "text": "nogalināt",
+      "meaning": "kill",
+      "rank": 150
+    },
+    {
+      "slug": "w151-atgriezties",
+      "type": "word",
+      "text": "atgriezties",
+      "meaning": "return/come back",
+      "rank": 151
+    },
+    {
+      "slug": "w152-bez",
+      "type": "word",
+      "text": "bez",
+      "meaning": "without",
+      "rank": 152
+    },
+    {
+      "slug": "w153-mamma",
+      "type": "word",
+      "text": "mamma",
+      "meaning": "mom",
+      "rank": 153
+    },
+    {
+      "slug": "w154-cels",
+      "type": "word",
+      "text": "ceļš",
+      "meaning": "road/way",
+      "rank": 154
+    },
+    {
+      "slug": "w155-vajadzigs",
+      "type": "word",
+      "text": "vajadzīgs",
+      "meaning": "needed/necessary",
+      "rank": 155
+    },
+    {
+      "slug": "w156-katrs",
+      "type": "word",
+      "text": "katrs",
+      "meaning": "each/every",
+      "rank": 156
+    },
+    {
+      "slug": "w157-reize",
+      "type": "word",
+      "text": "reize",
+      "meaning": "time/occasion",
+      "rank": 157
+    },
+    {
+      "slug": "w158-beigt",
+      "type": "word",
+      "text": "beigt",
+      "meaning": "finish/stop",
+      "rank": 158
+    },
+    {
+      "slug": "w159-pret",
+      "type": "word",
+      "text": "pret",
+      "meaning": "against/towards",
+      "rank": 159
+    },
+    {
+      "slug": "w160-masina",
+      "type": "word",
+      "text": "mašīna",
+      "meaning": "car/machine",
+      "rank": 160
+    },
+    {
+      "slug": "w161-gatavs",
+      "type": "word",
+      "text": "gatavs",
+      "meaning": "ready",
+      "rank": 161
+    },
+    {
+      "slug": "w162-mils",
+      "type": "word",
+      "text": "mīļš",
+      "meaning": "dear/sweet",
+      "rank": 162
+    },
+    {
+      "slug": "w163-virs",
+      "type": "word",
+      "text": "vīrs",
+      "meaning": "man/husband",
+      "rank": 163
+    },
+    {
+      "slug": "w164-mazs",
+      "type": "word",
+      "text": "mazs",
+      "meaning": "small/little",
+      "rank": 164
+    },
+    {
+      "slug": "w165-del",
+      "type": "word",
+      "text": "dēļ",
+      "meaning": "because of/for",
+      "rank": 165
+    },
+    {
+      "slug": "w166-lieliski",
+      "type": "word",
+      "text": "lieliski",
+      "meaning": "great/excellent",
+      "rank": 166
+    },
+    {
+      "slug": "w167-stradat",
+      "type": "word",
+      "text": "strādāt",
+      "meaning": "work",
+      "rank": 167
+    },
+    {
+      "slug": "w168-puisis",
+      "type": "word",
+      "text": "puisis",
+      "meaning": "boy/guy",
+      "rank": 168
+    },
+    {
+      "slug": "w169-paskatities",
+      "type": "word",
+      "text": "paskatīties",
+      "meaning": "take a look",
+      "rank": 169
+    },
+    {
+      "slug": "w170-vecs",
+      "type": "word",
+      "text": "vecs",
+      "meaning": "old",
+      "rank": 170
+    },
+    {
+      "slug": "w171-neka",
+      "type": "word",
+      "text": "nekā",
+      "meaning": "than",
+      "rank": 171
+    },
+    {
+      "slug": "w172-tris",
+      "type": "word",
+      "text": "trīs",
+      "meaning": "three",
+      "rank": 172
+    },
+    {
+      "slug": "w173-atvainoties",
+      "type": "word",
+      "text": "atvainoties",
+      "meaning": "sorry/apologize",
+      "rank": 173
+    },
+    {
+      "slug": "w174-tatad",
+      "type": "word",
+      "text": "tātad",
+      "meaning": "so/therefore",
+      "rank": 174
+    },
+    {
+      "slug": "w175-spet",
+      "type": "word",
+      "text": "spēt",
+      "meaning": "be able/can",
+      "rank": 175
+    },
+    {
+      "slug": "w176-laut",
+      "type": "word",
+      "text": "ļaut",
+      "meaning": "let/allow",
+      "rank": 176
+    },
+    {
+      "slug": "w177-meitene",
+      "type": "word",
+      "text": "meitene",
+      "meaning": "girl",
+      "rank": 177
+    },
+    {
+      "slug": "w178-skaidrs",
+      "type": "word",
+      "text": "skaidrs",
+      "meaning": "clear",
+      "rank": 178
+    },
+    {
+      "slug": "w179-klut",
+      "type": "word",
+      "text": "kļūt",
+      "meaning": "become",
+      "rank": 179
+    },
+    {
+      "slug": "w180-ists",
+      "type": "word",
+      "text": "īsts",
+      "meaning": "real/genuine",
+      "rank": 180
+    },
+    {
+      "slug": "w181-klausities",
+      "type": "word",
+      "text": "klausīties",
+      "meaning": "listen",
+      "rank": 181
+    },
+    {
+      "slug": "w182-nekads",
+      "type": "word",
+      "text": "nekāds",
+      "meaning": "no / none / no kind of",
+      "rank": 182
+    },
+    {
+      "slug": "w183-atkal",
+      "type": "word",
+      "text": "atkal",
+      "meaning": "again",
+      "rank": 183
+    },
+    {
+      "slug": "w184-ara",
+      "type": "word",
+      "text": "ārā",
+      "meaning": "outside/out",
+      "rank": 184
+    },
+    {
+      "slug": "w185-ieksa",
+      "type": "word",
+      "text": "iekšā",
+      "meaning": "inside/in",
+      "rank": 185
+    },
+    {
+      "slug": "w186-atcereties",
+      "type": "word",
+      "text": "atcerēties",
+      "meaning": "remember",
+      "rank": 186
+    },
+    {
+      "slug": "w187-dzivot",
+      "type": "word",
+      "text": "dzīvot",
+      "meaning": "live",
+      "rank": 187
+    },
+    {
+      "slug": "w188-prieksa",
+      "type": "word",
+      "text": "priekša",
+      "meaning": "front",
+      "rank": 188
+    },
+    {
+      "slug": "w189-minute",
+      "type": "word",
+      "text": "minūte",
+      "meaning": "minute",
+      "rank": 189
+    },
+    {
+      "slug": "w190-drikstet",
+      "type": "word",
+      "text": "drīkstēt",
+      "meaning": "be allowed / may",
+      "rank": 190
+    },
+    {
+      "slug": "w191-zeme",
+      "type": "word",
+      "text": "zeme",
+      "meaning": "land/earth/ground",
+      "rank": 191
+    },
+    {
+      "slug": "w192-pedejais",
+      "type": "word",
+      "text": "pēdējais",
+      "meaning": "last/latest",
+      "rank": 192
+    },
+    {
+      "slug": "w193-acs",
+      "type": "word",
+      "text": "acs",
+      "meaning": "eye",
+      "rank": 193
+    },
+    {
+      "slug": "w194-sieviete",
+      "type": "word",
+      "text": "sieviete",
+      "meaning": "woman",
+      "rank": 194
+    },
+    {
+      "slug": "w195-taisniba",
+      "type": "word",
+      "text": "taisnība",
+      "meaning": "truth/being right",
+      "rank": 195
+    },
+    {
+      "slug": "w196-tulit",
+      "type": "word",
+      "text": "tūlīt",
+      "meaning": "right away",
+      "rank": 196
+    },
+    {
+      "slug": "w197-nozime",
+      "type": "word",
+      "text": "nozīme",
+      "meaning": "meaning",
+      "rank": 197
+    },
+    {
+      "slug": "w198-paris",
+      "type": "word",
+      "text": "pāris",
+      "meaning": "couple/a few",
+      "rank": 198
+    },
+    {
+      "slug": "w199-gals",
+      "type": "word",
+      "text": "gals",
+      "meaning": "end",
+      "rank": 199
+    },
+    {
+      "slug": "w200-tikties",
+      "type": "word",
+      "text": "tikties",
+      "meaning": "meet",
+      "rank": 200
+    },
+    {
+      "slug": "w201-ei",
+      "type": "word",
+      "text": "ei",
+      "meaning": "hey",
+      "rank": 201
+    },
+    {
+      "slug": "w202-dazs",
+      "type": "word",
+      "text": "dažs",
+      "meaning": "some / a few",
+      "rank": 202
+    },
+    {
+      "slug": "w203-abi",
+      "type": "word",
+      "text": "abi",
+      "meaning": "both",
+      "rank": 203
+    },
+    {
+      "slug": "w204-parak",
+      "type": "word",
+      "text": "pārāk",
+      "meaning": "too (much)",
+      "rank": 204
+    },
+    {
+      "slug": "w205-otrs",
+      "type": "word",
+      "text": "otrs",
+      "meaning": "second/the other",
+      "rank": 205
+    },
+    {
+      "slug": "w206-panemt",
+      "type": "word",
+      "text": "paņemt",
+      "meaning": "take/grab",
+      "rank": 206
+    },
+    {
+      "slug": "w207-tetis",
+      "type": "word",
+      "text": "tētis",
+      "meaning": "dad",
+      "rank": 207
+    },
+    {
+      "slug": "w208-dels",
+      "type": "word",
+      "text": "dēls",
+      "meaning": "son",
+      "rank": 208
+    },
+    {
+      "slug": "w209-nemt",
+      "type": "word",
+      "text": "ņemt",
+      "meaning": "take",
+      "rank": 209
+    },
+    {
+      "slug": "w210-ilgi",
+      "type": "word",
+      "text": "ilgi",
+      "meaning": "long (time)",
+      "rank": 210
+    },
+    {
+      "slug": "w211-driz",
+      "type": "word",
+      "text": "drīz",
+      "meaning": "soon",
+      "rank": 211
+    },
+    {
+      "slug": "w212-patiesiba",
+      "type": "word",
+      "text": "patiesība",
+      "meaning": "truth/actually",
+      "rank": 212
+    },
+    {
+      "slug": "w213-meklet",
+      "type": "word",
+      "text": "meklēt",
+      "meaning": "to look for / search",
+      "rank": 213
+    },
+    {
+      "slug": "w214-gaidit",
+      "type": "word",
+      "text": "gaidīt",
+      "meaning": "to wait / expect",
+      "rank": 214
+    },
+    {
+      "slug": "w215-pilseta",
+      "type": "word",
+      "text": "pilsēta",
+      "meaning": "city/town",
+      "rank": 215
+    },
+    {
+      "slug": "w216-surp",
+      "type": "word",
+      "text": "šurp",
+      "meaning": "here (to here)",
+      "rank": 216
+    },
+    {
+      "slug": "w217-censties",
+      "type": "word",
+      "text": "censties",
+      "meaning": "try/make effort",
+      "rank": 217
+    },
+    {
+      "slug": "w218-rit",
+      "type": "word",
+      "text": "rīt",
+      "meaning": "tomorrow",
+      "rank": 218
+    },
+    {
+      "slug": "w219-puse",
+      "type": "word",
+      "text": "puse",
+      "meaning": "half/side",
+      "rank": 219
+    },
+    {
+      "slug": "w220-velu",
+      "type": "word",
+      "text": "vēlu",
+      "meaning": "late/later",
+      "rank": 220
+    },
+    {
+      "slug": "w221-talu",
+      "type": "word",
+      "text": "tālu",
+      "meaning": "far",
+      "rank": 221
+    },
+    {
+      "slug": "w222-zel",
+      "type": "word",
+      "text": "žēl",
+      "meaning": "sorry/a pity",
+      "rank": 222
+    },
+    {
+      "slug": "w223-gimene",
+      "type": "word",
+      "text": "ģimene",
+      "meaning": "family",
+      "rank": 223
+    },
+    {
+      "slug": "w224-sieva",
+      "type": "word",
+      "text": "sieva",
+      "meaning": "wife",
+      "rank": 224
+    },
+    {
+      "slug": "w225-zina",
+      "type": "word",
+      "text": "ziņa",
+      "meaning": "news/message",
+      "rank": 225
+    },
+    {
+      "slug": "w226-ierocis",
+      "type": "word",
+      "text": "ierocis",
+      "meaning": "weapon/gun",
+      "rank": 226
+    },
+    {
+      "slug": "w227-iespeja",
+      "type": "word",
+      "text": "iespēja",
+      "meaning": "chance/opportunity",
+      "rank": 227
+    },
+    {
+      "slug": "w228-bralis",
+      "type": "word",
+      "text": "brālis",
+      "meaning": "brother",
+      "rank": 228
+    },
+    {
+      "slug": "w229-nakts",
+      "type": "word",
+      "text": "nakts",
+      "meaning": "night",
+      "rank": 229
+    },
+    {
+      "slug": "w230-vecit",
+      "type": "word",
+      "text": "vecīt",
+      "meaning": "buddy/dude",
+      "rank": 230
+    },
+    {
+      "slug": "w231-iespejams",
+      "type": "word",
+      "text": "iespējams",
+      "meaning": "possible/maybe",
+      "rank": 231
+    },
+    {
+      "slug": "w232-tapat",
+      "type": "word",
+      "text": "tāpat",
+      "meaning": "anyway/likewise",
+      "rank": 232
+    },
+    {
+      "slug": "w233-noteikti",
+      "type": "word",
+      "text": "noteikti",
+      "meaning": "definitely",
+      "rank": 233
+    },
+    {
+      "slug": "w234-spele",
+      "type": "word",
+      "text": "spēle",
+      "meaning": "game",
+      "rank": 234
+    },
+    {
+      "slug": "w235-galva",
+      "type": "word",
+      "text": "galva",
+      "meaning": "head",
+      "rank": 235
+    },
+    {
+      "slug": "w236-stunda",
+      "type": "word",
+      "text": "stunda",
+      "meaning": "hour/lesson",
+      "rank": 236
+    },
+    {
+      "slug": "w237-ticet",
+      "type": "word",
+      "text": "ticēt",
+      "meaning": "to believe",
+      "rank": 237
+    },
+    {
+      "slug": "w238-prieks",
+      "type": "word",
+      "text": "prieks",
+      "meaning": "joy/pleasure",
+      "rank": 238
+    },
+    {
+      "slug": "w239-justies",
+      "type": "word",
+      "text": "justies",
+      "meaning": "feel",
+      "rank": 239
+    },
+    {
+      "slug": "w240-kadel",
+      "type": "word",
+      "text": "kādēļ",
+      "meaning": "why",
+      "rank": 240
+    },
+    {
+      "slug": "w241-pazit",
+      "type": "word",
+      "text": "pazīt",
+      "meaning": "know (person) / recognize",
+      "rank": 241
+    },
+    {
+      "slug": "w242-nave",
+      "type": "word",
+      "text": "nāve",
+      "meaning": "death",
+      "rank": 242
+    },
+    {
+      "slug": "w243-kamer",
+      "type": "word",
+      "text": "kamēr",
+      "meaning": "while/until",
+      "rank": 243
+    },
+    {
+      "slug": "w244-sveiki",
+      "type": "word",
+      "text": "sveiki",
+      "meaning": "hi/hello",
+      "rank": 244
+    },
+    {
+      "slug": "w245-joprojam",
+      "type": "word",
+      "text": "joprojām",
+      "meaning": "still",
+      "rank": 245
+    },
+    {
+      "slug": "w246-jautajums",
+      "type": "word",
+      "text": "jautājums",
+      "meaning": "question",
+      "rank": 246
+    },
+    {
+      "slug": "w247-bridis",
+      "type": "word",
+      "text": "brīdis",
+      "meaning": "moment",
+      "rank": 247
+    },
+    {
+      "slug": "w248-miers",
+      "type": "word",
+      "text": "miers",
+      "meaning": "peace/calm",
+      "rank": 248
+    },
+    {
+      "slug": "w249-tiesa",
+      "type": "word",
+      "text": "tiesa",
+      "meaning": "court/justice",
+      "rank": 249
+    },
+    {
+      "slug": "w250-mirt",
+      "type": "word",
+      "text": "mirt",
+      "meaning": "die",
+      "rank": 250
+    },
+    {
+      "slug": "w251-tikko",
+      "type": "word",
+      "text": "tikko",
+      "meaning": "just (now)",
+      "rank": 251
+    },
+    {
+      "slug": "w252-ierasties",
+      "type": "word",
+      "text": "ierasties",
+      "meaning": "arrive/show up",
+      "rank": 252
+    },
+    {
+      "slug": "w253-durvis",
+      "type": "word",
+      "text": "durvis",
+      "meaning": "door",
+      "rank": 253
+    },
+    {
+      "slug": "w254-luk",
+      "type": "word",
+      "text": "lūk",
+      "meaning": "look / here (you go)",
+      "rank": 254
+    },
+    {
+      "slug": "w255-lidzi",
+      "type": "word",
+      "text": "līdzi",
+      "meaning": "along/with",
+      "rank": 255
+    },
+    {
+      "slug": "w256-pareizi",
+      "type": "word",
+      "text": "pareizi",
+      "meaning": "correctly/right",
+      "rank": 256
+    },
+    {
+      "slug": "w257-vienigais",
+      "type": "word",
+      "text": "vienīgais",
+      "meaning": "only/sole",
+      "rank": 257
+    },
+    {
+      "slug": "w258-turet",
+      "type": "word",
+      "text": "turēt",
+      "meaning": "hold/keep",
+      "rank": 258
+    },
+    {
+      "slug": "w259-atvainot",
+      "type": "word",
+      "text": "atvainot",
+      "meaning": "excuse / sorry",
+      "rank": 259
+    },
+    {
+      "slug": "w260-dzeks",
+      "type": "word",
+      "text": "džeks",
+      "meaning": "guy / dude",
+      "rank": 260
+    },
+    {
+      "slug": "w261-izdoties",
+      "type": "word",
+      "text": "izdoties",
+      "meaning": "succeed / manage",
+      "rank": 261
+    },
+    {
+      "slug": "w262-mate",
+      "type": "word",
+      "text": "māte",
+      "meaning": "mother",
+      "rank": 262
+    },
+    {
+      "slug": "w263-vels",
+      "type": "word",
+      "text": "vēls",
+      "meaning": "late",
+      "rank": 263
+    },
+    {
+      "slug": "w264-udens",
+      "type": "word",
+      "text": "ūdens",
+      "meaning": "water",
+      "rank": 264
+    },
+    {
+      "slug": "w265-izmantot",
+      "type": "word",
+      "text": "izmantot",
+      "meaning": "to use",
+      "rank": 265
+    },
+    {
+      "slug": "w266-drosi",
+      "type": "word",
+      "text": "droši",
+      "meaning": "safely / surely",
+      "rank": 266
+    },
+    {
+      "slug": "w267-ceret",
+      "type": "word",
+      "text": "cerēt",
+      "meaning": "hope",
+      "rank": 267
+    },
+    {
+      "slug": "w268-nedela",
+      "type": "word",
+      "text": "nedēļa",
+      "meaning": "week",
+      "rank": 268
+    },
+    {
+      "slug": "w269-sasodit",
+      "type": "word",
+      "text": "sasodīt",
+      "meaning": "damn (it)",
+      "rank": 269
+    },
+    {
+      "slug": "w270-problema",
+      "type": "word",
+      "text": "problēma",
+      "meaning": "problem",
+      "rank": 270
+    },
+    {
+      "slug": "w271-nedaudz",
+      "type": "word",
+      "text": "nedaudz",
+      "meaning": "a little / a bit",
+      "rank": 271
+    },
+    {
+      "slug": "w272-slikti",
+      "type": "word",
+      "text": "slikti",
+      "meaning": "badly",
+      "rank": 272
+    },
+    {
+      "slug": "w273-kars",
+      "type": "word",
+      "text": "karš",
+      "meaning": "war",
+      "rank": 273
+    },
+    {
+      "slug": "w274-starp",
+      "type": "word",
+      "text": "starp",
+      "meaning": "between / among",
+      "rank": 274
+    },
+    {
+      "slug": "w275-aiz",
+      "type": "word",
+      "text": "aiz",
+      "meaning": "behind",
+      "rank": 275
+    },
+    {
+      "slug": "w276-pietikt",
+      "type": "word",
+      "text": "pietikt",
+      "meaning": "to suffice / be enough",
+      "rank": 276
+    },
+    {
+      "slug": "w277-kundze",
+      "type": "word",
+      "text": "kundze",
+      "meaning": "madam / Mrs.",
+      "rank": 277
+    },
+    {
+      "slug": "w278-aizmirst",
+      "type": "word",
+      "text": "aizmirst",
+      "meaning": "forget",
+      "rank": 278
+    },
+    {
+      "slug": "w279-speks",
+      "type": "word",
+      "text": "spēks",
+      "meaning": "strength / force",
+      "rank": 279
+    },
+    {
+      "slug": "w280-turpinat",
+      "type": "word",
+      "text": "turpināt",
+      "meaning": "to continue",
+      "rank": 280
+    },
+    {
+      "slug": "w281-gandriz",
+      "type": "word",
+      "text": "gandrīz",
+      "meaning": "almost",
+      "rank": 281
+    },
+    {
+      "slug": "w282-slikts",
+      "type": "word",
+      "text": "slikts",
+      "meaning": "bad",
+      "rank": 282
+    },
+    {
+      "slug": "w283-dala",
+      "type": "word",
+      "text": "daļa",
+      "meaning": "part / portion",
+      "rank": 283
+    },
+    {
+      "slug": "w284-pieci",
+      "type": "word",
+      "text": "pieci",
+      "meaning": "five",
+      "rank": 284
+    },
+    {
+      "slug": "w285-kaja",
+      "type": "word",
+      "text": "kāja",
+      "meaning": "leg / foot",
+      "rank": 285
+    },
+    {
+      "slug": "w286-plans",
+      "type": "word",
+      "text": "plāns",
+      "meaning": "plan / thin",
+      "rank": 286
+    },
+    {
+      "slug": "w287-kugis",
+      "type": "word",
+      "text": "kuģis",
+      "meaning": "ship",
+      "rank": 287
+    },
+    {
+      "slug": "w288-stasts",
+      "type": "word",
+      "text": "stāsts",
+      "meaning": "story",
+      "rank": 288
+    },
+    {
+      "slug": "w289-augsa",
+      "type": "word",
+      "text": "augšā",
+      "meaning": "up / upstairs",
+      "rank": 289
+    },
+    {
+      "slug": "w290-it",
+      "type": "word",
+      "text": "it",
+      "meaning": "quite / as if",
+      "rank": 290
+    },
+    {
+      "slug": "w291-sirds",
+      "type": "word",
+      "text": "sirds",
+      "meaning": "heart",
+      "rank": 291
+    },
+    {
+      "slug": "w292-atnakt",
+      "type": "word",
+      "text": "atnākt",
+      "meaning": "come (over) / arrive",
+      "rank": 292
+    },
+    {
+      "slug": "w293-klat",
+      "type": "word",
+      "text": "klāt",
+      "meaning": "near / present",
+      "rank": 293
+    },
+    {
+      "slug": "w294-prats",
+      "type": "word",
+      "text": "prāts",
+      "meaning": "mind",
+      "rank": 294
+    },
+    {
+      "slug": "w295-veids",
+      "type": "word",
+      "text": "veids",
+      "meaning": "way / type",
+      "rank": 295
+    },
+    {
+      "slug": "w296-lauks",
+      "type": "word",
+      "text": "lauks",
+      "meaning": "field / outside",
+      "rank": 296
+    },
+    {
+      "slug": "w297-skaists",
+      "type": "word",
+      "text": "skaists",
+      "meaning": "beautiful",
+      "rank": 297
+    },
+    {
+      "slug": "w298-beigties",
+      "type": "word",
+      "text": "beigties",
+      "meaning": "end / be over",
+      "rank": 298
+    },
+    {
+      "slug": "w299-lielisks",
+      "type": "word",
+      "text": "lielisks",
+      "meaning": "great / excellent",
+      "rank": 299
+    },
+    {
+      "slug": "w300-parads",
+      "type": "word",
+      "text": "parāds",
+      "meaning": "debt",
+      "rank": 300
+    },
+    {
+      "slug": "w301-palidziba",
+      "type": "word",
+      "text": "palīdzība",
+      "meaning": "help / aid",
+      "rank": 301
+    },
+    {
+      "slug": "w302-vala",
+      "type": "word",
+      "text": "vaļā",
+      "meaning": "open / loose",
+      "rank": 302
+    },
+    {
+      "slug": "w303-zaudet",
+      "type": "word",
+      "text": "zaudēt",
+      "meaning": "to lose",
+      "rank": 303
+    },
+    {
+      "slug": "w304-komanda",
+      "type": "word",
+      "text": "komanda",
+      "meaning": "team / command",
+      "rank": 304
+    },
+    {
+      "slug": "w305-mazliet",
+      "type": "word",
+      "text": "mazliet",
+      "meaning": "a little / a bit",
+      "rank": 305
+    },
+    {
+      "slug": "w306-drosiba",
+      "type": "word",
+      "text": "drošība",
+      "meaning": "safety / security",
+      "rank": 306
+    },
+    {
+      "slug": "w307-vaina",
+      "type": "word",
+      "text": "vaina",
+      "meaning": "fault / blame",
+      "rank": 307
+    },
+    {
+      "slug": "w308-velreiz",
+      "type": "word",
+      "text": "vēlreiz",
+      "meaning": "again / once more",
+      "rank": 308
+    },
+    {
+      "slug": "w309-atrasties",
+      "type": "word",
+      "text": "atrasties",
+      "meaning": "be located / be",
+      "rank": 309
+    },
+    {
+      "slug": "w310-sejiene",
+      "type": "word",
+      "text": "šejiene",
+      "meaning": "here (this place)",
+      "rank": 310
+    },
+    {
+      "slug": "w311-puika",
+      "type": "word",
+      "text": "puika",
+      "meaning": "boy",
+      "rank": 311
+    },
+    {
+      "slug": "w312-sakties",
+      "type": "word",
+      "text": "sākties",
+      "meaning": "begin / start",
+      "rank": 312
+    },
+    {
+      "slug": "w313-daudzi",
+      "type": "word",
+      "text": "daudzi",
+      "meaning": "many",
+      "rank": 313
+    },
+    {
+      "slug": "w314-tuvu",
+      "type": "word",
+      "text": "tuvu",
+      "meaning": "close / near",
+      "rank": 314
+    },
+    {
+      "slug": "w315-kapteinis",
+      "type": "word",
+      "text": "kapteinis",
+      "meaning": "captain",
+      "rank": 315
+    },
+    {
+      "slug": "w316-pazust",
+      "type": "word",
+      "text": "pazust",
+      "meaning": "to disappear",
+      "rank": 316
+    },
+    {
+      "slug": "w317-tet",
+      "type": "word",
+      "text": "tēt",
+      "meaning": "dad",
+      "rank": 317
+    },
+    {
+      "slug": "w318-dolars",
+      "type": "word",
+      "text": "dolārs",
+      "meaning": "dollar",
+      "rank": 318
+    },
+    {
+      "slug": "w319-atstat",
+      "type": "word",
+      "text": "atstāt",
+      "meaning": "leave (behind)",
+      "rank": 319
+    },
+    {
+      "slug": "w320-paradit",
+      "type": "word",
+      "text": "parādīt",
+      "meaning": "to show",
+      "rank": 320
+    },
+    {
+      "slug": "w321-agents",
+      "type": "word",
+      "text": "aģents",
+      "meaning": "agent",
+      "rank": 321
+    },
+    {
+      "slug": "w322-sanemt",
+      "type": "word",
+      "text": "saņemt",
+      "meaning": "to receive / get",
+      "rank": 322
+    },
+    {
+      "slug": "w323-rits",
+      "type": "word",
+      "text": "rīts",
+      "meaning": "morning",
+      "rank": 323
+    },
+    {
+      "slug": "w324-nevis",
+      "type": "word",
+      "text": "nevis",
+      "meaning": "not / rather than",
+      "rank": 324
+    },
+    {
+      "slug": "w325-lugt",
+      "type": "word",
+      "text": "lūgt",
+      "meaning": "ask / beg / pray",
+      "rank": 325
+    },
+    {
+      "slug": "w326-dross",
+      "type": "word",
+      "text": "drošs",
+      "meaning": "safe / sure",
+      "rank": 326
+    },
+    {
+      "slug": "w327-skola",
+      "type": "word",
+      "text": "skola",
+      "meaning": "school",
+      "rank": 327
+    },
+    {
+      "slug": "w328-miljons",
+      "type": "word",
+      "text": "miljons",
+      "meaning": "million",
+      "rank": 328
+    },
+    {
+      "slug": "w329-seja",
+      "type": "word",
+      "text": "seja",
+      "meaning": "face",
+      "rank": 329
+    },
+    {
+      "slug": "w330-gruti",
+      "type": "word",
+      "text": "grūti",
+      "meaning": "hard / difficult",
+      "rank": 330
+    },
+    {
+      "slug": "w331-beigas",
+      "type": "word",
+      "text": "beigas",
+      "meaning": "end",
+      "rank": 331
+    },
+    {
+      "slug": "w332-suns",
+      "type": "word",
+      "text": "suns",
+      "meaning": "dog",
+      "rank": 332
+    },
+    {
+      "slug": "w333-nemaz",
+      "type": "word",
+      "text": "nemaz",
+      "meaning": "not at all",
+      "rank": 333
+    },
+    {
+      "slug": "w334-pienemt",
+      "type": "word",
+      "text": "pieņemt",
+      "meaning": "to accept / assume",
+      "rank": 334
+    },
+    {
+      "slug": "w335-noladet",
+      "type": "word",
+      "text": "nolādēt",
+      "meaning": "damn / curse",
+      "rank": 335
+    },
+    {
+      "slug": "w336-hei",
+      "type": "word",
+      "text": "hei",
+      "meaning": "hey",
+      "rank": 336
+    },
+    {
+      "slug": "w337-dzivs",
+      "type": "word",
+      "text": "dzīvs",
+      "meaning": "alive",
+      "rank": 337
+    },
+    {
+      "slug": "w338-dziviba",
+      "type": "word",
+      "text": "dzīvība",
+      "meaning": "life (biological)",
+      "rank": 338
+    },
+    {
+      "slug": "w339-policija",
+      "type": "word",
+      "text": "policija",
+      "meaning": "police",
+      "rank": 339
+    },
+    {
+      "slug": "w340-diezgan",
+      "type": "word",
+      "text": "diezgan",
+      "meaning": "quite / fairly",
+      "rank": 340
+    },
+    {
+      "slug": "w341-kuriene",
+      "type": "word",
+      "text": "kuriene",
+      "meaning": "where (place)",
+      "rank": 341
+    },
+    {
+      "slug": "w342-tomer",
+      "type": "word",
+      "text": "tomēr",
+      "meaning": "however / still",
+      "rank": 342
+    },
+    {
+      "slug": "w343-iedot",
+      "type": "word",
+      "text": "iedot",
+      "meaning": "give/hand over",
+      "rank": 343
+    },
+    {
+      "slug": "w344-kops",
+      "type": "word",
+      "text": "kopš",
+      "meaning": "since",
+      "rank": 344
+    },
+    {
+      "slug": "w345-vakars",
+      "type": "word",
+      "text": "vakars",
+      "meaning": "evening",
+      "rank": 345
+    },
+    {
+      "slug": "w346-menesis",
+      "type": "word",
+      "text": "mēnesis",
+      "meaning": "month",
+      "rank": 346
+    },
+    {
+      "slug": "w347-sovakar",
+      "type": "word",
+      "text": "šovakar",
+      "meaning": "tonight",
+      "rank": 347
+    },
+    {
+      "slug": "w348-gaiss",
+      "type": "word",
+      "text": "gaiss",
+      "meaning": "air",
+      "rank": 348
+    },
+    {
+      "slug": "w349-nopietni",
+      "type": "word",
+      "text": "nopietni",
+      "meaning": "seriously",
+      "rank": 349
+    },
+    {
+      "slug": "w350-dargs",
+      "type": "word",
+      "text": "dārgs",
+      "meaning": "expensive / dear",
+      "rank": 350
+    },
+    {
+      "slug": "w351-valsts",
+      "type": "word",
+      "text": "valsts",
+      "meaning": "country / state",
+      "rank": 351
+    },
+    {
+      "slug": "w352-vecaks",
+      "type": "word",
+      "text": "vecāks",
+      "meaning": "parent",
+      "rank": 352
+    },
+    {
+      "slug": "w353-suds",
+      "type": "word",
+      "text": "sūds",
+      "meaning": "crap / shit",
+      "rank": 353
+    },
+    {
+      "slug": "w354-gramata",
+      "type": "word",
+      "text": "grāmata",
+      "meaning": "book",
+      "rank": 354
+    },
+    {
+      "slug": "w355-nakamais",
+      "type": "word",
+      "text": "nākamais",
+      "meaning": "next",
+      "rank": 355
+    },
+    {
+      "slug": "w356-spelet",
+      "type": "word",
+      "text": "spēlēt",
+      "meaning": "play",
+      "rank": 356
+    },
+    {
+      "slug": "w357-cauri",
+      "type": "word",
+      "text": "cauri",
+      "meaning": "through",
+      "rank": 357
+    },
+    {
+      "slug": "w358-miris",
+      "type": "word",
+      "text": "miris",
+      "meaning": "dead",
+      "rank": 358
+    },
+    {
+      "slug": "w359-meginat",
+      "type": "word",
+      "text": "mēģināt",
+      "meaning": "try",
+      "rank": 359
+    },
+    {
+      "slug": "w360-virietis",
+      "type": "word",
+      "text": "vīrietis",
+      "meaning": "man",
+      "rank": 360
+    },
+    {
+      "slug": "w361-izbeigt",
+      "type": "word",
+      "text": "izbeigt",
+      "meaning": "stop / cut it out",
+      "rank": 361
+    },
+    {
+      "slug": "w362-pilnigi",
+      "type": "word",
+      "text": "pilnīgi",
+      "meaning": "completely / totally",
+      "rank": 362
+    },
+    {
+      "slug": "w363-istaba",
+      "type": "word",
+      "text": "istaba",
+      "meaning": "room",
+      "rank": 363
+    },
+    {
+      "slug": "w364-leja",
+      "type": "word",
+      "text": "lejā",
+      "meaning": "down / downstairs",
+      "rank": 364
+    },
+    {
+      "slug": "w365-prieks",
+      "type": "word",
+      "text": "priekš",
+      "meaning": "for",
+      "rank": 365
+    },
+    {
+      "slug": "w366-parejais",
+      "type": "word",
+      "text": "pārējais",
+      "meaning": "the rest / remaining",
+      "rank": 366
+    },
+    {
+      "slug": "w367-paiet",
+      "type": "word",
+      "text": "paiet",
+      "meaning": "to pass (time/by)",
+      "rank": 367
+    },
+    {
+      "slug": "w368-sapnis",
+      "type": "word",
+      "text": "sapnis",
+      "meaning": "dream",
+      "rank": 368
+    },
+    {
+      "slug": "w369-vienalga",
+      "type": "word",
+      "text": "vienalga",
+      "meaning": "doesn't matter / anyway",
+      "rank": 369
+    },
+    {
+      "slug": "w370-gaisma",
+      "type": "word",
+      "text": "gaisma",
+      "meaning": "light",
+      "rank": 370
+    },
+    {
+      "slug": "w371-piezvanit",
+      "type": "word",
+      "text": "piezvanīt",
+      "meaning": "call/phone",
+      "rank": 371
+    },
+    {
+      "slug": "w372-nost",
+      "type": "word",
+      "text": "nost",
+      "meaning": "off / away",
+      "rank": 372
+    },
+    {
+      "slug": "w373-gadijums",
+      "type": "word",
+      "text": "gadījums",
+      "meaning": "case / instance",
+      "rank": 373
+    },
+    {
+      "slug": "w374-meita",
+      "type": "word",
+      "text": "meita",
+      "meaning": "daughter / girl",
+      "rank": 374
+    },
+    {
+      "slug": "w375-ata",
+      "type": "word",
+      "text": "atā",
+      "meaning": "bye-bye",
+      "rank": 375
+    },
+    {
+      "slug": "w376-telefons",
+      "type": "word",
+      "text": "telefons",
+      "meaning": "phone",
+      "rank": 376
+    },
+    {
+      "slug": "w377-vismaz",
+      "type": "word",
+      "text": "vismaz",
+      "meaning": "at least",
+      "rank": 377
+    },
+    {
+      "slug": "w378-merkis",
+      "type": "word",
+      "text": "mērķis",
+      "meaning": "goal / target",
+      "rank": 378
+    },
+    {
+      "slug": "w379-zens",
+      "type": "word",
+      "text": "zēns",
+      "meaning": "boy",
+      "rank": 379
+    },
+    {
+      "slug": "w380-traks",
+      "type": "word",
+      "text": "traks",
+      "meaning": "crazy / mad",
+      "rank": 380
+    },
+    {
+      "slug": "w381-nomirt",
+      "type": "word",
+      "text": "nomirt",
+      "meaning": "to die",
+      "rank": 381
+    },
+    {
+      "slug": "w382-viegli",
+      "type": "word",
+      "text": "viegli",
+      "meaning": "easily",
+      "rank": 382
+    },
+    {
+      "slug": "w383-iemesls",
+      "type": "word",
+      "text": "iemesls",
+      "meaning": "reason",
+      "rank": 383
+    },
+    {
+      "slug": "w384-darboties",
+      "type": "word",
+      "text": "darboties",
+      "meaning": "to work / function",
+      "rank": 384
+    },
+    {
+      "slug": "w385-banka",
+      "type": "word",
+      "text": "banka",
+      "meaning": "bank",
+      "rank": 385
+    },
+    {
+      "slug": "w386-muzs",
+      "type": "word",
+      "text": "mūžs",
+      "meaning": "lifetime / age",
+      "rank": 386
+    },
+    {
+      "slug": "w387-cetri",
+      "type": "word",
+      "text": "četri",
+      "meaning": "four",
+      "rank": 387
+    },
+    {
+      "slug": "w388-maz",
+      "type": "word",
+      "text": "maz",
+      "meaning": "little / few",
+      "rank": 388
+    },
+    {
+      "slug": "w389-asinis",
+      "type": "word",
+      "text": "asinis",
+      "meaning": "blood",
+      "rank": 389
+    },
+    {
+      "slug": "w390-satikt",
+      "type": "word",
+      "text": "satikt",
+      "meaning": "to meet",
+      "rank": 390
+    },
+    {
+      "slug": "w391-birojs",
+      "type": "word",
+      "text": "birojs",
+      "meaning": "office",
+      "rank": 391
+    },
+    {
+      "slug": "w392-uztraukties",
+      "type": "word",
+      "text": "uztraukties",
+      "meaning": "worry",
+      "rank": 392
+    },
+    {
+      "slug": "w393-reiz",
+      "type": "word",
+      "text": "reiz",
+      "meaning": "once",
+      "rank": 393
+    },
+    {
+      "slug": "w394-gulet",
+      "type": "word",
+      "text": "gulēt",
+      "meaning": "to sleep",
+      "rank": 394
+    },
+    {
+      "slug": "w395-atdot",
+      "type": "word",
+      "text": "atdot",
+      "meaning": "give back/return",
+      "rank": 395
+    },
+    {
+      "slug": "w396-iela",
+      "type": "word",
+      "text": "iela",
+      "meaning": "street",
+      "rank": 396
+    },
+    {
+      "slug": "w397-milestiba",
+      "type": "word",
+      "text": "mīlestība",
+      "meaning": "love",
+      "rank": 397
+    },
+    {
+      "slug": "w398-zvans",
+      "type": "word",
+      "text": "zvans",
+      "meaning": "phone call / bell",
+      "rank": 398
+    },
+    {
+      "slug": "w399-dama",
+      "type": "word",
+      "text": "dāma",
+      "meaning": "lady",
+      "rank": 399
+    },
+    {
+      "slug": "w400-pastastit",
+      "type": "word",
+      "text": "pastāstīt",
+      "meaning": "tell",
+      "rank": 400
+    },
+    {
+      "slug": "w401-priecaties",
+      "type": "word",
+      "text": "priecāties",
+      "meaning": "to be glad",
+      "rank": 401
+    },
+    {
+      "slug": "w402-atbilde",
+      "type": "word",
+      "text": "atbilde",
+      "meaning": "answer",
+      "rank": 402
+    },
+    {
+      "slug": "w403-likties",
+      "type": "word",
+      "text": "likties",
+      "meaning": "to seem",
+      "rank": 403
+    },
+    {
+      "slug": "w404-cietums",
+      "type": "word",
+      "text": "cietums",
+      "meaning": "prison",
+      "rank": 404
+    },
+    {
+      "slug": "w405-pilns",
+      "type": "word",
+      "text": "pilns",
+      "meaning": "full",
+      "rank": 405
+    },
+    {
+      "slug": "w406-laimigs",
+      "type": "word",
+      "text": "laimīgs",
+      "meaning": "happy",
+      "rank": 406
+    },
+    {
+      "slug": "w407-klau",
+      "type": "word",
+      "text": "klau",
+      "meaning": "hey / listen",
+      "rank": 407
+    },
+    {
+      "slug": "w408-patiesam",
+      "type": "word",
+      "text": "patiešām",
+      "meaning": "really / indeed",
+      "rank": 408
+    },
+    {
+      "slug": "w409-ideja",
+      "type": "word",
+      "text": "ideja",
+      "meaning": "idea",
+      "rank": 409
+    },
+    {
+      "slug": "w410-draudzene",
+      "type": "word",
+      "text": "draudzene",
+      "meaning": "girlfriend / female friend",
+      "rank": 410
+    },
+    {
+      "slug": "w411-zem",
+      "type": "word",
+      "text": "zem",
+      "meaning": "under / below",
+      "rank": 411
+    },
+    {
+      "slug": "w412-aizvest",
+      "type": "word",
+      "text": "aizvest",
+      "meaning": "to take away / drive",
+      "rank": 412
+    },
+    {
+      "slug": "w413-kadreiz",
+      "type": "word",
+      "text": "kādreiz",
+      "meaning": "sometimes / once",
+      "rank": 413
+    },
+    {
+      "slug": "w414-uzmaniba",
+      "type": "word",
+      "text": "uzmanība",
+      "meaning": "attention",
+      "rank": 414
+    },
+    {
+      "slug": "w415-stavet",
+      "type": "word",
+      "text": "stāvēt",
+      "meaning": "stand",
+      "rank": 415
+    },
+    {
+      "slug": "w416-citadi",
+      "type": "word",
+      "text": "citādi",
+      "meaning": "otherwise",
+      "rank": 416
+    },
+    {
+      "slug": "w417-elle",
+      "type": "word",
+      "text": "elle",
+      "meaning": "hell",
+      "rank": 417
+    },
+    {
+      "slug": "w418-joks",
+      "type": "word",
+      "text": "joks",
+      "meaning": "joke",
+      "rank": 418
+    },
+    {
+      "slug": "w419-svarigi",
+      "type": "word",
+      "text": "svarīgi",
+      "meaning": "important / importantly",
+      "rank": 419
+    },
+    {
+      "slug": "w420-sakums",
+      "type": "word",
+      "text": "sākums",
+      "meaning": "beginning / start",
+      "rank": 420
+    },
+    {
+      "slug": "w421-izveleties",
+      "type": "word",
+      "text": "izvēlēties",
+      "meaning": "to choose",
+      "rank": 421
+    },
+    {
+      "slug": "w422-baidities",
+      "type": "word",
+      "text": "baidīties",
+      "meaning": "be afraid",
+      "rank": 422
+    },
+    {
+      "slug": "w423-kafija",
+      "type": "word",
+      "text": "kafija",
+      "meaning": "coffee",
+      "rank": 423
+    },
+    {
+      "slug": "w424-parliecinat",
+      "type": "word",
+      "text": "pārliecināt",
+      "meaning": "to convince",
+      "rank": 424
+    },
+    {
+      "slug": "w425-klients",
+      "type": "word",
+      "text": "klients",
+      "meaning": "client / customer",
+      "rank": 425
+    },
+    {
+      "slug": "w426-agri",
+      "type": "word",
+      "text": "agri",
+      "meaning": "early",
+      "rank": 426
+    },
+    {
+      "slug": "w427-numurs",
+      "type": "word",
+      "text": "numurs",
+      "meaning": "number",
+      "rank": 427
+    },
+    {
+      "slug": "w428-radit",
+      "type": "word",
+      "text": "radīt",
+      "meaning": "to create",
+      "rank": 428
+    },
+    {
+      "slug": "w429-atslega",
+      "type": "word",
+      "text": "atslēga",
+      "meaning": "key",
+      "rank": 429
+    },
+    {
+      "slug": "w430-skriet",
+      "type": "word",
+      "text": "skriet",
+      "meaning": "to run",
+      "rank": 430
+    },
+    {
+      "slug": "w431-laipni",
+      "type": "word",
+      "text": "laipni",
+      "meaning": "kindly / welcome",
+      "rank": 431
+    },
+    {
+      "slug": "w432-vest",
+      "type": "word",
+      "text": "vest",
+      "meaning": "to lead / drive",
+      "rank": 432
+    },
+    {
+      "slug": "w433-noslepums",
+      "type": "word",
+      "text": "noslēpums",
+      "meaning": "secret",
+      "rank": 433
+    },
+    {
+      "slug": "w434-garam",
+      "type": "word",
+      "text": "garām",
+      "meaning": "past / by",
+      "rank": 434
+    },
+    {
+      "slug": "w435-nopirkt",
+      "type": "word",
+      "text": "nopirkt",
+      "meaning": "to buy",
+      "rank": 435
+    },
+    {
+      "slug": "w436-beidzot",
+      "type": "word",
+      "text": "beidzot",
+      "meaning": "finally",
+      "rank": 436
+    },
+    {
+      "slug": "w437-jutas",
+      "type": "word",
+      "text": "jūtas",
+      "meaning": "feelings",
+      "rank": 437
+    },
+    {
+      "slug": "w438-zale",
+      "type": "word",
+      "text": "zāle",
+      "meaning": "grass / hall / medicine",
+      "rank": 438
+    },
+    {
+      "slug": "w439-est",
+      "type": "word",
+      "text": "ēst",
+      "meaning": "eat",
+      "rank": 439
+    },
+    {
+      "slug": "w440-kusteties",
+      "type": "word",
+      "text": "kustēties",
+      "meaning": "move",
+      "rank": 440
+    },
+    {
+      "slug": "w441-oho",
+      "type": "word",
+      "text": "oho",
+      "meaning": "wow",
+      "rank": 441
+    },
+    {
+      "slug": "w442-tiksanas",
+      "type": "word",
+      "text": "tikšanās",
+      "meaning": "meeting",
+      "rank": 442
+    },
+    {
+      "slug": "w443-veikt",
+      "type": "word",
+      "text": "veikt",
+      "meaning": "to carry out / perform",
+      "rank": 443
+    },
+    {
+      "slug": "w444-paligs",
+      "type": "word",
+      "text": "palīgs",
+      "meaning": "helper / help!",
+      "rank": 444
+    },
+    {
+      "slug": "w445-galvenais",
+      "type": "word",
+      "text": "galvenais",
+      "meaning": "main / the main thing",
+      "rank": 445
+    },
+    {
+      "slug": "w446-piederet",
+      "type": "word",
+      "text": "piederēt",
+      "meaning": "to belong",
+      "rank": 446
+    },
+    {
+      "slug": "w447-speja",
+      "type": "word",
+      "text": "spēja",
+      "meaning": "ability",
+      "rank": 447
+    },
+    {
+      "slug": "w448-sekot",
+      "type": "word",
+      "text": "sekot",
+      "meaning": "follow",
+      "rank": 448
+    },
+    {
+      "slug": "w449-zelts",
+      "type": "word",
+      "text": "zelts",
+      "meaning": "gold",
+      "rank": 449
+    },
+    {
+      "slug": "w450-padoms",
+      "type": "word",
+      "text": "padoms",
+      "meaning": "advice",
+      "rank": 450
+    },
+    {
+      "slug": "w451-tadel",
+      "type": "word",
+      "text": "tādēļ",
+      "meaning": "therefore",
+      "rank": 451
+    },
+    {
+      "slug": "w452-parunat",
+      "type": "word",
+      "text": "parunāt",
+      "meaning": "talk/have a word",
+      "rank": 452
+    },
+    {
+      "slug": "w453-bumba",
+      "type": "word",
+      "text": "bumba",
+      "meaning": "ball / bomb",
+      "rank": 453
+    },
+    {
+      "slug": "w454-pateikties",
+      "type": "word",
+      "text": "pateikties",
+      "meaning": "to thank",
+      "rank": 454
+    },
+    {
+      "slug": "w455-informacija",
+      "type": "word",
+      "text": "informācija",
+      "meaning": "information",
+      "rank": 455
+    },
+    {
+      "slug": "w456-vispar",
+      "type": "word",
+      "text": "vispār",
+      "meaning": "at all / in general",
+      "rank": 456
+    },
+    {
+      "slug": "w457-atvert",
+      "type": "word",
+      "text": "atvērt",
+      "meaning": "to open",
+      "rank": 457
+    },
+    {
+      "slug": "w458-masa",
+      "type": "word",
+      "text": "māsa",
+      "meaning": "sister",
+      "rank": 458
+    },
+    {
+      "slug": "w459-pamest",
+      "type": "word",
+      "text": "pamest",
+      "meaning": "to abandon / leave",
+      "rank": 459
+    },
+    {
+      "slug": "w460-uzvaret",
+      "type": "word",
+      "text": "uzvarēt",
+      "meaning": "to win",
+      "rank": 460
+    },
+    {
+      "slug": "w461-sen",
+      "type": "word",
+      "text": "sen",
+      "meaning": "long ago",
+      "rank": 461
+    },
+    {
+      "slug": "w462-vakarinas",
+      "type": "word",
+      "text": "vakariņas",
+      "meaning": "dinner / supper",
+      "rank": 462
+    },
+    {
+      "slug": "w463-isti",
+      "type": "word",
+      "text": "īsti",
+      "meaning": "really / quite",
+      "rank": 463
+    },
+    {
+      "slug": "w464-forsi",
+      "type": "word",
+      "text": "forši",
+      "meaning": "cool / great",
+      "rank": 464
+    },
+    {
+      "slug": "w465-iepazities",
+      "type": "word",
+      "text": "iepazīties",
+      "meaning": "to get acquainted",
+      "rank": 465
+    },
+    {
+      "slug": "w466-uzzinat",
+      "type": "word",
+      "text": "uzzināt",
+      "meaning": "to find out",
+      "rank": 466
+    },
+    {
+      "slug": "w467-mirklis",
+      "type": "word",
+      "text": "mirklis",
+      "meaning": "moment",
+      "rank": 467
+    },
+    {
+      "slug": "w468-sistema",
+      "type": "word",
+      "text": "sistēma",
+      "meaning": "system",
+      "rank": 468
+    },
+    {
+      "slug": "w469-pietiekami",
+      "type": "word",
+      "text": "pietiekami",
+      "meaning": "enough / sufficiently",
+      "rank": 469
+    },
+    {
+      "slug": "w470-manuprat",
+      "type": "word",
+      "text": "manuprāt",
+      "meaning": "in my opinion",
+      "rank": 470
+    },
+    {
+      "slug": "w471-uzmanigi",
+      "type": "word",
+      "text": "uzmanīgi",
+      "meaning": "carefully",
+      "rank": 471
+    },
+    {
+      "slug": "w472-debess",
+      "type": "word",
+      "text": "debess",
+      "meaning": "sky / heaven",
+      "rank": 472
+    },
+    {
+      "slug": "w473-likums",
+      "type": "word",
+      "text": "likums",
+      "meaning": "law",
+      "rank": 473
+    },
+    {
+      "slug": "w474-kamera",
+      "type": "word",
+      "text": "kamera",
+      "meaning": "camera / cell",
+      "rank": 474
+    },
+    {
+      "slug": "w475-melns",
+      "type": "word",
+      "text": "melns",
+      "meaning": "black",
+      "rank": 475
+    },
+    {
+      "slug": "w476-labrit",
+      "type": "word",
+      "text": "labrīt",
+      "meaning": "good morning",
+      "rank": 476
+    },
+    {
+      "slug": "w477-cinities",
+      "type": "word",
+      "text": "cīnīties",
+      "meaning": "to fight / struggle",
+      "rank": 477
+    },
+    {
+      "slug": "w478-nakotne",
+      "type": "word",
+      "text": "nākotne",
+      "meaning": "future",
+      "rank": 478
+    },
+    {
+      "slug": "w479-parasti",
+      "type": "word",
+      "text": "parasti",
+      "meaning": "usually",
+      "rank": 479
+    },
+    {
+      "slug": "w480-karalis",
+      "type": "word",
+      "text": "karalis",
+      "meaning": "king",
+      "rank": 480
+    },
+    {
+      "slug": "w481-jaunkundze",
+      "type": "word",
+      "text": "jaunkundze",
+      "meaning": "miss/young lady",
+      "rank": 481
+    },
+    {
+      "slug": "w482-dokuments",
+      "type": "word",
+      "text": "dokuments",
+      "meaning": "document",
+      "rank": 482
+    },
+    {
+      "slug": "w483-lidmasina",
+      "type": "word",
+      "text": "lidmašīna",
+      "meaning": "airplane",
+      "rank": 483
+    },
+    {
+      "slug": "w484-cau",
+      "type": "word",
+      "text": "čau",
+      "meaning": "hi/bye",
+      "rank": 484
+    },
+    {
+      "slug": "w485-noteikums",
+      "type": "word",
+      "text": "noteikums",
+      "meaning": "rule / condition",
+      "rank": 485
+    },
+    {
+      "slug": "w486-tuvoties",
+      "type": "word",
+      "text": "tuvoties",
+      "meaning": "approach/draw near",
+      "rank": 486
+    },
+    {
+      "slug": "w487-ipass",
+      "type": "word",
+      "text": "īpašs",
+      "meaning": "special",
+      "rank": 487
+    },
+    {
+      "slug": "w488-verts",
+      "type": "word",
+      "text": "vērts",
+      "meaning": "worth/worthwhile",
+      "rank": 488
+    },
+    {
+      "slug": "w489-svarigs",
+      "type": "word",
+      "text": "svarīgs",
+      "meaning": "important",
+      "rank": 489
+    },
+    {
+      "slug": "w490-mugura",
+      "type": "word",
+      "text": "mugura",
+      "meaning": "back (body)",
+      "rank": 490
+    },
+    {
+      "slug": "w491-uguns",
+      "type": "word",
+      "text": "uguns",
+      "meaning": "fire",
+      "rank": 491
+    },
+    {
+      "slug": "w492-telpa",
+      "type": "word",
+      "text": "telpa",
+      "meaning": "room/space",
+      "rank": 492
+    },
+    {
+      "slug": "w493-otrais",
+      "type": "word",
+      "text": "otrais",
+      "meaning": "second",
+      "rank": 493
+    },
+    {
+      "slug": "w494-dziesma",
+      "type": "word",
+      "text": "dziesma",
+      "meaning": "song",
+      "rank": 494
+    },
+    {
+      "slug": "w495-sobrid",
+      "type": "word",
+      "text": "šobrīd",
+      "meaning": "right now",
+      "rank": 495
+    },
+    {
+      "slug": "w496-muzika",
+      "type": "word",
+      "text": "mūzika",
+      "meaning": "music",
+      "rank": 496
+    },
+    {
+      "slug": "w497-tiesiba",
+      "type": "word",
+      "text": "tiesība",
+      "meaning": "right (entitlement)",
+      "rank": 497
+    },
+    {
+      "slug": "w498-laudis",
+      "type": "word",
+      "text": "ļaudis",
+      "meaning": "people/folk",
+      "rank": 498
+    },
+    {
+      "slug": "w499-gulta",
+      "type": "word",
+      "text": "gulta",
+      "meaning": "bed",
+      "rank": 499
+    },
+    {
+      "slug": "w500-pavisam",
+      "type": "word",
+      "text": "pavisam",
+      "meaning": "completely/at all",
+      "rank": 500
+    },
+    {
+      "slug": "w501-tukstotis",
+      "type": "word",
+      "text": "tūkstotis",
+      "meaning": "thousand",
+      "rank": 501
+    },
+    {
+      "slug": "w502-jezin",
+      "type": "word",
+      "text": "jēziņ",
+      "meaning": "oh gosh/jeez",
+      "rank": 502
+    },
+    {
+      "slug": "w503-saraksts",
+      "type": "word",
+      "text": "saraksts",
+      "meaning": "list",
+      "rank": 503
+    },
+    {
+      "slug": "w504-pieradijums",
+      "type": "word",
+      "text": "pierādījums",
+      "meaning": "proof/evidence",
+      "rank": 504
+    },
+    {
+      "slug": "w505-mats",
+      "type": "word",
+      "text": "mats",
+      "meaning": "hair",
+      "rank": 505
+    },
+    {
+      "slug": "w506-kalns",
+      "type": "word",
+      "text": "kalns",
+      "meaning": "mountain/hill",
+      "rank": 506
+    },
+    {
+      "slug": "w507-vakar",
+      "type": "word",
+      "text": "vakar",
+      "meaning": "yesterday",
+      "rank": 507
+    },
+    {
+      "slug": "w508-gluzi",
+      "type": "word",
+      "text": "gluži",
+      "meaning": "quite/exactly",
+      "rank": 508
+    },
+    {
+      "slug": "w509-peda",
+      "type": "word",
+      "text": "pēda",
+      "meaning": "foot",
+      "rank": 509
+    },
+    {
+      "slug": "w510-pabeigt",
+      "type": "word",
+      "text": "pabeigt",
+      "meaning": "finish/complete",
+      "rank": 510
+    },
+    {
+      "slug": "w511-ballite",
+      "type": "word",
+      "text": "ballīte",
+      "meaning": "party",
+      "rank": 511
+    },
+    {
+      "slug": "w512-vienosanas",
+      "type": "word",
+      "text": "vienošanās",
+      "meaning": "agreement/deal",
+      "rank": 512
+    },
+    {
+      "slug": "w513-uzticeties",
+      "type": "word",
+      "text": "uzticēties",
+      "meaning": "to trust",
+      "rank": 513
+    },
+    {
+      "slug": "w514-apkart",
+      "type": "word",
+      "text": "apkārt",
+      "meaning": "around",
+      "rank": 514
+    },
+    {
+      "slug": "w515-filma",
+      "type": "word",
+      "text": "filma",
+      "meaning": "film/movie",
+      "rank": 515
+    },
+    {
+      "slug": "w516-padarit",
+      "type": "word",
+      "text": "padarīt",
+      "meaning": "get done/accomplish",
+      "rank": 516
+    },
+    {
+      "slug": "w517-nomierinaties",
+      "type": "word",
+      "text": "nomierināties",
+      "meaning": "calm down",
+      "rank": 517
+    },
+    {
+      "slug": "w518-blakus",
+      "type": "word",
+      "text": "blakus",
+      "meaning": "next to/beside",
+      "rank": 518
+    },
+    {
+      "slug": "w519-davana",
+      "type": "word",
+      "text": "dāvana",
+      "meaning": "gift/present",
+      "rank": 519
+    },
+    {
+      "slug": "w520-izvele",
+      "type": "word",
+      "text": "izvēle",
+      "meaning": "choice",
+      "rank": 520
+    },
+    {
+      "slug": "w521-brivs",
+      "type": "word",
+      "text": "brīvs",
+      "meaning": "free",
+      "rank": 521
+    },
+    {
+      "slug": "w522-cina",
+      "type": "word",
+      "text": "cīņa",
+      "meaning": "fight/struggle",
+      "rank": 522
+    },
+    {
+      "slug": "w523-smiekligi",
+      "type": "word",
+      "text": "smieklīgi",
+      "meaning": "funny/ridiculous",
+      "rank": 523
+    },
+    {
+      "slug": "w524-izklausities",
+      "type": "word",
+      "text": "izklausīties",
+      "meaning": "sound (like)",
+      "rank": 524
+    },
+    {
+      "slug": "w525-sesi",
+      "type": "word",
+      "text": "seši",
+      "meaning": "six",
+      "rank": 525
+    },
+    {
+      "slug": "w526-attieciba",
+      "type": "word",
+      "text": "attiecība",
+      "meaning": "relationship",
+      "rank": 526
+    },
+    {
+      "slug": "w527-nakties",
+      "type": "word",
+      "text": "nākties",
+      "meaning": "have to/be forced to",
+      "rank": 527
+    },
+    {
+      "slug": "w528-ikviens",
+      "type": "word",
+      "text": "ikviens",
+      "meaning": "everyone/each",
+      "rank": 528
+    },
+    {
+      "slug": "w529-lidot",
+      "type": "word",
+      "text": "lidot",
+      "meaning": "to fly",
+      "rank": 529
+    },
+    {
+      "slug": "w530-vispirms",
+      "type": "word",
+      "text": "vispirms",
+      "meaning": "first of all",
+      "rank": 530
+    },
+    {
+      "slug": "w531-caur",
+      "type": "word",
+      "text": "caur",
+      "meaning": "through",
+      "rank": 531
+    },
+    {
+      "slug": "w532-nepieciesams",
+      "type": "word",
+      "text": "nepieciešams",
+      "meaning": "necessary/needed",
+      "rank": 532
+    },
+    {
+      "slug": "w533-mierigi",
+      "type": "word",
+      "text": "mierīgi",
+      "meaning": "calmly/quietly",
+      "rank": 533
+    },
+    {
+      "slug": "w534-balss",
+      "type": "word",
+      "text": "balss",
+      "meaning": "voice",
+      "rank": 534
+    },
+    {
+      "slug": "w535-sakars",
+      "type": "word",
+      "text": "sakars",
+      "meaning": "connection/relation",
+      "rank": 535
+    },
+    {
+      "slug": "w536-jebkurs",
+      "type": "word",
+      "text": "jebkurš",
+      "meaning": "any/anyone",
+      "rank": 536
+    },
+    {
+      "slug": "w537-sajuta",
+      "type": "word",
+      "text": "sajūta",
+      "meaning": "feeling/sensation",
+      "rank": 537
+    },
+    {
+      "slug": "w538-jura",
+      "type": "word",
+      "text": "jūra",
+      "meaning": "sea",
+      "rank": 538
+    },
+    {
+      "slug": "w539-ipasi",
+      "type": "word",
+      "text": "īpaši",
+      "meaning": "especially/particularly",
+      "rank": 539
+    },
+    {
+      "slug": "w540-koks",
+      "type": "word",
+      "text": "koks",
+      "meaning": "tree/wood",
+      "rank": 540
+    },
+    {
+      "slug": "w541-putns",
+      "type": "word",
+      "text": "putns",
+      "meaning": "bird",
+      "rank": 541
+    },
+    {
+      "slug": "w542-viesnica",
+      "type": "word",
+      "text": "viesnīca",
+      "meaning": "hotel",
+      "rank": 542
+    },
+    {
+      "slug": "w543-eka",
+      "type": "word",
+      "text": "ēka",
+      "meaning": "building",
+      "rank": 543
+    },
+    {
+      "slug": "w544-punkts",
+      "type": "word",
+      "text": "punkts",
+      "meaning": "point/dot",
+      "rank": 544
+    },
+    {
+      "slug": "w545-saruna",
+      "type": "word",
+      "text": "saruna",
+      "meaning": "conversation",
+      "rank": 545
+    },
+    {
+      "slug": "w546-mute",
+      "type": "word",
+      "text": "mute",
+      "meaning": "mouth",
+      "rank": 546
+    },
+    {
+      "slug": "w547-advokats",
+      "type": "word",
+      "text": "advokāts",
+      "meaning": "lawyer",
+      "rank": 547
+    },
+    {
+      "slug": "w548-par",
+      "type": "word",
+      "text": "pār",
+      "meaning": "over/across",
+      "rank": 548
+    },
+    {
+      "slug": "w549-akmens",
+      "type": "word",
+      "text": "akmens",
+      "meaning": "stone/rock",
+      "rank": 549
+    },
+    {
+      "slug": "w550-firma",
+      "type": "word",
+      "text": "firma",
+      "meaning": "firm/company",
+      "rank": 550
+    },
+    {
+      "slug": "w551-vesels",
+      "type": "word",
+      "text": "vesels",
+      "meaning": "whole/healthy",
+      "rank": 551
+    },
+    {
+      "slug": "w552-ilgs",
+      "type": "word",
+      "text": "ilgs",
+      "meaning": "long (time)",
+      "rank": 552
+    },
+    {
+      "slug": "w553-smadzenes",
+      "type": "word",
+      "text": "smadzenes",
+      "meaning": "brain(s)",
+      "rank": 553
+    },
+    {
+      "slug": "w554-nozagt",
+      "type": "word",
+      "text": "nozagt",
+      "meaning": "steal",
+      "rank": 554
+    },
+    {
+      "slug": "w555-svets",
+      "type": "word",
+      "text": "svēts",
+      "meaning": "holy/sacred",
+      "rank": 555
+    },
+    {
+      "slug": "w556-tepat",
+      "type": "word",
+      "text": "tepat",
+      "meaning": "right here",
+      "rank": 556
+    },
+    {
+      "slug": "w557-pakal",
+      "type": "word",
+      "text": "pakaļ",
+      "meaning": "after/to fetch",
+      "rank": 557
+    },
+    {
+      "slug": "w558-zvers",
+      "type": "word",
+      "text": "zvērs",
+      "meaning": "beast/animal",
+      "rank": 558
+    },
+    {
+      "slug": "w559-kluda",
+      "type": "word",
+      "text": "kļūda",
+      "meaning": "mistake/error",
+      "rank": 559
+    },
+    {
+      "slug": "w560-iznicinat",
+      "type": "word",
+      "text": "iznīcināt",
+      "meaning": "destroy",
+      "rank": 560
+    },
+    {
+      "slug": "w561-uzskats",
+      "type": "word",
+      "text": "uzskats",
+      "meaning": "view/opinion",
+      "rank": 561
+    },
+    {
+      "slug": "w562-veikties",
+      "type": "word",
+      "text": "veikties",
+      "meaning": "go well/succeed",
+      "rank": 562
+    },
+    {
+      "slug": "w563-noskaidrot",
+      "type": "word",
+      "text": "noskaidrot",
+      "meaning": "find out/clarify",
+      "rank": 563
+    },
+    {
+      "slug": "w564-slimnica",
+      "type": "word",
+      "text": "slimnīca",
+      "meaning": "hospital",
+      "rank": 564
+    },
+    {
+      "slug": "w565-armija",
+      "type": "word",
+      "text": "armija",
+      "meaning": "army",
+      "rank": 565
+    },
+    {
+      "slug": "w566-tikpat",
+      "type": "word",
+      "text": "tikpat",
+      "meaning": "just as/equally",
+      "rank": 566
+    },
+    {
+      "slug": "w567-iedomaties",
+      "type": "word",
+      "text": "iedomāties",
+      "meaning": "imagine",
+      "rank": 567
+    },
+    {
+      "slug": "w568-parbaude",
+      "type": "word",
+      "text": "pārbaude",
+      "meaning": "test/check",
+      "rank": 568
+    },
+    {
+      "slug": "w569-sads",
+      "type": "word",
+      "text": "šāds",
+      "meaning": "such/this kind",
+      "rank": 569
+    },
+    {
+      "slug": "w570-sutit",
+      "type": "word",
+      "text": "sūtīt",
+      "meaning": "send",
+      "rank": 570
+    },
+    {
+      "slug": "w571-desmit",
+      "type": "word",
+      "text": "desmit",
+      "meaning": "ten",
+      "rank": 571
+    },
+    {
+      "slug": "w572-neticami",
+      "type": "word",
+      "text": "neticami",
+      "meaning": "incredibly/unbelievable",
+      "rank": 572
+    },
+    {
+      "slug": "w573-apturet",
+      "type": "word",
+      "text": "apturēt",
+      "meaning": "stop/halt",
+      "rank": 573
+    },
+    {
+      "slug": "w574-izstastit",
+      "type": "word",
+      "text": "izstāstīt",
+      "meaning": "tell/recount",
+      "rank": 574
+    },
+    {
+      "slug": "w575-rikoties",
+      "type": "word",
+      "text": "rīkoties",
+      "meaning": "act/behave",
+      "rank": 575
+    },
+    {
+      "slug": "w576-augsts",
+      "type": "word",
+      "text": "augsts",
+      "meaning": "high/tall",
+      "rank": 576
+    },
+    {
+      "slug": "w577-bizness",
+      "type": "word",
+      "text": "bizness",
+      "meaning": "business",
+      "rank": 577
+    },
+    {
+      "slug": "w578-soreiz",
+      "type": "word",
+      "text": "šoreiz",
+      "meaning": "this time",
+      "rank": 578
+    },
+    {
+      "slug": "w579-mala",
+      "type": "word",
+      "text": "mala",
+      "meaning": "edge/side",
+      "rank": 579
+    },
+    {
+      "slug": "w580-alus",
+      "type": "word",
+      "text": "alus",
+      "meaning": "beer",
+      "rank": 580
+    },
+    {
+      "slug": "w581-maksa",
+      "type": "word",
+      "text": "maksa",
+      "meaning": "fee/charge",
+      "rank": 581
+    },
+    {
+      "slug": "w582-apsolit",
+      "type": "word",
+      "text": "apsolīt",
+      "meaning": "to promise",
+      "rank": 582
+    },
+    {
+      "slug": "w583-prezidents",
+      "type": "word",
+      "text": "prezidents",
+      "meaning": "president",
+      "rank": 583
+    },
+    {
+      "slug": "w584-veikals",
+      "type": "word",
+      "text": "veikals",
+      "meaning": "store/shop",
+      "rank": 584
+    },
+    {
+      "slug": "w585-gods",
+      "type": "word",
+      "text": "gods",
+      "meaning": "honor",
+      "rank": 585
+    },
+    {
+      "slug": "w586-godigi",
+      "type": "word",
+      "text": "godīgi",
+      "meaning": "honestly/fairly",
+      "rank": 586
+    },
+    {
+      "slug": "w587-ieprieks",
+      "type": "word",
+      "text": "iepriekš",
+      "meaning": "previously/beforehand",
+      "rank": 587
+    },
+    {
+      "slug": "w588-zirgs",
+      "type": "word",
+      "text": "zirgs",
+      "meaning": "horse",
+      "rank": 588
+    },
+    {
+      "slug": "w589-parbaudit",
+      "type": "word",
+      "text": "pārbaudīt",
+      "meaning": "check/test",
+      "rank": 589
+    },
+    {
+      "slug": "w590-ienakt",
+      "type": "word",
+      "text": "ienākt",
+      "meaning": "come in/enter",
+      "rank": 590
+    },
+    {
+      "slug": "w591-gudrs",
+      "type": "word",
+      "text": "gudrs",
+      "meaning": "smart/clever",
+      "rank": 591
+    },
+    {
+      "slug": "w592-kreisi",
+      "type": "word",
+      "text": "kreisi",
+      "meaning": "to the left",
+      "rank": 592
+    },
+    {
+      "slug": "w593-mulkis",
+      "type": "word",
+      "text": "muļķis",
+      "meaning": "fool/idiot",
+      "rank": 593
+    },
+    {
+      "slug": "w594-situacija",
+      "type": "word",
+      "text": "situācija",
+      "meaning": "situation",
+      "rank": 594
+    },
+    {
+      "slug": "w595-dzert",
+      "type": "word",
+      "text": "dzert",
+      "meaning": "drink",
+      "rank": 595
+    },
+    {
+      "slug": "w596-tirs",
+      "type": "word",
+      "text": "tīrs",
+      "meaning": "clean",
+      "rank": 596
+    },
+    {
+      "slug": "w597-stulbs",
+      "type": "word",
+      "text": "stulbs",
+      "meaning": "stupid/dumb",
+      "rank": 597
+    },
+    {
+      "slug": "w598-kermenis",
+      "type": "word",
+      "text": "ķermenis",
+      "meaning": "body",
+      "rank": 598
+    },
+    {
+      "slug": "w599-grupa",
+      "type": "word",
+      "text": "grupa",
+      "meaning": "group",
+      "rank": 599
+    },
+    {
+      "slug": "w600-noticet",
+      "type": "word",
+      "text": "noticēt",
+      "meaning": "believe",
+      "rank": 600
+    },
+    {
+      "slug": "w601-jautri",
+      "type": "word",
+      "text": "jautri",
+      "meaning": "merrily/fun",
+      "rank": 601
+    },
+    {
+      "slug": "w602-kurp",
+      "type": "word",
+      "text": "kurp",
+      "meaning": "where to/whither",
+      "rank": 602
+    },
+    {
+      "slug": "w603-rakstit",
+      "type": "word",
+      "text": "rakstīt",
+      "meaning": "write",
+      "rank": 603
+    },
+    {
+      "slug": "w604-kazas",
+      "type": "word",
+      "text": "kāzas",
+      "meaning": "wedding",
+      "rank": 604
+    },
+    {
+      "slug": "w605-aiznemts",
+      "type": "word",
+      "text": "aizņemts",
+      "meaning": "busy/occupied",
+      "rank": 605
+    },
+    {
+      "slug": "w606-gabals",
+      "type": "word",
+      "text": "gabals",
+      "meaning": "piece",
+      "rank": 606
+    },
+    {
+      "slug": "w607-manta",
+      "type": "word",
+      "text": "manta",
+      "meaning": "belongings/stuff",
+      "rank": 607
+    },
+    {
+      "slug": "w608-sekunde",
+      "type": "word",
+      "text": "sekunde",
+      "meaning": "second",
+      "rank": 608
+    },
+    {
+      "slug": "w609-skaisti",
+      "type": "word",
+      "text": "skaisti",
+      "meaning": "beautifully/nicely",
+      "rank": 609
+    },
+    {
+      "slug": "w610-ienaidnieks",
+      "type": "word",
+      "text": "ienaidnieks",
+      "meaning": "enemy",
+      "rank": 610
+    },
+    {
+      "slug": "w611-gars",
+      "type": "word",
+      "text": "garš",
+      "meaning": "long/tall",
+      "rank": 611
+    },
+    {
+      "slug": "w612-divaini",
+      "type": "word",
+      "text": "dīvaini",
+      "meaning": "strangely/weird",
+      "rank": 612
+    },
+    {
+      "slug": "w613-turiene",
+      "type": "word",
+      "text": "turiene",
+      "meaning": "that place/there",
+      "rank": 613
+    },
+    {
+      "slug": "w614-arsts",
+      "type": "word",
+      "text": "ārsts",
+      "meaning": "doctor",
+      "rank": 614
+    },
+    {
+      "slug": "w615-dzimsana",
+      "type": "word",
+      "text": "dzimšana",
+      "meaning": "birth",
+      "rank": 615
+    },
+    {
+      "slug": "w616-tresais",
+      "type": "word",
+      "text": "trešais",
+      "meaning": "third",
+      "rank": 616
+    },
+    {
+      "slug": "w617-priecigs",
+      "type": "word",
+      "text": "priecīgs",
+      "meaning": "happy/glad",
+      "rank": 617
+    },
+    {
+      "slug": "w618-ap",
+      "type": "word",
+      "text": "ap",
+      "meaning": "around/about",
+      "rank": 618
+    },
+    {
+      "slug": "w619-maksla",
+      "type": "word",
+      "text": "māksla",
+      "meaning": "art",
+      "rank": 619
+    },
+    {
+      "slug": "w620-laime",
+      "type": "word",
+      "text": "laime",
+      "meaning": "happiness/luck",
+      "rank": 620
+    },
+    {
+      "slug": "w621-diez",
+      "type": "word",
+      "text": "diez",
+      "meaning": "hardly/I wonder",
+      "rank": 621
+    },
+    {
+      "slug": "w622-saut",
+      "type": "word",
+      "text": "šaut",
+      "meaning": "shoot",
+      "rank": 622
+    },
+    {
+      "slug": "w623-aprunaties",
+      "type": "word",
+      "text": "aprunāties",
+      "meaning": "have a chat",
+      "rank": 623
+    },
+    {
+      "slug": "w624-slepkava",
+      "type": "word",
+      "text": "slepkava",
+      "meaning": "murderer",
+      "rank": 624
+    },
+    {
+      "slug": "w625-valoda",
+      "type": "word",
+      "text": "valoda",
+      "meaning": "language",
+      "rank": 625
+    },
+    {
+      "slug": "w626-uzmanities",
+      "type": "word",
+      "text": "uzmanīties",
+      "meaning": "be careful/watch out",
+      "rank": 626
+    },
+    {
+      "slug": "w627-sala",
+      "type": "word",
+      "text": "sala",
+      "meaning": "island",
+      "rank": 627
+    },
+    {
+      "slug": "w628-atklat",
+      "type": "word",
+      "text": "atklāt",
+      "meaning": "discover/reveal",
+      "rank": 628
+    },
+    {
+      "slug": "w629-karta",
+      "type": "word",
+      "text": "kārta",
+      "meaning": "turn/layer/order",
+      "rank": 629
+    },
+    {
+      "slug": "w630-pirksts",
+      "type": "word",
+      "text": "pirksts",
+      "meaning": "finger",
+      "rank": 630
+    },
+    {
+      "slug": "w631-calis",
+      "type": "word",
+      "text": "čalis",
+      "meaning": "guy/dude",
+      "rank": 631
+    },
+    {
+      "slug": "w632-piemers",
+      "type": "word",
+      "text": "piemērs",
+      "meaning": "example",
+      "rank": 632
+    },
+    {
+      "slug": "w633-biezi",
+      "type": "word",
+      "text": "bieži",
+      "meaning": "often",
+      "rank": 633
+    },
+    {
+      "slug": "w634-stavoklis",
+      "type": "word",
+      "text": "stāvoklis",
+      "meaning": "situation/condition",
+      "rank": 634
+    },
+    {
+      "slug": "w635-noziegums",
+      "type": "word",
+      "text": "noziegums",
+      "meaning": "crime",
+      "rank": 635
+    },
+    {
+      "slug": "w636-dvesele",
+      "type": "word",
+      "text": "dvēsele",
+      "meaning": "soul",
+      "rank": 636
+    },
+    {
+      "slug": "w637-nolikt",
+      "type": "word",
+      "text": "nolikt",
+      "meaning": "put down/set down",
+      "rank": 637
+    },
+    {
+      "slug": "w638-ceriba",
+      "type": "word",
+      "text": "cerība",
+      "meaning": "hope",
+      "rank": 638
+    },
+    {
+      "slug": "w639-sekss",
+      "type": "word",
+      "text": "sekss",
+      "meaning": "sex",
+      "rank": 639
+    },
+    {
+      "slug": "w640-saule",
+      "type": "word",
+      "text": "saule",
+      "meaning": "sun",
+      "rank": 640
+    },
+    {
+      "slug": "w641-iznemt",
+      "type": "word",
+      "text": "izņemt",
+      "meaning": "take out/except",
+      "rank": 641
+    },
+    {
+      "slug": "w642-glabt",
+      "type": "word",
+      "text": "glābt",
+      "meaning": "save/rescue",
+      "rank": 642
+    },
+    {
+      "slug": "w643-vainigs",
+      "type": "word",
+      "text": "vainīgs",
+      "meaning": "guilty",
+      "rank": 643
+    },
+    {
+      "slug": "w644-uzvara",
+      "type": "word",
+      "text": "uzvara",
+      "meaning": "victory/win",
+      "rank": 644
+    },
+    {
+      "slug": "w645-vesture",
+      "type": "word",
+      "text": "vēsture",
+      "meaning": "history",
+      "rank": 645
+    },
+    {
+      "slug": "w646-veiksme",
+      "type": "word",
+      "text": "veiksme",
+      "meaning": "luck/success",
+      "rank": 646
+    },
+    {
+      "slug": "w647-gars",
+      "type": "word",
+      "text": "gars",
+      "meaning": "spirit/ghost",
+      "rank": 647
+    },
+    {
+      "slug": "w648-krasa",
+      "type": "word",
+      "text": "krāsa",
+      "meaning": "color/paint",
+      "rank": 648
+    },
+    {
+      "slug": "w649-nekur",
+      "type": "word",
+      "text": "nekur",
+      "meaning": "nowhere",
+      "rank": 649
+    },
+    {
+      "slug": "w650-centrs",
+      "type": "word",
+      "text": "centrs",
+      "meaning": "center/downtown",
+      "rank": 650
+    },
+    {
+      "slug": "w651-karte",
+      "type": "word",
+      "text": "karte",
+      "meaning": "map/card",
+      "rank": 651
+    },
+    {
+      "slug": "w652-atnest",
+      "type": "word",
+      "text": "atnest",
+      "meaning": "bring",
+      "rank": 652
+    },
+    {
+      "slug": "w653-pelnit",
+      "type": "word",
+      "text": "pelnīt",
+      "meaning": "earn/deserve",
+      "rank": 653
+    },
+    {
+      "slug": "w654-piedavat",
+      "type": "word",
+      "text": "piedāvāt",
+      "meaning": "offer",
+      "rank": 654
+    },
+    {
+      "slug": "w655-nodot",
+      "type": "word",
+      "text": "nodot",
+      "meaning": "hand over/betray",
+      "rank": 655
+    },
+    {
+      "slug": "w656-zvaigzne",
+      "type": "word",
+      "text": "zvaigzne",
+      "meaning": "star",
+      "rank": 656
+    },
+    {
+      "slug": "w657-galds",
+      "type": "word",
+      "text": "galds",
+      "meaning": "table",
+      "rank": 657
+    },
+    {
+      "slug": "w658-sveicinat",
+      "type": "word",
+      "text": "sveicināt",
+      "meaning": "greet/welcome",
+      "rank": 658
+    },
+    {
+      "slug": "w659-pienakt",
+      "type": "word",
+      "text": "pienākt",
+      "meaning": "arrive/come up",
+      "rank": 659
+    },
+    {
+      "slug": "w660-kauja",
+      "type": "word",
+      "text": "kauja",
+      "meaning": "battle",
+      "rank": 660
+    },
+    {
+      "slug": "w661-ediens",
+      "type": "word",
+      "text": "ēdiens",
+      "meaning": "food/dish",
+      "rank": 661
+    },
+    {
+      "slug": "w662-izglabt",
+      "type": "word",
+      "text": "izglābt",
+      "meaning": "save/rescue",
+      "rank": 662
+    },
+    {
+      "slug": "w663-pusdienas",
+      "type": "word",
+      "text": "pusdienas",
+      "meaning": "lunch",
+      "rank": 663
+    },
+    {
+      "slug": "w664-launs",
+      "type": "word",
+      "text": "ļauns",
+      "meaning": "evil/mean",
+      "rank": 664
+    },
+    {
+      "slug": "w665-krukis",
+      "type": "word",
+      "text": "kruķis",
+      "meaning": "crutch",
+      "rank": 665
+    },
+    {
+      "slug": "w666-atlikt",
+      "type": "word",
+      "text": "atlikt",
+      "meaning": "be left/postpone",
+      "rank": 666
+    },
+    {
+      "slug": "w667-panakt",
+      "type": "word",
+      "text": "panākt",
+      "meaning": "catch up/achieve",
+      "rank": 667
+    },
+    {
+      "slug": "w668-kapt",
+      "type": "word",
+      "text": "kāpt",
+      "meaning": "climb/step",
+      "rank": 668
+    },
+    {
+      "slug": "w669-bail",
+      "type": "word",
+      "text": "bail",
+      "meaning": "afraid/scary",
+      "rank": 669
+    },
+    {
+      "slug": "w670-pulkstenis",
+      "type": "word",
+      "text": "pulkstenis",
+      "meaning": "clock/watch",
+      "rank": 670
+    },
+    {
+      "slug": "w671-paveikt",
+      "type": "word",
+      "text": "paveikt",
+      "meaning": "accomplish/get done",
+      "rank": 671
+    },
+    {
+      "slug": "w672-amerikanis",
+      "type": "word",
+      "text": "amerikānis",
+      "meaning": "American (person)",
+      "rank": 672
+    },
+    {
+      "slug": "w673-atbildet",
+      "type": "word",
+      "text": "atbildēt",
+      "meaning": "answer/reply",
+      "rank": 673
+    },
+    {
+      "slug": "w674-sape",
+      "type": "word",
+      "text": "sāpe",
+      "meaning": "pain",
+      "rank": 674
+    },
+    {
+      "slug": "w675-uzbrukums",
+      "type": "word",
+      "text": "uzbrukums",
+      "meaning": "attack",
+      "rank": 675
+    },
+    {
+      "slug": "w676-pagatne",
+      "type": "word",
+      "text": "pagātne",
+      "meaning": "the past",
+      "rank": 676
+    },
+    {
+      "slug": "w677-sargs",
+      "type": "word",
+      "text": "sargs",
+      "meaning": "guard",
+      "rank": 677
+    },
+    {
+      "slug": "w678-dzivnieks",
+      "type": "word",
+      "text": "dzīvnieks",
+      "meaning": "animal",
+      "rank": 678
+    },
+    {
+      "slug": "w679-visur",
+      "type": "word",
+      "text": "visur",
+      "meaning": "everywhere",
+      "rank": 679
+    },
+    {
+      "slug": "w680-uzdevums",
+      "type": "word",
+      "text": "uzdevums",
+      "meaning": "task/assignment",
+      "rank": 680
+    },
+    {
+      "slug": "w681-draudzins",
+      "type": "word",
+      "text": "draudziņš",
+      "meaning": "buddy/pal",
+      "rank": 681
+    },
+    {
+      "slug": "w682-briniskigi",
+      "type": "word",
+      "text": "brīnišķīgi",
+      "meaning": "wonderfully/wonderful",
+      "rank": 682
+    },
+    {
+      "slug": "w683-vaditajs",
+      "type": "word",
+      "text": "vadītājs",
+      "meaning": "driver/leader",
+      "rank": 683
+    },
+    {
+      "slug": "w684-sanakt",
+      "type": "word",
+      "text": "sanākt",
+      "meaning": "work out/gather",
+      "rank": 684
+    },
+    {
+      "slug": "w685-celties",
+      "type": "word",
+      "text": "celties",
+      "meaning": "get up/rise",
+      "rank": 685
+    },
+    {
+      "slug": "w686-darijums",
+      "type": "word",
+      "text": "darījums",
+      "meaning": "deal/transaction",
+      "rank": 686
+    },
+    {
+      "slug": "w687-briviba",
+      "type": "word",
+      "text": "brīvība",
+      "meaning": "freedom",
+      "rank": 687
+    },
+    {
+      "slug": "w688-vejs",
+      "type": "word",
+      "text": "vējš",
+      "meaning": "wind",
+      "rank": 688
+    },
+    {
+      "slug": "w689-jausma",
+      "type": "word",
+      "text": "jausma",
+      "meaning": "clue/idea",
+      "rank": 689
+    },
+    {
+      "slug": "w690-raksts",
+      "type": "word",
+      "text": "raksts",
+      "meaning": "article/writing",
+      "rank": 690
+    },
+    {
+      "slug": "w691-rezultats",
+      "type": "word",
+      "text": "rezultāts",
+      "meaning": "result/score",
+      "rank": 691
+    },
+    {
+      "slug": "w692-septini",
+      "type": "word",
+      "text": "septiņi",
+      "meaning": "seven",
+      "rank": 692
+    },
+    {
+      "slug": "w693-apsveikt",
+      "type": "word",
+      "text": "apsveikt",
+      "meaning": "congratulate",
+      "rank": 693
+    },
+    {
+      "slug": "w694-pakala",
+      "type": "word",
+      "text": "pakaļa",
+      "meaning": "behind/butt",
+      "rank": 694
+    },
+    {
+      "slug": "w695-partneris",
+      "type": "word",
+      "text": "partneris",
+      "meaning": "partner",
+      "rank": 695
+    },
+    {
+      "slug": "w696-labdien",
+      "type": "word",
+      "text": "labdien",
+      "meaning": "good day/hello",
+      "rank": 696
+    },
+    {
+      "slug": "w697-ziemassvetki",
+      "type": "word",
+      "text": "ziemassvētki",
+      "meaning": "Christmas",
+      "rank": 697
+    },
+    {
+      "slug": "w698-logs",
+      "type": "word",
+      "text": "logs",
+      "meaning": "window",
+      "rank": 698
+    },
+    {
+      "slug": "w699-burvis",
+      "type": "word",
+      "text": "burvis",
+      "meaning": "wizard/magician",
+      "rank": 699
+    },
+    {
+      "slug": "w700-divains",
+      "type": "word",
+      "text": "dīvains",
+      "meaning": "strange/weird",
+      "rank": 700
+    },
+    {
+      "slug": "w701-sapet",
+      "type": "word",
+      "text": "sāpēt",
+      "meaning": "to hurt/ache",
+      "rank": 701
+    },
+    {
+      "slug": "w702-uzreiz",
+      "type": "word",
+      "text": "uzreiz",
+      "meaning": "right away/at once",
+      "rank": 702
+    },
+    {
+      "slug": "w703-kabinets",
+      "type": "word",
+      "text": "kabinets",
+      "meaning": "office",
+      "rank": 703
+    },
+    {
+      "slug": "w704-turp",
+      "type": "word",
+      "text": "turp",
+      "meaning": "there / thither",
+      "rank": 704
+    },
+    {
+      "slug": "w705-dazreiz",
+      "type": "word",
+      "text": "dažreiz",
+      "meaning": "sometimes",
+      "rank": 705
+    },
+    {
+      "slug": "w706-varonis",
+      "type": "word",
+      "text": "varonis",
+      "meaning": "hero",
+      "rank": 706
+    },
+    {
+      "slug": "w707-signals",
+      "type": "word",
+      "text": "signāls",
+      "meaning": "signal",
+      "rank": 707
+    },
+    {
+      "slug": "w708-sadi",
+      "type": "word",
+      "text": "šādi",
+      "meaning": "this way / like this",
+      "rank": 708
+    },
+    {
+      "slug": "w709-nodala",
+      "type": "word",
+      "text": "nodaļa",
+      "meaning": "department/section",
+      "rank": 709
+    },
+    {
+      "slug": "w710-satikties",
+      "type": "word",
+      "text": "satikties",
+      "meaning": "to meet",
+      "rank": 710
+    },
+    {
+      "slug": "w711-iegut",
+      "type": "word",
+      "text": "iegūt",
+      "meaning": "to obtain/gain",
+      "rank": 711
+    },
+    {
+      "slug": "w712-atmina",
+      "type": "word",
+      "text": "atmiņa",
+      "meaning": "memory",
+      "rank": 712
+    },
+    {
+      "slug": "w713-doktors",
+      "type": "word",
+      "text": "doktors",
+      "meaning": "doctor",
+      "rank": 713
+    },
+    {
+      "slug": "w714-sedet",
+      "type": "word",
+      "text": "sēdēt",
+      "meaning": "to sit",
+      "rank": 714
+    },
+    {
+      "slug": "w715-maks",
+      "type": "word",
+      "text": "maks",
+      "meaning": "wallet/purse",
+      "rank": 715
+    },
+    {
+      "slug": "w716-tevocis",
+      "type": "word",
+      "text": "tēvocis",
+      "meaning": "uncle",
+      "rank": 716
+    },
+    {
+      "slug": "w717-gredzens",
+      "type": "word",
+      "text": "gredzens",
+      "meaning": "ring",
+      "rank": 717
+    },
+    {
+      "slug": "w718-aizdomas",
+      "type": "word",
+      "text": "aizdomas",
+      "meaning": "suspicion",
+      "rank": 718
+    },
+    {
+      "slug": "w719-vestule",
+      "type": "word",
+      "text": "vēstule",
+      "meaning": "letter",
+      "rank": 719
+    },
+    {
+      "slug": "w720-stastit",
+      "type": "word",
+      "text": "stāstīt",
+      "meaning": "to tell/narrate",
+      "rank": 720
+    },
+    {
+      "slug": "w721-pagaidam",
+      "type": "word",
+      "text": "pagaidām",
+      "meaning": "for now",
+      "rank": 721
+    },
+    {
+      "slug": "w722-mest",
+      "type": "word",
+      "text": "mest",
+      "meaning": "to throw",
+      "rank": 722
+    },
+    {
+      "slug": "w723-vectevs",
+      "type": "word",
+      "text": "vectēvs",
+      "meaning": "grandfather",
+      "rank": 723
+    },
+    {
+      "slug": "w724-aizmugure",
+      "type": "word",
+      "text": "aizmugure",
+      "meaning": "back/rear",
+      "rank": 724
+    },
+    {
+      "slug": "w725-arvien",
+      "type": "word",
+      "text": "arvien",
+      "meaning": "ever/increasingly",
+      "rank": 725
+    },
+    {
+      "slug": "w726-sede",
+      "type": "word",
+      "text": "sēde",
+      "meaning": "session/meeting",
+      "rank": 726
+    },
+    {
+      "slug": "w727-neliels",
+      "type": "word",
+      "text": "neliels",
+      "meaning": "small/slight",
+      "rank": 727
+    },
+    {
+      "slug": "w728-apsesties",
+      "type": "word",
+      "text": "apsēsties",
+      "meaning": "to sit down",
+      "rank": 728
+    },
+    {
+      "slug": "w729-slepens",
+      "type": "word",
+      "text": "slepens",
+      "meaning": "secret",
+      "rank": 729
+    },
+    {
+      "slug": "w730-gana",
+      "type": "word",
+      "text": "gana",
+      "meaning": "enough",
+      "rank": 730
+    },
+    {
+      "slug": "w731-diemzel",
+      "type": "word",
+      "text": "diemžēl",
+      "meaning": "unfortunately",
+      "rank": 731
+    },
+    {
+      "slug": "w732-narkotika",
+      "type": "word",
+      "text": "narkotika",
+      "meaning": "drug (narcotic)",
+      "rank": 732
+    },
+    {
+      "slug": "w733-operacija",
+      "type": "word",
+      "text": "operācija",
+      "meaning": "operation/surgery",
+      "rank": 733
+    },
+    {
+      "slug": "w734-zivs",
+      "type": "word",
+      "text": "zivs",
+      "meaning": "fish",
+      "rank": 734
+    },
+    {
+      "slug": "w735-zvanit",
+      "type": "word",
+      "text": "zvanīt",
+      "meaning": "to call/phone",
+      "rank": 735
+    },
+    {
+      "slug": "w736-vads",
+      "type": "word",
+      "text": "vads",
+      "meaning": "wire/cord",
+      "rank": 736
+    },
+    {
+      "slug": "w737-sarkans",
+      "type": "word",
+      "text": "sarkans",
+      "meaning": "red",
+      "rank": 737
+    },
+    {
+      "slug": "w738-preti",
+      "type": "word",
+      "text": "pretī",
+      "meaning": "opposite/towards",
+      "rank": 738
+    },
+    {
+      "slug": "w739-paklau",
+      "type": "word",
+      "text": "paklau",
+      "meaning": "hey/listen",
+      "rank": 739
+    },
+    {
+      "slug": "w740-zime",
+      "type": "word",
+      "text": "zīme",
+      "meaning": "sign/mark/note",
+      "rank": 740
+    },
+    {
+      "slug": "w741-skats",
+      "type": "word",
+      "text": "skats",
+      "meaning": "view/sight/look",
+      "rank": 741
+    },
+    {
+      "slug": "w742-balts",
+      "type": "word",
+      "text": "balts",
+      "meaning": "white",
+      "rank": 742
+    },
+    {
+      "slug": "w743-randins",
+      "type": "word",
+      "text": "randiņš",
+      "meaning": "date (romantic)",
+      "rank": 743
+    },
+    {
+      "slug": "w744-jega",
+      "type": "word",
+      "text": "jēga",
+      "meaning": "sense/meaning/point",
+      "rank": 744
+    },
+    {
+      "slug": "w745-solis",
+      "type": "word",
+      "text": "solis",
+      "meaning": "step",
+      "rank": 745
+    },
+    {
+      "slug": "w746-sods",
+      "type": "word",
+      "text": "sods",
+      "meaning": "punishment/penalty",
+      "rank": 746
+    },
+    {
+      "slug": "w747-ciet",
+      "type": "word",
+      "text": "ciet",
+      "meaning": "shut/closed",
+      "rank": 747
+    },
+    {
+      "slug": "w748-slepkaviba",
+      "type": "word",
+      "text": "slepkavība",
+      "meaning": "murder",
+      "rank": 748
+    },
+    {
+      "slug": "w749-dzivoklis",
+      "type": "word",
+      "text": "dzīvoklis",
+      "meaning": "apartment/flat",
+      "rank": 749
+    },
+    {
+      "slug": "w750-vis",
+      "type": "word",
+      "text": "vis",
+      "meaning": "at all (emphatic)",
+      "rank": 750
+    },
+    {
+      "slug": "w751-patiesi",
+      "type": "word",
+      "text": "patiesi",
+      "meaning": "truly/really",
+      "rank": 751
+    },
+    {
+      "slug": "w752-pavadit",
+      "type": "word",
+      "text": "pavadīt",
+      "meaning": "to spend (time)/accompany",
+      "rank": 752
+    },
+    {
+      "slug": "w753-nokartot",
+      "type": "word",
+      "text": "nokārtot",
+      "meaning": "to sort out/arrange",
+      "rank": 753
+    },
+    {
+      "slug": "w754-ieraksts",
+      "type": "word",
+      "text": "ieraksts",
+      "meaning": "recording/entry",
+      "rank": 754
+    },
+    {
+      "slug": "w755-pardot",
+      "type": "word",
+      "text": "pārdot",
+      "meaning": "to sell",
+      "rank": 755
+    },
+    {
+      "slug": "w756-vairaki",
+      "type": "word",
+      "text": "vairāki",
+      "meaning": "several",
+      "rank": 756
+    },
+    {
+      "slug": "w757-peksni",
+      "type": "word",
+      "text": "pēkšņi",
+      "meaning": "suddenly",
+      "rank": 757
+    },
+    {
+      "slug": "w758-ienist",
+      "type": "word",
+      "text": "ienīst",
+      "meaning": "to hate",
+      "rank": 758
+    },
+    {
+      "slug": "w759-lemums",
+      "type": "word",
+      "text": "lēmums",
+      "meaning": "decision",
+      "rank": 759
+    },
+    {
+      "slug": "w760-ik",
+      "type": "word",
+      "text": "ik",
+      "meaning": "every/each",
+      "rank": 760
+    },
+    {
+      "slug": "w761-bailes",
+      "type": "word",
+      "text": "bailes",
+      "meaning": "fear",
+      "rank": 761
+    },
+    {
+      "slug": "w762-nokert",
+      "type": "word",
+      "text": "noķert",
+      "meaning": "to catch",
+      "rank": 762
+    },
+    {
+      "slug": "w763-laist",
+      "type": "word",
+      "text": "laist",
+      "meaning": "to let / release / let through",
+      "rank": 763
+    },
+    {
+      "slug": "w764-stiprs",
+      "type": "word",
+      "text": "stiprs",
+      "meaning": "strong",
+      "rank": 764
+    },
+    {
+      "slug": "w765-tumsa",
+      "type": "word",
+      "text": "tumsa",
+      "meaning": "darkness",
+      "rank": 765
+    },
+    {
+      "slug": "w766-virs",
+      "type": "word",
+      "text": "virs",
+      "meaning": "above/over",
+      "rank": 766
+    },
+    {
+      "slug": "w767-iedzert",
+      "type": "word",
+      "text": "iedzert",
+      "meaning": "to have a drink",
+      "rank": 767
+    },
+    {
+      "slug": "w768-apmeram",
+      "type": "word",
+      "text": "apmēram",
+      "meaning": "approximately/about",
+      "rank": 768
+    },
+    {
+      "slug": "w769-siena",
+      "type": "word",
+      "text": "siena",
+      "meaning": "wall",
+      "rank": 769
+    },
+    {
+      "slug": "w770-mainities",
+      "type": "word",
+      "text": "mainīties",
+      "meaning": "to change",
+      "rank": 770
+    },
+    {
+      "slug": "w771-tiesnesis",
+      "type": "word",
+      "text": "tiesnesis",
+      "meaning": "judge/referee",
+      "rank": 771
+    },
+    {
+      "slug": "w772-vasara",
+      "type": "word",
+      "text": "vasara",
+      "meaning": "summer",
+      "rank": 772
+    },
+    {
+      "slug": "w773-bistami",
+      "type": "word",
+      "text": "bīstami",
+      "meaning": "dangerous(ly)",
+      "rank": 773
+    },
+    {
+      "slug": "w774-pilniba",
+      "type": "word",
+      "text": "pilnība",
+      "meaning": "completely (pilnībā)",
+      "rank": 774
+    },
+    {
+      "slug": "w775-malacis",
+      "type": "word",
+      "text": "malacis",
+      "meaning": "well done/good job",
+      "rank": 775
+    },
+    {
+      "slug": "w776-uznemums",
+      "type": "word",
+      "text": "uzņēmums",
+      "meaning": "company/business",
+      "rank": 776
+    },
+    {
+      "slug": "w777-auto",
+      "type": "word",
+      "text": "auto",
+      "meaning": "car",
+      "rank": 777
+    },
+    {
+      "slug": "w778-briesmas",
+      "type": "word",
+      "text": "briesmas",
+      "meaning": "danger",
+      "rank": 778
+    },
+    {
+      "slug": "w779-tualete",
+      "type": "word",
+      "text": "tualete",
+      "meaning": "toilet/restroom",
+      "rank": 779
+    },
+    {
+      "slug": "w780-apstaties",
+      "type": "word",
+      "text": "apstāties",
+      "meaning": "to stop",
+      "rank": 780
+    },
+    {
+      "slug": "w781-uzvalks",
+      "type": "word",
+      "text": "uzvalks",
+      "meaning": "suit",
+      "rank": 781
+    },
+    {
+      "slug": "w782-mulkiba",
+      "type": "word",
+      "text": "muļķība",
+      "meaning": "nonsense/foolishness",
+      "rank": 782
+    },
+    {
+      "slug": "w783-jautat",
+      "type": "word",
+      "text": "jautāt",
+      "meaning": "to ask",
+      "rank": 783
+    },
+    {
+      "slug": "w784-pukis",
+      "type": "word",
+      "text": "pūķis",
+      "meaning": "dragon/kite",
+      "rank": 784
+    },
+    {
+      "slug": "w785-kaste",
+      "type": "word",
+      "text": "kaste",
+      "meaning": "box",
+      "rank": 785
+    },
+    {
+      "slug": "w786-zobs",
+      "type": "word",
+      "text": "zobs",
+      "meaning": "tooth",
+      "rank": 786
+    },
+    {
+      "slug": "w787-preceties",
+      "type": "word",
+      "text": "precēties",
+      "meaning": "to marry / get married",
+      "rank": 787
+    },
+    {
+      "slug": "w788-liktenis",
+      "type": "word",
+      "text": "liktenis",
+      "meaning": "fate/destiny",
+      "rank": 788
+    },
+    {
+      "slug": "w789-zona",
+      "type": "word",
+      "text": "zona",
+      "meaning": "zone/area",
+      "rank": 789
+    },
+    {
+      "slug": "w790-interesanti",
+      "type": "word",
+      "text": "interesanti",
+      "meaning": "interesting(ly)",
+      "rank": 790
+    },
+    {
+      "slug": "w791-brinums",
+      "type": "word",
+      "text": "brīnums",
+      "meaning": "wonder/miracle",
+      "rank": 791
+    },
+    {
+      "slug": "w792-aizsardziba",
+      "type": "word",
+      "text": "aizsardzība",
+      "meaning": "defense/protection",
+      "rank": 792
+    },
+    {
+      "slug": "w793-vadiba",
+      "type": "word",
+      "text": "vadība",
+      "meaning": "management/leadership",
+      "rank": 793
+    },
+    {
+      "slug": "w794-atlauja",
+      "type": "word",
+      "text": "atļauja",
+      "meaning": "permission",
+      "rank": 794
+    },
+    {
+      "slug": "w795-paradities",
+      "type": "word",
+      "text": "parādīties",
+      "meaning": "to appear/show up",
+      "rank": 795
+    },
+    {
+      "slug": "w796-jebkad",
+      "type": "word",
+      "text": "jebkad",
+      "meaning": "ever / any time",
+      "rank": 796
+    },
+    {
+      "slug": "w797-parupeties",
+      "type": "word",
+      "text": "parūpēties",
+      "meaning": "to take care of",
+      "rank": 797
+    },
+    {
+      "slug": "w798-kreiss",
+      "type": "word",
+      "text": "kreiss",
+      "meaning": "left",
+      "rank": 798
+    },
+    {
+      "slug": "w799-papirs",
+      "type": "word",
+      "text": "papīrs",
+      "meaning": "paper",
+      "rank": 799
+    },
+    {
+      "slug": "w800-policists",
+      "type": "word",
+      "text": "policists",
+      "meaning": "police officer",
+      "rank": 800
+    },
+    {
+      "slug": "w801-stavs",
+      "type": "word",
+      "text": "stāvs",
+      "meaning": "floor/storey",
+      "rank": 801
+    },
+    {
+      "slug": "w802-boss",
+      "type": "word",
+      "text": "boss",
+      "meaning": "boss",
+      "rank": 802
+    },
+    {
+      "slug": "w803-parsteigums",
+      "type": "word",
+      "text": "pārsteigums",
+      "meaning": "surprise",
+      "rank": 803
+    },
+    {
+      "slug": "w804-atrums",
+      "type": "word",
+      "text": "ātrums",
+      "meaning": "speed",
+      "rank": 804
+    },
+    {
+      "slug": "w805-vidus",
+      "type": "word",
+      "text": "vidus",
+      "meaning": "middle",
+      "rank": 805
+    },
+    {
+      "slug": "w806-kods",
+      "type": "word",
+      "text": "kods",
+      "meaning": "code",
+      "rank": 806
+    },
+    {
+      "slug": "w807-linija",
+      "type": "word",
+      "text": "līnija",
+      "meaning": "line",
+      "rank": 807
+    },
+    {
+      "slug": "w808-virsu",
+      "type": "word",
+      "text": "virsū",
+      "meaning": "on top/onto",
+      "rank": 808
+    },
+    {
+      "slug": "w809-karaliene",
+      "type": "word",
+      "text": "karaliene",
+      "meaning": "queen",
+      "rank": 809
+    },
+    {
+      "slug": "w810-sorit",
+      "type": "word",
+      "text": "šorīt",
+      "meaning": "this morning",
+      "rank": 810
+    },
+    {
+      "slug": "w811-metrs",
+      "type": "word",
+      "text": "metrs",
+      "meaning": "metre",
+      "rank": 811
+    },
+    {
+      "slug": "w812-daba",
+      "type": "word",
+      "text": "daba",
+      "meaning": "nature",
+      "rank": 812
+    },
+    {
+      "slug": "w813-pavele",
+      "type": "word",
+      "text": "pavēle",
+      "meaning": "order/command",
+      "rank": 813
+    },
+    {
+      "slug": "w814-slepties",
+      "type": "word",
+      "text": "slēpties",
+      "meaning": "hide (oneself)",
+      "rank": 814
+    },
+    {
+      "slug": "w815-mezs",
+      "type": "word",
+      "text": "mežs",
+      "meaning": "forest",
+      "rank": 815
+    },
+    {
+      "slug": "w816-vieniba",
+      "type": "word",
+      "text": "vienība",
+      "meaning": "unit",
+      "rank": 816
+    },
+    {
+      "slug": "w817-forma",
+      "type": "word",
+      "text": "forma",
+      "meaning": "shape/form",
+      "rank": 817
+    },
+    {
+      "slug": "w818-cena",
+      "type": "word",
+      "text": "cena",
+      "meaning": "price",
+      "rank": 818
+    },
+    {
+      "slug": "w819-zals",
+      "type": "word",
+      "text": "zaļš",
+      "meaning": "green",
+      "rank": 819
+    },
+    {
+      "slug": "w820-proti",
+      "type": "word",
+      "text": "proti",
+      "meaning": "namely/that is",
+      "rank": 820
+    },
+    {
+      "slug": "w821-macities",
+      "type": "word",
+      "text": "mācīties",
+      "meaning": "learn/study",
+      "rank": 821
+    },
+    {
+      "slug": "w822-novakt",
+      "type": "word",
+      "text": "novākt",
+      "meaning": "clear away/remove",
+      "rank": 822
+    },
+    {
+      "slug": "w823-nonakt",
+      "type": "word",
+      "text": "nonākt",
+      "meaning": "end up/arrive at",
+      "rank": 823
+    },
+    {
+      "slug": "w824-laiva",
+      "type": "word",
+      "text": "laiva",
+      "meaning": "boat",
+      "rank": 824
+    },
+    {
+      "slug": "w825-ragana",
+      "type": "word",
+      "text": "ragana",
+      "meaning": "witch",
+      "rank": 825
+    },
+    {
+      "slug": "w826-vilciens",
+      "type": "word",
+      "text": "vilciens",
+      "meaning": "train",
+      "rank": 826
+    },
+    {
+      "slug": "w827-arpus",
+      "type": "word",
+      "text": "ārpus",
+      "meaning": "outside (of)",
+      "rank": 827
+    },
+    {
+      "slug": "w828-dzili",
+      "type": "word",
+      "text": "dziļi",
+      "meaning": "deeply",
+      "rank": 828
+    },
+    {
+      "slug": "w829-baznica",
+      "type": "word",
+      "text": "baznīca",
+      "meaning": "church",
+      "rank": 829
+    },
+    {
+      "slug": "w830-planeta",
+      "type": "word",
+      "text": "planēta",
+      "meaning": "planet",
+      "rank": 830
+    },
+    {
+      "slug": "w831-pils",
+      "type": "word",
+      "text": "pils",
+      "meaning": "castle",
+      "rank": 831
+    },
+    {
+      "slug": "w832-patikami",
+      "type": "word",
+      "text": "patīkami",
+      "meaning": "pleasant/nice",
+      "rank": 832
+    },
+    {
+      "slug": "w833-manejais",
+      "type": "word",
+      "text": "manējais",
+      "meaning": "mine",
+      "rank": 833
+    },
+    {
+      "slug": "w834-likis",
+      "type": "word",
+      "text": "līķis",
+      "meaning": "corpse",
+      "rank": 834
+    },
+    {
+      "slug": "w835-lidzigs",
+      "type": "word",
+      "text": "līdzīgs",
+      "meaning": "similar",
+      "rank": 835
+    },
+    {
+      "slug": "w836-ierice",
+      "type": "word",
+      "text": "ierīce",
+      "meaning": "device",
+      "rank": 836
+    },
+    {
+      "slug": "w837-prasit",
+      "type": "word",
+      "text": "prasīt",
+      "meaning": "to ask (for) / demand / request",
+      "rank": 837
+    },
+    {
+      "slug": "w838-visai",
+      "type": "word",
+      "text": "visai",
+      "meaning": "quite/rather",
+      "rank": 838
+    },
+    {
+      "slug": "w839-nosaukt",
+      "type": "word",
+      "text": "nosaukt",
+      "meaning": "name/call",
+      "rank": 839
+    },
+    {
+      "slug": "w840-kaveties",
+      "type": "word",
+      "text": "kavēties",
+      "meaning": "delay/be late",
+      "rank": 840
+    },
+    {
+      "slug": "w841-nepareizi",
+      "type": "word",
+      "text": "nepareizi",
+      "meaning": "wrongly/incorrectly",
+      "rank": 841
+    },
+    {
+      "slug": "w842-klusu",
+      "type": "word",
+      "text": "klusu",
+      "meaning": "quietly",
+      "rank": 842
+    },
+    {
+      "slug": "w843-piedavajums",
+      "type": "word",
+      "text": "piedāvājums",
+      "meaning": "offer/proposal",
+      "rank": 843
+    },
+    {
+      "slug": "w844-soma",
+      "type": "word",
+      "text": "soma",
+      "meaning": "bag",
+      "rank": 844
+    },
+    {
+      "slug": "w845-darbinieks",
+      "type": "word",
+      "text": "darbinieks",
+      "meaning": "employee/worker",
+      "rank": 845
+    },
+    {
+      "slug": "w846-dzeriens",
+      "type": "word",
+      "text": "dzēriens",
+      "meaning": "drink/beverage",
+      "rank": 846
+    },
+    {
+      "slug": "w847-atlaist",
+      "type": "word",
+      "text": "atlaist",
+      "meaning": "release/dismiss",
+      "rank": 847
+    },
+    {
+      "slug": "w848-bars",
+      "type": "word",
+      "text": "bārs",
+      "meaning": "bar (pub)",
+      "rank": 848
+    },
+    {
+      "slug": "w849-ziemeli",
+      "type": "word",
+      "text": "ziemeļi",
+      "meaning": "north",
+      "rank": 849
+    },
+    {
+      "slug": "w850-ada",
+      "type": "word",
+      "text": "āda",
+      "meaning": "skin",
+      "rank": 850
+    },
+    {
+      "slug": "w851-tuvums",
+      "type": "word",
+      "text": "tuvums",
+      "meaning": "vicinity/closeness",
+      "rank": 851
+    },
+    {
+      "slug": "w852-vienigi",
+      "type": "word",
+      "text": "vienīgi",
+      "meaning": "only/solely",
+      "rank": 852
+    },
+    {
+      "slug": "w853-zinojums",
+      "type": "word",
+      "text": "ziņojums",
+      "meaning": "message/report",
+      "rank": 853
+    },
+    {
+      "slug": "w854-varti",
+      "type": "word",
+      "text": "vārti",
+      "meaning": "gate",
+      "rank": 854
+    },
+    {
+      "slug": "w855-bilete",
+      "type": "word",
+      "text": "biļete",
+      "meaning": "ticket",
+      "rank": 855
+    },
+    {
+      "slug": "w856-nams",
+      "type": "word",
+      "text": "nams",
+      "meaning": "house/building",
+      "rank": 856
+    },
+    {
+      "slug": "w857-ielikt",
+      "type": "word",
+      "text": "ielikt",
+      "meaning": "put in/insert",
+      "rank": 857
+    },
+    {
+      "slug": "w858-traki",
+      "type": "word",
+      "text": "traki",
+      "meaning": "crazily/like crazy",
+      "rank": 858
+    },
+    {
+      "slug": "w859-sovs",
+      "type": "word",
+      "text": "šovs",
+      "meaning": "show (performance)",
+      "rank": 859
+    },
+    {
+      "slug": "w860-siks",
+      "type": "word",
+      "text": "sīks",
+      "meaning": "tiny/petty",
+      "rank": 860
+    },
+    {
+      "slug": "w861-izeja",
+      "type": "word",
+      "text": "izeja",
+      "meaning": "exit",
+      "rank": 861
+    },
+    {
+      "slug": "w862-sonakt",
+      "type": "word",
+      "text": "šonakt",
+      "meaning": "tonight",
+      "rank": 862
+    },
+    {
+      "slug": "w863-krava",
+      "type": "word",
+      "text": "krava",
+      "meaning": "load/cargo",
+      "rank": 863
+    },
+    {
+      "slug": "w864-cepure",
+      "type": "word",
+      "text": "cepure",
+      "meaning": "hat/cap",
+      "rank": 864
+    },
+    {
+      "slug": "w865-riciba",
+      "type": "word",
+      "text": "rīcība",
+      "meaning": "action/conduct",
+      "rank": 865
+    },
+    {
+      "slug": "w866-nometne",
+      "type": "word",
+      "text": "nometne",
+      "meaning": "camp",
+      "rank": 866
+    },
+    {
+      "slug": "w867-jebkas",
+      "type": "word",
+      "text": "jebkas",
+      "meaning": "anything",
+      "rank": 867
+    },
+    {
+      "slug": "w868-milzigs",
+      "type": "word",
+      "text": "milzīgs",
+      "meaning": "huge/enormous",
+      "rank": 868
+    },
+    {
+      "slug": "w869-dators",
+      "type": "word",
+      "text": "dators",
+      "meaning": "computer",
+      "rank": 869
+    },
+    {
+      "slug": "w870-mirklitis",
+      "type": "word",
+      "text": "mirklītis",
+      "meaning": "little moment",
+      "rank": 870
+    },
+    {
+      "slug": "w871-skaidri",
+      "type": "word",
+      "text": "skaidri",
+      "meaning": "clearly",
+      "rank": 871
+    },
+    {
+      "slug": "w872-skana",
+      "type": "word",
+      "text": "skaņa",
+      "meaning": "sound",
+      "rank": 872
+    },
+    {
+      "slug": "w873-paturet",
+      "type": "word",
+      "text": "paturēt",
+      "meaning": "keep/retain",
+      "rank": 873
+    },
+    {
+      "slug": "w874-piekrist",
+      "type": "word",
+      "text": "piekrist",
+      "meaning": "agree",
+      "rank": 874
+    },
+    {
+      "slug": "w875-vecums",
+      "type": "word",
+      "text": "vecums",
+      "meaning": "age",
+      "rank": 875
+    },
+    {
+      "slug": "w876-glezna",
+      "type": "word",
+      "text": "glezna",
+      "meaning": "painting",
+      "rank": 876
+    },
+    {
+      "slug": "w877-vins",
+      "type": "word",
+      "text": "vīns",
+      "meaning": "wine",
+      "rank": 877
+    },
+    {
+      "slug": "w878-koledza",
+      "type": "word",
+      "text": "koledža",
+      "meaning": "college",
+      "rank": 878
+    },
+    {
+      "slug": "w879-autobuss",
+      "type": "word",
+      "text": "autobuss",
+      "meaning": "bus",
+      "rank": 879
+    },
+    {
+      "slug": "w880-programma",
+      "type": "word",
+      "text": "programma",
+      "meaning": "program",
+      "rank": 880
+    },
+    {
+      "slug": "w881-slims",
+      "type": "word",
+      "text": "slims",
+      "meaning": "sick / ill",
+      "rank": 881
+    },
+    {
+      "slug": "w882-turklat",
+      "type": "word",
+      "text": "turklāt",
+      "meaning": "moreover/besides",
+      "rank": 882
+    },
+    {
+      "slug": "w883-mazulis",
+      "type": "word",
+      "text": "mazulis",
+      "meaning": "baby/little one",
+      "rank": 883
+    },
+    {
+      "slug": "w884-deret",
+      "type": "word",
+      "text": "derēt",
+      "meaning": "fit/be suitable/bet",
+      "rank": 884
+    },
+    {
+      "slug": "w885-garsot",
+      "type": "word",
+      "text": "garšot",
+      "meaning": "to taste (good) / to like the taste of",
+      "rank": 885
+    },
+    {
+      "slug": "w886-austrumi",
+      "type": "word",
+      "text": "austrumi",
+      "meaning": "east",
+      "rank": 886
+    },
+    {
+      "slug": "w887-tukss",
+      "type": "word",
+      "text": "tukšs",
+      "meaning": "empty",
+      "rank": 887
+    },
+    {
+      "slug": "w888-nolemt",
+      "type": "word",
+      "text": "nolemt",
+      "meaning": "decide",
+      "rank": 888
+    },
+    {
+      "slug": "w889-dienvidi",
+      "type": "word",
+      "text": "dienvidi",
+      "meaning": "south",
+      "rank": 889
+    },
+    {
+      "slug": "w890-klase",
+      "type": "word",
+      "text": "klase",
+      "meaning": "class/classroom",
+      "rank": 890
+    },
+    {
+      "slug": "w891-pudele",
+      "type": "word",
+      "text": "pudele",
+      "meaning": "bottle",
+      "rank": 891
+    },
+    {
+      "slug": "w892-drebes",
+      "type": "word",
+      "text": "drēbes",
+      "meaning": "clothes",
+      "rank": 892
+    },
+    {
+      "slug": "w893-just",
+      "type": "word",
+      "text": "just",
+      "meaning": "feel",
+      "rank": 893
+    },
+    {
+      "slug": "w894-kontrole",
+      "type": "word",
+      "text": "kontrole",
+      "meaning": "control",
+      "rank": 894
+    },
+    {
+      "slug": "w895-limenis",
+      "type": "word",
+      "text": "līmenis",
+      "meaning": "level",
+      "rank": 895
+    },
+    {
+      "slug": "w896-bilde",
+      "type": "word",
+      "text": "bilde",
+      "meaning": "picture/photo",
+      "rank": 896
+    },
+    {
+      "slug": "w897-sabiedriba",
+      "type": "word",
+      "text": "sabiedrība",
+      "meaning": "society/company",
+      "rank": 897
+    },
+    {
+      "slug": "w898-valdiba",
+      "type": "word",
+      "text": "valdība",
+      "meaning": "government",
+      "rank": 898
+    },
+    {
+      "slug": "w899-dienests",
+      "type": "word",
+      "text": "dienests",
+      "meaning": "service (duty)",
+      "rank": 899
+    },
+    {
+      "slug": "w900-atvest",
+      "type": "word",
+      "text": "atvest",
+      "meaning": "bring (by transport)",
+      "rank": 900
+    },
+    {
+      "slug": "w901-atkapties",
+      "type": "word",
+      "text": "atkāpties",
+      "meaning": "step back / retreat",
+      "rank": 901
+    },
+    {
+      "slug": "w902-izslegt",
+      "type": "word",
+      "text": "izslēgt",
+      "meaning": "turn off / switch off",
+      "rank": 902
+    },
+    {
+      "slug": "w903-kakis",
+      "type": "word",
+      "text": "kaķis",
+      "meaning": "cat",
+      "rank": 903
+    },
+    {
+      "slug": "w904-robeza",
+      "type": "word",
+      "text": "robeža",
+      "meaning": "border / limit",
+      "rank": 904
+    },
+    {
+      "slug": "w905-vienoties",
+      "type": "word",
+      "text": "vienoties",
+      "meaning": "agree / come to terms",
+      "rank": 905
+    },
+    {
+      "slug": "w906-paraut",
+      "type": "word",
+      "text": "paraut",
+      "meaning": "pull / yank",
+      "rank": 906
+    },
+    {
+      "slug": "w907-teja",
+      "type": "word",
+      "text": "tēja",
+      "meaning": "tea",
+      "rank": 907
+    },
+    {
+      "slug": "w908-pievienoties",
+      "type": "word",
+      "text": "pievienoties",
+      "meaning": "join",
+      "rank": 908
+    },
+    {
+      "slug": "w909-pareizs",
+      "type": "word",
+      "text": "pareizs",
+      "meaning": "correct / right",
+      "rank": 909
+    },
+    {
+      "slug": "w910-celojums",
+      "type": "word",
+      "text": "ceļojums",
+      "meaning": "trip / journey",
+      "rank": 910
+    },
+    {
+      "slug": "w911-aizvert",
+      "type": "word",
+      "text": "aizvērt",
+      "meaning": "close / shut",
+      "rank": 911
+    },
+    {
+      "slug": "w912-ligums",
+      "type": "word",
+      "text": "līgums",
+      "meaning": "contract / agreement",
+      "rank": 912
+    },
+    {
+      "slug": "w913-sokolade",
+      "type": "word",
+      "text": "šokolāde",
+      "meaning": "chocolate",
+      "rank": 913
+    },
+    {
+      "slug": "w914-triks",
+      "type": "word",
+      "text": "triks",
+      "meaning": "trick",
+      "rank": 914
+    },
+    {
+      "slug": "w915-nudien",
+      "type": "word",
+      "text": "nudien",
+      "meaning": "truly / indeed",
+      "rank": 915
+    },
+    {
+      "slug": "w916-apskatit",
+      "type": "word",
+      "text": "apskatīt",
+      "meaning": "look at / examine",
+      "rank": 916
+    },
+    {
+      "slug": "w917-virziens",
+      "type": "word",
+      "text": "virziens",
+      "meaning": "direction",
+      "rank": 917
+    },
+    {
+      "slug": "w918-jumts",
+      "type": "word",
+      "text": "jumts",
+      "meaning": "roof",
+      "rank": 918
+    },
+    {
+      "slug": "w919-ipasums",
+      "type": "word",
+      "text": "īpašums",
+      "meaning": "property / possession",
+      "rank": 919
+    },
+    {
+      "slug": "w920-nepatiksana",
+      "type": "word",
+      "text": "nepatikšana",
+      "meaning": "trouble",
+      "rank": 920
+    },
+    {
+      "slug": "w921-trukt",
+      "type": "word",
+      "text": "trūkt",
+      "meaning": "be lacking / missing",
+      "rank": 921
+    },
+    {
+      "slug": "w922-nelaime",
+      "type": "word",
+      "text": "nelaime",
+      "meaning": "misfortune / accident",
+      "rank": 922
+    },
+    {
+      "slug": "w923-pag",
+      "type": "word",
+      "text": "pag",
+      "meaning": "wait (colloq.)",
+      "rank": 923
+    },
+    {
+      "slug": "w924-projam",
+      "type": "word",
+      "text": "projām",
+      "meaning": "away",
+      "rank": 924
+    },
+    {
+      "slug": "w925-tiklidz",
+      "type": "word",
+      "text": "tiklīdz",
+      "meaning": "as soon as",
+      "rank": 925
+    },
+    {
+      "slug": "w926-meli",
+      "type": "word",
+      "text": "meli",
+      "meaning": "lie / lies",
+      "rank": 926
+    },
+    {
+      "slug": "w927-ciena",
+      "type": "word",
+      "text": "cieņa",
+      "meaning": "respect",
+      "rank": 927
+    },
+    {
+      "slug": "w928-iziet",
+      "type": "word",
+      "text": "iziet",
+      "meaning": "go out / exit",
+      "rank": 928
+    },
+    {
+      "slug": "w929-nozimet",
+      "type": "word",
+      "text": "nozīmēt",
+      "meaning": "to mean / signify",
+      "rank": 929
+    },
+    {
+      "slug": "w930-izsaukt",
+      "type": "word",
+      "text": "izsaukt",
+      "meaning": "call (out) / summon",
+      "rank": 930
+    },
+    {
+      "slug": "w931-mers",
+      "type": "word",
+      "text": "mērs",
+      "meaning": "measure / mayor",
+      "rank": 931
+    },
+    {
+      "slug": "w932-rietumi",
+      "type": "word",
+      "text": "rietumi",
+      "meaning": "west",
+      "rank": 932
+    },
+    {
+      "slug": "w933-vienreiz",
+      "type": "word",
+      "text": "vienreiz",
+      "meaning": "once",
+      "rank": 933
+    },
+    {
+      "slug": "w934-zobens",
+      "type": "word",
+      "text": "zobens",
+      "meaning": "sword",
+      "rank": 934
+    },
+    {
+      "slug": "w935-partraukt",
+      "type": "word",
+      "text": "pārtraukt",
+      "meaning": "interrupt / stop",
+      "rank": 935
+    },
+    {
+      "slug": "w936-kompanija",
+      "type": "word",
+      "text": "kompānija",
+      "meaning": "company / firm",
+      "rank": 936
+    },
+    {
+      "slug": "w937-arlabunakti",
+      "type": "word",
+      "text": "arlabunakti",
+      "meaning": "goodnight",
+      "rank": 937
+    },
+    {
+      "slug": "w938-padoties",
+      "type": "word",
+      "text": "padoties",
+      "meaning": "give up / surrender",
+      "rank": 938
+    },
+    {
+      "slug": "w939-smagi",
+      "type": "word",
+      "text": "smagi",
+      "meaning": "hard / heavily",
+      "rank": 939
+    },
+    {
+      "slug": "w940-sarunat",
+      "type": "word",
+      "text": "sarunāt",
+      "meaning": "arrange / agree on",
+      "rank": 940
+    },
+    {
+      "slug": "w941-parsteigt",
+      "type": "word",
+      "text": "pārsteigt",
+      "meaning": "surprise",
+      "rank": 941
+    },
+    {
+      "slug": "w942-klubs",
+      "type": "word",
+      "text": "klubs",
+      "meaning": "club",
+      "rank": 942
+    },
+    {
+      "slug": "w943-video",
+      "type": "word",
+      "text": "video",
+      "meaning": "video",
+      "rank": 943
+    },
+    {
+      "slug": "w944-interese",
+      "type": "word",
+      "text": "interese",
+      "meaning": "interest",
+      "rank": 944
+    },
+    {
+      "slug": "w945-izradities",
+      "type": "word",
+      "text": "izrādīties",
+      "meaning": "turn out / prove to be",
+      "rank": 945
+    },
+    {
+      "slug": "w946-leni",
+      "type": "word",
+      "text": "lēni",
+      "meaning": "slowly",
+      "rank": 946
+    },
+    {
+      "slug": "w947-biedrs",
+      "type": "word",
+      "text": "biedrs",
+      "meaning": "member / comrade",
+      "rank": 947
+    },
+    {
+      "slug": "w948-nupat",
+      "type": "word",
+      "text": "nupat",
+      "meaning": "just now",
+      "rank": 948
+    },
+    {
+      "slug": "w949-radit",
+      "type": "word",
+      "text": "rādīt",
+      "meaning": "show",
+      "rank": 949
+    },
+    {
+      "slug": "w950-briniskigs",
+      "type": "word",
+      "text": "brīnišķīgs",
+      "meaning": "wonderful",
+      "rank": 950
+    },
+    {
+      "slug": "w951-upe",
+      "type": "word",
+      "text": "upe",
+      "meaning": "river",
+      "rank": 951
+    },
+    {
+      "slug": "w952-atbrivot",
+      "type": "word",
+      "text": "atbrīvot",
+      "meaning": "free / release",
+      "rank": 952
+    },
+    {
+      "slug": "w953-nodarboties",
+      "type": "word",
+      "text": "nodarboties",
+      "meaning": "do / be occupied with",
+      "rank": 953
+    },
+    {
+      "slug": "w954-pasteigties",
+      "type": "word",
+      "text": "pasteigties",
+      "meaning": "hurry",
+      "rank": 954
+    },
+    {
+      "slug": "w955-pilnigs",
+      "type": "word",
+      "text": "pilnīgs",
+      "meaning": "complete / total",
+      "rank": 955
+    },
+    {
+      "slug": "w956-laukums",
+      "type": "word",
+      "text": "laukums",
+      "meaning": "square / area",
+      "rank": 956
+    },
+    {
+      "slug": "w957-viesis",
+      "type": "word",
+      "text": "viesis",
+      "meaning": "guest",
+      "rank": 957
+    },
+    {
+      "slug": "w958-paslaik",
+      "type": "word",
+      "text": "pašlaik",
+      "meaning": "currently / right now",
+      "rank": 958
+    },
+    {
+      "slug": "w959-aizbraukt",
+      "type": "word",
+      "text": "aizbraukt",
+      "meaning": "leave / depart (by vehicle)",
+      "rank": 959
+    },
+    {
+      "slug": "w960-dzinejs",
+      "type": "word",
+      "text": "dzinējs",
+      "meaning": "engine / motor",
+      "rank": 960
+    },
+    {
+      "slug": "w961-tirgus",
+      "type": "word",
+      "text": "tirgus",
+      "meaning": "market",
+      "rank": 961
+    },
+    {
+      "slug": "w962-pietrukt",
+      "type": "word",
+      "text": "pietrūkt",
+      "meaning": "run short / be lacking",
+      "rank": 962
+    },
+    {
+      "slug": "w963-gajiens",
+      "type": "word",
+      "text": "gājiens",
+      "meaning": "move (in a game) / march",
+      "rank": 963
+    },
+    {
+      "slug": "w964-bikses",
+      "type": "word",
+      "text": "bikses",
+      "meaning": "trousers / pants",
+      "rank": 964
+    },
+    {
+      "slug": "w965-sturis",
+      "type": "word",
+      "text": "stūris",
+      "meaning": "corner",
+      "rank": 965
+    },
+    {
+      "slug": "w966-saistit",
+      "type": "word",
+      "text": "saistīt",
+      "meaning": "connect / link",
+      "rank": 966
+    },
+    {
+      "slug": "w967-uzbrukt",
+      "type": "word",
+      "text": "uzbrukt",
+      "meaning": "attack",
+      "rank": 967
+    },
+    {
+      "slug": "w968-stacija",
+      "type": "word",
+      "text": "stacija",
+      "meaning": "station",
+      "rank": 968
+    },
+    {
+      "slug": "w969-ledus",
+      "type": "word",
+      "text": "ledus",
+      "meaning": "ice",
+      "rank": 969
+    },
+    {
+      "slug": "w970-liecinieks",
+      "type": "word",
+      "text": "liecinieks",
+      "meaning": "witness",
+      "rank": 970
+    },
+    {
+      "slug": "w971-tauta",
+      "type": "word",
+      "text": "tauta",
+      "meaning": "nation / people",
+      "rank": 971
+    },
+    {
+      "slug": "w972-lode",
+      "type": "word",
+      "text": "lode",
+      "meaning": "bullet",
+      "rank": 972
+    },
+    {
+      "slug": "w973-smags",
+      "type": "word",
+      "text": "smags",
+      "meaning": "heavy / hard",
+      "rank": 973
+    },
+    {
+      "slug": "w974-labvakar",
+      "type": "word",
+      "text": "labvakar",
+      "meaning": "good evening",
+      "rank": 974
+    },
+    {
+      "slug": "w975-galigi",
+      "type": "word",
+      "text": "galīgi",
+      "meaning": "completely / totally",
+      "rank": 975
+    },
+    {
+      "slug": "w976-rasties",
+      "type": "word",
+      "text": "rasties",
+      "meaning": "arise / appear",
+      "rank": 976
+    },
+    {
+      "slug": "w977-dati",
+      "type": "word",
+      "text": "dati",
+      "meaning": "data",
+      "rank": 977
+    },
+    {
+      "slug": "w978-isteniba",
+      "type": "word",
+      "text": "īstenība",
+      "meaning": "reality",
+      "rank": 978
+    },
+    {
+      "slug": "w979-kartigi",
+      "type": "word",
+      "text": "kārtīgi",
+      "meaning": "properly / thoroughly",
+      "rank": 979
+    },
+    {
+      "slug": "w980-sagaidit",
+      "type": "word",
+      "text": "sagaidīt",
+      "meaning": "wait for / greet (on arrival)",
+      "rank": 980
+    },
+    {
+      "slug": "w981-ieraudzit",
+      "type": "word",
+      "text": "ieraudzīt",
+      "meaning": "catch sight of / spot",
+      "rank": 981
+    },
+    {
+      "slug": "w982-savakt",
+      "type": "word",
+      "text": "savākt",
+      "meaning": "collect / gather up",
+      "rank": 982
+    },
+    {
+      "slug": "w983-darbiba",
+      "type": "word",
+      "text": "darbība",
+      "meaning": "action / activity",
+      "rank": 983
+    },
+    {
+      "slug": "w984-krapsana",
+      "type": "word",
+      "text": "krāpšana",
+      "meaning": "cheating / fraud",
+      "rank": 984
+    },
+    {
+      "slug": "w985-darisana",
+      "type": "word",
+      "text": "darīšana",
+      "meaning": "business/affair",
+      "rank": 985
+    },
+    {
+      "slug": "w986-parasts",
+      "type": "word",
+      "text": "parasts",
+      "meaning": "ordinary/usual",
+      "rank": 986
+    },
+    {
+      "slug": "w987-sture",
+      "type": "word",
+      "text": "stūre",
+      "meaning": "steering wheel",
+      "rank": 987
+    },
+    {
+      "slug": "w988-allaz",
+      "type": "word",
+      "text": "allaž",
+      "meaning": "always/ever",
+      "rank": 988
+    },
+    {
+      "slug": "w989-mosties",
+      "type": "word",
+      "text": "mosties",
+      "meaning": "wake up",
+      "rank": 989
+    },
+    {
+      "slug": "w990-melot",
+      "type": "word",
+      "text": "melot",
+      "meaning": "lie/tell lies",
+      "rank": 990
+    },
+    {
+      "slug": "w991-tavejais",
+      "type": "word",
+      "text": "tavējais",
+      "meaning": "yours",
+      "rank": 991
+    },
+    {
+      "slug": "w992-augsa",
+      "type": "word",
+      "text": "augša",
+      "meaning": "top/upstairs",
+      "rank": 992
+    },
+    {
+      "slug": "w993-energija",
+      "type": "word",
+      "text": "enerģija",
+      "meaning": "energy",
+      "rank": 993
+    },
+    {
+      "slug": "w994-fotografija",
+      "type": "word",
+      "text": "fotogrāfija",
+      "meaning": "photograph",
+      "rank": 994
+    },
+    {
+      "slug": "w995-noziedznieks",
+      "type": "word",
+      "text": "noziedznieks",
+      "meaning": "criminal",
+      "rank": 995
+    },
+    {
+      "slug": "w996-pagalam",
+      "type": "word",
+      "text": "pagalam",
+      "meaning": "done for/finished",
+      "rank": 996
+    },
+    {
+      "slug": "w997-divreiz",
+      "type": "word",
+      "text": "divreiz",
+      "meaning": "twice",
+      "rank": 997
+    },
+    {
+      "slug": "w998-loceklis",
+      "type": "word",
+      "text": "loceklis",
+      "meaning": "member/limb",
+      "rank": 998
+    },
+    {
+      "slug": "w999-ieprieksejs",
+      "type": "word",
+      "text": "iepriekšējs",
+      "meaning": "previous",
+      "rank": 999
+    },
+    {
+      "slug": "w1000-medzt",
+      "type": "word",
+      "text": "mēdzt",
+      "meaning": "tend to/used to",
+      "rank": 1000
+    },
+    {
+      "slug": "p0001",
+      "type": "phrase",
+      "text": "Vienu kafiju, lūdzu.",
+      "meaning": "One coffee, please.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0002",
+      "type": "phrase",
+      "text": "Vienu tēju, lūdzu.",
+      "meaning": "One tea, please.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0003",
+      "type": "phrase",
+      "text": "Ūdeni, lūdzu.",
+      "meaning": "Water, please.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0004",
+      "type": "phrase",
+      "text": "Es gribētu kafiju.",
+      "meaning": "I'd like a coffee.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0005",
+      "type": "phrase",
+      "text": "Es gribētu kaut ko ēst.",
+      "meaning": "I'd like something to eat.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0006",
+      "type": "phrase",
+      "text": "Vai jums ir tēja?",
+      "meaning": "Do you have tea?",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0007",
+      "type": "phrase",
+      "text": "Vai es varu dabūt kafiju?",
+      "meaning": "Can I have a coffee?",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0008",
+      "type": "phrase",
+      "text": "Karti, lūdzu.",
+      "meaning": "The menu, please.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0009",
+      "type": "phrase",
+      "text": "Vai es varu redzēt karti?",
+      "meaning": "Can I see the menu?",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0010",
+      "type": "phrase",
+      "text": "Cik tā ir cena?",
+      "meaning": "What's the price?",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0011",
+      "type": "phrase",
+      "text": "Man garšo.",
+      "meaning": "I like it (it tastes good to me).",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0029",
+      "type": "phrase",
+      "text": "Es nesaprotu.",
+      "meaning": "I don't understand.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0031",
+      "type": "phrase",
+      "text": "Atvainojiet, es nesaprotu.",
+      "meaning": "Sorry, I don't understand.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0032",
+      "type": "phrase",
+      "text": "Vai varat vēlreiz pateikt?",
+      "meaning": "Can you say that again?",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0033",
+      "type": "phrase",
+      "text": "Vēlreiz, lūdzu.",
+      "meaning": "Again, please.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0035",
+      "type": "phrase",
+      "text": "Lūdzu, runājiet lēni.",
+      "meaning": "Please speak slowly.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0037",
+      "type": "phrase",
+      "text": "Es runāju tikai mazliet.",
+      "meaning": "I only speak a little.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0039",
+      "type": "phrase",
+      "text": "Es vēl mācos.",
+      "meaning": "I'm still learning.",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0040",
+      "type": "phrase",
+      "text": "Ko tas nozīmē?",
+      "meaning": "What does that mean?",
+      "tier": "T1"
+    },
+    {
+      "slug": "p0042",
+      "type": "phrase",
+      "text": "Es nezinu.",
+      "meaning": "I don't know.",
+      "tier": "T1"
+    }
+  ]
+}

@@ -53,7 +53,13 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
                   {stage === 'rec' ? 'Listening… tap to stop' : 'Tap to record'}
                 </Text>
               </View>
-            ) : null}
+            ) : (
+              <View style={styles.mic}>
+                <Text style={[styles.recHint, { color: T.faint }]}>
+                  Recording is off — turn it on in Settings to hear yourself.
+                </Text>
+              </View>
+            )}
           </>
         ) : (
           <>
@@ -64,12 +70,15 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
 
             <View style={styles.compare}>
               <CompareRow label="Native" icon="speaker" envelope={item.audio?.envelope} onPress={() => onPlayCompare?.('native', speed)} />
-              <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
+              {/* No recording can exist without consent — never offer a "You" playback that is silent. */}
+              {recConsent ? <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} /> : null}
             </View>
 
-            <View style={{ marginTop: 18 }}>
-              <PlayBackToBack onPress={() => onPlayCompare?.('native', speed)} />
-            </View>
+            {recConsent ? (
+              <View style={{ marginTop: 18 }}>
+                <PlayBackToBack onPress={() => onPlayCompare?.('native', speed)} />
+              </View>
+            ) : null}
             <View style={{ marginTop: 12 }}>
               <SpeedChip value={speed} onChange={changeSpeed} />
             </View>

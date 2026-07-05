@@ -16,6 +16,7 @@ import type {
   ReviewStateRow,
 } from './types';
 import {
+  buildComponentBreakdown,
   cardResultToRating,
   itemTypeToDbType,
   lemmaRowToReviewItem,
@@ -643,6 +644,13 @@ export class SupabaseSrsService implements SrsService {
     const stateByKey = new Map<string, ReviewStateRow>();
     for (const s of orderedStates) stateByKey.set(`${s.item_type}:${s.item_id}`, s);
 
+    // Phrase items + their component rows, collected during the loop; the per-word intro
+    // breakdown is built after it (one batched lemmas query for whatever lemmaMap lacks).
+    const phraseComponents: Array<{
+      item: ReviewItem;
+      comps: Array<{ lemma_id: string; position: number }>;
+    }> = [];
+
     for (const s of orderedStates) {
       if (s.item_type === 'lemma') {
         const row = lemmaMap.get(s.item_id);
@@ -675,10 +683,16 @@ export class SupabaseSrsService implements SrsService {
         const item = phraseRowToReviewItem(row, stateByKey.get(`phrase:${row.id}`));
         const { data: components } = await this.client
           .from('phrase_components')
-          .select('lemma_id')
+          .select('lemma_id,position')
           .eq('phrase_id', row.id);
         if (components) {
-          item.componentLemmaIds = (components as { lemma_id: string }[]).map((c) => c.lemma_id);
+          const comps = components as { lemma_id: string; position?: number }[];
+          item.componentLemmaIds = comps.map((c) => c.lemma_id);
+          // Collected for the post-loop breakdown build (needs lemma text/gloss — batched below).
+          phraseComponents.push({
+            item,
+            comps: comps.map((c, i) => ({ lemma_id: c.lemma_id, position: c.position ?? i })),
+          });
         }
         // Meaning-quiz distractors (graceful fallback on error).
         try {
@@ -703,6 +717,29 @@ export class SupabaseSrsService implements SrsService {
         const row = pairMap.get(s.item_id);
         if (!row) continue;
         items.push(pairRowToReviewItem(row, stateByKey.get(`pair:${row.id}`)));
+      }
+    }
+
+    // Build the per-word intro breakdown for phrases: resolve component lemma text/gloss
+    // (one query for whatever the due/candidate lemma maps don't already hold) and align
+    // tokens by position via buildComponentBreakdown (pure, tested).
+    if (phraseComponents.length > 0) {
+      const missing = new Set<string>();
+      for (const { comps } of phraseComponents) {
+        for (const c of comps) if (!lemmaMap.has(c.lemma_id)) missing.add(c.lemma_id);
+      }
+      if (missing.size > 0) {
+        const { data } = await this.client.from('lemmas').select('*').in('id', [...missing]);
+        for (const r of (data ?? []) as LemmaRow[]) lemmaMap.set(r.id, r);
+      }
+      for (const { item, comps } of phraseComponents) {
+        item.componentBreakdown = buildComponentBreakdown(
+          item.target,
+          comps.flatMap((c) => {
+            const l = lemmaMap.get(c.lemma_id);
+            return l ? [{ position: c.position, lemma: l.lemma, gloss: l.gloss_en }] : [];
+          }),
+        );
       }
     }
 

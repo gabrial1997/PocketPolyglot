@@ -2,9 +2,11 @@
 // Each run of consecutive new words is presented in groups of `groupSize`:
 // intros first, then an MC (recognition) retest of each, then a speak (production)
 // retest of each — the full teach → MC → speak arc within one session.
-// Fully-known new phrases get the same arc as a single-item group. Locked-phrase
-// teasers (a new phrase with an unknown component) are emitted in place and are
-// transparent to word grouping — the unlock requeue path gives them their arc later.
+//
+// New PHRASES are NOT expanded here: every new phrase first renders the one-time
+// 'phrase/unlock' reveal (decideKind), and the controller's unlock advance inserts the
+// phrase's own hear → MC → speak arc (requeueArcNext). They pass through in place and are
+// transparent to word grouping — a teaser-before-word unit must not split a word run.
 // Picture words pass through single: word/pic-review already runs a full loop.
 // Pure — no clock, no services.
 import type { ReviewItem } from '../types/reviewItem';
@@ -13,39 +15,22 @@ function isGroupableNewWord(item: ReviewItem): boolean {
   return item.type === 'word' && item.stage === 'new' && !item.media?.imageUrl;
 }
 
-function isFullyKnownNewPhrase(item: ReviewItem, known: ReadonlySet<string>): boolean {
-  return (
-    item.type === 'phrase' &&
-    item.stage === 'new' &&
-    (item.componentLemmaIds ?? []).every((id) => known.has(id))
-  );
+function isNewPhrase(item: ReviewItem): boolean {
+  return item.type === 'phrase' && item.stage === 'new';
 }
 
-function isLockedTeaser(item: ReviewItem, known: ReadonlySet<string>): boolean {
-  return item.type === 'phrase' && item.stage === 'new' && !isFullyKnownNewPhrase(item, known);
-}
-
-export function expandLearningSteps(
-  batch: ReviewItem[],
-  groupSize: number,
-  knownLemmaIds: ReadonlySet<string> = new Set<string>(),
-): ReviewItem[] {
+export function expandLearningSteps(batch: ReviewItem[], groupSize: number): ReviewItem[] {
   const out: ReviewItem[] = [];
   let i = 0;
   while (i < batch.length) {
     const item = batch[i]!;
-    if (isFullyKnownNewPhrase(item, knownLemmaIds)) {
-      out.push(item, { ...item, retest: 'mc' }, { ...item, retest: 'speak' });
-      i++;
-      continue;
-    }
     if (!isGroupableNewWord(item)) {
       out.push(item);
       i++;
       continue;
     }
-    // Gather up to groupSize new words; locked teasers between them are emitted
-    // in place (transparent) so a phrase+word unit doesn't split the word run.
+    // Gather up to groupSize new words; new phrases between them (locked teasers or
+    // batch-admitted unlocks) are emitted in place (transparent) so they don't split the run.
     const group: ReviewItem[] = [];
     while (i < batch.length && group.length < groupSize) {
       const next = batch[i]!;
@@ -54,7 +39,7 @@ export function expandLearningSteps(
         i++;
         continue;
       }
-      if (isLockedTeaser(next, knownLemmaIds)) {
+      if (isNewPhrase(next)) {
         out.push(next);
         i++;
         continue;

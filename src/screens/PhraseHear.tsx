@@ -69,6 +69,21 @@ export function PhraseHear({ item, onPlay, onStop, onPreload, onComplete, speed:
           </View>
         ) : null}
 
+        {/* word-by-word breakdown — a phrase built from known LEMMAS can surface unrecognizable
+            FORMS ("nav" ← būt); teach the mapping right here, at the moment it matters. */}
+        {item.componentBreakdown?.length ? (
+          <View style={styles.breakdown}>
+            {item.componentBreakdown.map((c, i) => (
+              <View key={`${c.surface}-${i}`} style={styles.breakdownRow}>
+                <Text style={[styles.breakdownSurface, { color: T.ink }]}>{c.surface}</Text>
+                <Text style={[styles.breakdownGloss, { color: T.faint }]} numberOfLines={1}>
+                  {c.surface === c.lemma ? c.gloss : `form of ${c.lemma} (${c.gloss})`}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         {/* audio hero */}
         <View style={styles.audio}>
           <View style={styles.wave}>
@@ -104,6 +119,10 @@ export function PhraseHear({ item, onPlay, onStop, onPreload, onComplete, speed:
 const styles = StyleSheet.create({
   body: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 8 },
   hint: { fontSize: 13, marginTop: 12 },
+  breakdown: { marginTop: 16, rowGap: 5, alignItems: 'center' },
+  breakdownRow: { flexDirection: 'row', alignItems: 'baseline', columnGap: 8 },
+  breakdownSurface: { fontSize: 14.5, fontWeight: '600' },
+  breakdownGloss: { fontSize: 13 },
   audio: { width: '100%', marginTop: 32, alignItems: 'center', rowGap: 20 },
   wave: { width: '78%' },
   meaning: { height: 70, marginTop: 24, alignItems: 'center', justifyContent: 'flex-start' },

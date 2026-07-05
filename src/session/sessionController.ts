@@ -41,10 +41,9 @@ export function useSession(): SessionState {
   const [queue, setQueue] = useState<ReviewItem[]>([]);
   const [pos, setPos] = useState(0);
   const [loading, setLoading] = useState(true);
-  // Phrase ids seen LOCKED this session. A later available render of the same phrase becomes the
-  // one-time 'phrase/unlock' reveal. A ref (not state) — recording it must not trigger a re-render.
-  const seenLocked = useRef<Set<string>>(new Set());
   // Phrase ids whose one-time unlock reveal has already been shown (so it never repeats).
+  // Every NEW phrase opens with the reveal (building blocks — arriving IS an unlock); a ref
+  // (not state) — recording it must not trigger a re-render.
   const revealed = useRef<Set<string>>(new Set());
   // Optimistic in-session known overlay (lemma ids learned THIS session). Lets "learn a word"
   // change a later phrase's lock state without a network round-trip.
@@ -58,9 +57,8 @@ export function useSession(): SessionState {
     setLoading(true);
     await known.refresh();
     const items = await srs.getDueBatch();
-    setQueue(expandLearningSteps(items, LEARNING_STEP_GROUP_SIZE, known.all()));
+    setQueue(expandLearningSteps(items, LEARNING_STEP_GROUP_SIZE));
     setPos(0);
-    seenLocked.current = new Set();
     revealed.current = new Set();
     learned.current = new Set();
     setLoading(false);
@@ -88,15 +86,14 @@ export function useSession(): SessionState {
 
   const kind: CardKind | null = useMemo(() => {
     if (!item) return null;
-    // Phrase gating: decideKind consults knownUnion + seenLocked + revealed to pick
-    // locked/unlock/hear; everything else falls through to renderFor. Pure — no ref mutation here.
-    return decideKind(item, knownUnion, seenLocked.current, revealed.current).kind;
+    // Phrase gating: decideKind consults knownUnion + revealed to pick locked/unlock/hear;
+    // everything else falls through to renderFor. Pure — no ref mutation here.
+    return decideKind(item, knownUnion, revealed.current).kind;
   }, [item, knownUnion, pos]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Record gate renders AFTER render (the useMemo must stay pure). A later available render of a
-  // seenLocked phrase resolves to 'phrase/unlock'; once that unlock is shown, `revealed` retires it.
+  // Record gate renders AFTER render (the useMemo must stay pure). Once a phrase's unlock
+  // reveal is shown, `revealed` retires it — the next encounter renders the review kind.
   useEffect(() => {
-    if (item && kind === 'phrase/locked') seenLocked.current.add(item.id);
     if (item && kind === 'phrase/unlock') revealed.current.add(item.id);
   }, [item, kind]);
 

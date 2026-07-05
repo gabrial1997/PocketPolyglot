@@ -81,6 +81,11 @@ export interface ReviewItem {
   // phrase items only — the lemma ids that make up the phrase (for the i+1 lock gate).
   componentLemmaIds?: string[];
 
+  // phrase items only — per-word breakdown for the intro card: the surface token as it appears
+  // in the phrase, the dictionary lemma it comes from, and the lemma's gloss. Lets the learner
+  // recognize "nav" as a form of "būt" the moment a phrase built from known lemmas arrives.
+  componentBreakdown?: Array<{ surface: string; lemma: string; gloss: string }>;
+
   // --- visual-sync installment 2 (optional, presentational) ---
   newForm?: string;
   newLemma?: string;

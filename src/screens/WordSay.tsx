@@ -101,7 +101,11 @@ export function WordSay(props: Props): React.JSX.Element {
                 <MicOrb rec={m.stage === 'rec'} onPress={() => { if (m.stage === 'rec') { onRecordStop(); m.finishRec(); } else { startRec(); } }} />
                 <Caption>{m.stage === 'rec' ? 'Listening… tap to stop' : 'Now say it'}</Caption>
               </View>
-            ) : null}
+            ) : (
+              <View style={styles.mic}>
+                <Caption>Recording is off — turn it on in Settings to hear yourself.</Caption>
+              </View>
+            )}
           </CardBody>
           <CardFooter>
             {recConsent ? (
@@ -120,9 +124,10 @@ export function WordSay(props: Props): React.JSX.Element {
             <GlossLine gloss={item.gloss} pron={item.pron} />
             <View style={styles.compare}>
               <CompareRow label="Native" icon="speaker" envelope={item.audio?.envelope} onPress={() => onPlayCompare?.('native')} />
-              <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
+              {/* No recording can exist without consent — never offer a "You" playback that is silent. */}
+              {recConsent ? <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} /> : null}
             </View>
-            <PlayBackToBack onPress={() => onPlayCompare?.('native')} />
+            {recConsent ? <PlayBackToBack onPress={() => onPlayCompare?.('native')} /> : null}
             <ResultNote>{loopResultNote(m.missed, item.reviewPreview)}</ResultNote>
           </CardBody>
           <CardFooter>

@@ -46,25 +46,15 @@ describe('expandLearningSteps', () => {
     expect(out[0]!.retest).toBeUndefined();
   });
 
-  it('expands a fully-known new phrase into its own hear→mc→speak arc', () => {
-    const known = new Set(['w1', 'w2']);
-    const out = expandLearningSteps([phrase('p', ['w1', 'w2'])], 3, known);
-    expect(out.map((i) => `${i.id}:${i.retest ?? 'intro'}`)).toEqual(['p:intro', 'p:mc', 'p:speak']);
+  it('passes every new phrase through single — the unlock reveal + requeueArcNext own its arc', () => {
+    // Both a fully-known phrase and a locked teaser: no expansion here, no retest copies.
+    const out = expandLearningSteps([phrase('p', ['w1', 'w2']), phrase('q', ['w9'])], 3);
+    expect(out.map((i) => `${i.id}:${i.retest ?? 'intro'}`)).toEqual(['p:intro', 'q:intro']);
   });
 
-  it('passes a locked phrase (unknown component) through single', () => {
-    const out = expandLearningSteps([phrase('p', ['w1'])], 3, new Set());
-    expect(out).toHaveLength(1);
-    expect(out[0]!.retest).toBeUndefined();
-  });
-
-  it('emits a locked teaser in place without splitting the word group around it', () => {
-    // teaser p (unknown comp w2) sits between w1 and w2 — the word run stays one group
-    const out = expandLearningSteps(
-      [word('w1'), phrase('p', ['w2']), word('w2'), word('w3')],
-      3,
-      new Set(),
-    );
+  it('emits a new phrase in place without splitting the word group around it', () => {
+    // phrase p sits between w1 and w2 — the word run stays one group
+    const out = expandLearningSteps([word('w1'), phrase('p', ['w2']), word('w2'), word('w3')], 3);
     expect(out.map((i) => `${i.id}:${i.retest ?? 'intro'}`)).toEqual([
       'p:intro',
       'w1:intro', 'w2:intro', 'w3:intro',

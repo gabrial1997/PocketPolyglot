@@ -490,3 +490,46 @@ describe('projectReviewLabels', () => {
     expect(pass).toBe(nextReviewLabel(schedule(prior, Rating.Good, now).due, now));
   });
 });
+
+// ---------------------------------------------------------------------------
+// buildComponentBreakdown — phrase intro per-word breakdown (beta fix 2026-07-05)
+// ---------------------------------------------------------------------------
+import { buildComponentBreakdown } from './mappers';
+
+describe('buildComponentBreakdown', () => {
+  it('aligns surface tokens to components by position, stripping punctuation', () => {
+    const out = buildComponentBreakdown('Nav par ko!', [
+      { position: 0, lemma: 'būt', gloss: 'to be' },
+      { position: 1, lemma: 'par', gloss: 'about/for' },
+      { position: 2, lemma: 'kas', gloss: 'what/who' },
+    ]);
+    expect(out).toEqual([
+      { surface: 'nav', lemma: 'būt', gloss: 'to be' },
+      { surface: 'par', lemma: 'par', gloss: 'about/for' },
+      { surface: 'ko', lemma: 'kas', gloss: 'what/who' },
+    ]);
+  });
+
+  it('sorts by position regardless of input order', () => {
+    const out = buildComponentBreakdown('Kā tev iet?', [
+      { position: 2, lemma: 'iet', gloss: 'to go' },
+      { position: 0, lemma: 'kā', gloss: 'how/as' },
+      { position: 1, lemma: 'tu', gloss: 'you (sg.)' },
+    ]);
+    expect(out.map((c) => c.surface)).toEqual(['kā', 'tev', 'iet']);
+    expect(out.map((c) => c.lemma)).toEqual(['kā', 'tu', 'iet']);
+  });
+
+  it('drops components whose position has no matching token (misaligned data)', () => {
+    const out = buildComponentBreakdown('Paldies!', [
+      { position: 0, lemma: 'paldies', gloss: 'thank you' },
+      { position: 1, lemma: 'par', gloss: 'about/for' }, // no 2nd token
+    ]);
+    expect(out).toEqual([{ surface: 'paldies', lemma: 'paldies', gloss: 'thank you' }]);
+  });
+
+  it('returns [] for empty components or blank target', () => {
+    expect(buildComponentBreakdown('Nav par ko!', [])).toEqual([]);
+    expect(buildComponentBreakdown('', [{ position: 0, lemma: 'x', gloss: 'y' }])).toEqual([]);
+  });
+});

@@ -3,20 +3,24 @@ import type { CardKind } from '../types/cardKind';
 import { renderFor } from './renderFor';
 import { lockState } from './phraseGate';
 
-// Decides the card kind for an item given the known-lemma set and the set of phrase ids already
-// seen LOCKED this session. Returns the kind plus whether this render is a fresh unlock (so the
-// caller can record it). Phrases consult the i+1 gate; everything else falls through to renderFor.
+// Decides the card kind for an item given the known-lemma set and the set of phrase ids whose
+// unlock reveal has already been shown this session. Phrases consult the i+1 gate; everything
+// else falls through to renderFor.
+//
+// Building blocks (beta decision 2026-07-05): EVERY new phrase opens with the one-time
+// 'phrase/unlock' reveal (chime) — a phrase arriving in the loop IS an unlock, whether its final
+// word was learned seconds ago (the locked-teaser arc) or on an earlier day (admitted fully
+// known). The reveal shows once per session (`revealed`); the arc copies the controller inserts
+// after it carry a `retest` marker and are never treated as a first arrival.
 export function decideKind(
   item: ReviewItem,
   known: ReadonlySet<string>,
-  seenLocked: ReadonlySet<string>,
   revealed: ReadonlySet<string>,
 ): { kind: CardKind; nowUnlocked: boolean } {
   if (item.type === 'phrase' && item.componentLemmaIds) {
     const { locked } = lockState(item.componentLemmaIds, known);
     if (locked) return { kind: 'phrase/locked', nowUnlocked: false };
-    // One-time reveal: only if it was seen locked AND we have not shown the reveal yet.
-    if (seenLocked.has(item.id) && !revealed.has(item.id)) {
+    if (item.stage === 'new' && !item.retest && !revealed.has(item.id)) {
       return { kind: 'phrase/unlock', nowUnlocked: true };
     }
   }

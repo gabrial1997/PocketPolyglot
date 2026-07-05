@@ -99,3 +99,40 @@ describe('PhraseHear', () => {
     expect(u.getByText(u.props.item?.target ?? 'labrīt')).toBeTruthy();
   });
 });
+
+// ── component breakdown (beta fix 2026-07-05) ────────────────────────────────
+// A phrase built from known LEMMAS can surface unrecognizable FORMS ("nav" ← būt). The intro
+// card teaches the mapping word-by-word at the moment it matters.
+describe('PhraseHear component breakdown', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => {
+    act(() => jest.runOnlyPendingTimers());
+    jest.useRealTimers();
+  });
+
+  it('renders a per-word line; changed forms name their source word', () => {
+    const u = renderCard({
+      target: 'Nav par ko!',
+      componentBreakdown: [
+        { surface: 'nav', lemma: 'būt', gloss: 'to be' },
+        { surface: 'par', lemma: 'par', gloss: 'about/for' },
+        { surface: 'ko', lemma: 'kas', gloss: 'what/who' },
+      ],
+    });
+    // surface ≠ lemma → "form of" phrasing, naming the taught word
+    expect(u.getByText(/form of\s+būt/)).toBeTruthy();
+    expect(u.getByText(/form of\s+kas/)).toBeTruthy();
+    // surface == lemma → just the gloss, no "form of"
+    expect(u.getByText('about/for')).toBeTruthy();
+    // all three surfaces are listed (the phrase line itself also shows the words, so 'par'
+    // appears twice: once in the PhraseLine, once as a breakdown row)
+    expect(u.getAllByText('nav').length).toBeGreaterThanOrEqual(1);
+    expect(u.getAllByText('par').length).toBeGreaterThanOrEqual(2);
+    expect(u.getAllByText('ko').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders no breakdown block when the item carries none', () => {
+    const u = renderCard();
+    expect(u.queryByText(/form of/)).toBeNull();
+  });
+});
