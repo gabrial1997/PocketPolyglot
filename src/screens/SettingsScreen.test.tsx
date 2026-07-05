@@ -67,3 +67,30 @@ it('shows the app version in the footer', () => {
   const { u } = setup({ appVersion: '9.9.9' });
   expect(u.getByText(/PocketPolyglot · v9\.9\.9/)).toBeTruthy();
 });
+
+const devProps = {
+  simulatedDateLabel: 'Tue Jul 7 (+2 days)',
+  offsetDays: 2,
+  onSkipDay: jest.fn(),
+  onResetProgress: jest.fn(),
+};
+
+it('renders no Developer group without dev props', () => {
+  const { u } = setup();
+  expect(u.queryByText('Developer')).toBeNull();
+});
+
+it('renders the Developer group and fires onSkipDay', () => {
+  const { u } = setup({ dev: devProps });
+  expect(u.getByText('Tue Jul 7 (+2 days)')).toBeTruthy();
+  fireEvent.press(u.getByText('Skip to next day'));
+  expect(devProps.onSkipDay).toHaveBeenCalled();
+});
+
+it('Reset progress requires a second confirming tap', () => {
+  const { u } = setup({ dev: devProps });
+  fireEvent.press(u.getByText('Reset progress'));
+  expect(devProps.onResetProgress).not.toHaveBeenCalled(); // armed, not fired
+  fireEvent.press(u.getByText('Tap again to erase all progress'));
+  expect(devProps.onResetProgress).toHaveBeenCalledTimes(1);
+});

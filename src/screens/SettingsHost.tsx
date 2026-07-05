@@ -6,6 +6,9 @@ import type { User } from '@supabase/supabase-js';
 import { useAuth } from '../auth/AuthProvider';
 import { useThemeMode } from '../theme/ThemeProvider';
 import { useServices } from '../services/ServiceProvider';
+import { supabase } from '../services';
+import { devNow, getOffsetDays, loadClockOffset, skipDay } from '../services/devClock';
+import { resetProgress } from '../services/devTools';
 import { SettingsScreen } from './SettingsScreen';
 
 /** First-name from the user (mirrors navigation/index.tsx displayName; local copy avoids a cycle). */
@@ -40,6 +43,30 @@ export function SettingsHost(): React.JSX.Element {
 
   const appVersion = Constants.expoConfig?.version ?? '0.1.2';
 
+  const [devOffset, setDevOffset] = useState(0);
+  useEffect(() => {
+    if (!__DEV__) return;
+    void loadClockOffset().then(setDevOffset);
+  }, []);
+
+  const dev = __DEV__
+    ? {
+        simulatedDateLabel:
+          devOffset === 0
+            ? 'Today (real time)'
+            : `${devNow().toDateString()} (+${devOffset} day${devOffset === 1 ? '' : 's'})`,
+        offsetDays: devOffset,
+        onSkipDay: () => {
+          void skipDay().then(setDevOffset);
+        },
+        onResetProgress: () => {
+          void resetProgress(supabase)
+            .then(() => setDevOffset(getOffsetDays()))
+            .catch(() => {});
+        },
+      }
+    : undefined;
+
   return (
     <SettingsScreen
       name={firstName(user)}
@@ -58,6 +85,7 @@ export function SettingsHost(): React.JSX.Element {
       onSignOut={() => {
         void signOut();
       }}
+      dev={dev}
     />
   );
 }

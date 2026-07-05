@@ -3,7 +3,7 @@
 // and actions arrive as props from SettingsHost. Ported from the design mock `screens-settings.jsx`
 // with the locked scope decisions: Subscription omitted, Profile display-only, GDPR consent in a
 // dedicated Privacy group, Notifications local-only.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Modal, StyleSheet } from 'react-native';
 import { Screen } from '../components';
 import { useTheme } from '../theme/ThemeProvider';
@@ -29,6 +29,13 @@ export interface SettingsScreenProps {
   onToggleConsent: (next: boolean) => void;
   onDeleteRecordings: () => void;
   onSignOut: () => void;
+  /** Dev-only controls (host passes this ONLY under __DEV__; absent in production). */
+  dev?: {
+    simulatedDateLabel: string;
+    offsetDays: number;
+    onSkipDay: () => void;
+    onResetProgress: () => void;
+  };
 }
 
 type SettingsView = 'menu' | 'profile' | 'appearance';
@@ -140,6 +147,9 @@ function SettingsMenu(
           <SettRow icon="help" title="Help & feedback" chevron={false} />
           <SettRow icon="info" title="About" value={`v${props.appVersion}`} chevron={false} isLast />
         </SettCard>
+
+        {/* Developer (dev builds only — the host omits `dev` in production) */}
+        {props.dev ? <DevSection dev={props.dev} /> : null}
 
         {/* Log out */}
         <View style={styles.logoutWrap}>
@@ -311,6 +321,44 @@ function LogoutSheet({
         </Pressable>
       </View>
     </Modal>
+  );
+}
+
+// --- Developer (dev builds only) --------------------------------------------
+
+function DevSection({ dev }: { dev: NonNullable<SettingsScreenProps['dev']> }): React.JSX.Element {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 4000); // disarm if not confirmed
+    return () => clearTimeout(t);
+  }, [armed]);
+  return (
+    <>
+      <SettGroupLabel>Developer</SettGroupLabel>
+      <SettCard>
+        <SettRow
+          title="Skip to next day"
+          value={dev.simulatedDateLabel}
+          chevron={false}
+          onPress={dev.onSkipDay}
+        />
+        <SettRow
+          title={armed ? 'Tap again to erase all progress' : 'Reset progress'}
+          danger={armed}
+          chevron={false}
+          isLast
+          onPress={() => {
+            if (armed) {
+              setArmed(false);
+              dev.onResetProgress();
+            } else {
+              setArmed(true);
+            }
+          }}
+        />
+      </SettCard>
+    </>
   );
 }
 
