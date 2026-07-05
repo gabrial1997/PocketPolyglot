@@ -230,16 +230,27 @@ it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', as
     });
   }
 
-  // expandLearningSteps inserts in-session retest copies (word/hear) after the group of 3 intros.
-  // These retests have the same item.id as the originals — submit through them so P1 can surface.
-  // The retest items share ids with the originals; requeuePhraseAfterComponents places P1 after the
-  // last retest copy (since it also matches by id), so P1 appears after all 3 retests.
+  // expandLearningSteps produces a 3-step arc: intros, MC retests, then speak retests.
+  // These retest copies (MC + speak) have the same item.id as the originals — submit through them
+  // so P1 can surface. The retest items share ids with the originals; requeuePhraseAfterComponents
+  // places P1 after the last retest copy (since it also matches by id), so P1 appears after all retests.
   // NOTE: must submit with correct:true — the correctness gate means only a correctly-answered
   // recall card adds the word to the in-session learned overlay (word/hear emits correct:!missed).
+  // First, submit the 3 MC steps
   for (const w of ['labdien', 'es', 'esmu']) {
     await settleHook(() => {
       expect(result.current.current?.item.id).toBe(w);
-      expect(result.current.current?.item.retest).toBe(true);
+      expect(result.current.current?.item.retest).toBe('mc');
+    });
+    await act(async () => {
+      await result.current.submit({ itemId: w, cardKind: 'word/hear', correct: true, spoke: false });
+    });
+  }
+  // Then submit the 3 speak steps (renderFor doesn't yet route these specially, so they appear as word cards)
+  for (const w of ['labdien', 'es', 'esmu']) {
+    await settleHook(() => {
+      expect(result.current.current?.item.id).toBe(w);
+      expect(result.current.current?.item.retest).toBe('speak');
     });
     await act(async () => {
       await result.current.submit({ itemId: w, cardKind: 'word/hear', correct: true, spoke: false });
@@ -271,8 +282,8 @@ it('interleaves new-word intros with in-session retest quizzes', async () => {
     }),
   );
   const { result } = renderSessionHook(newWords, new Set());
-  // 4 new words -> expandLearningSteps -> group of 3 intros + 3 retests, then 1 intro + 1 retest = 8.
-  await settleHook(() => expect(result.current.total).toBe(8));
+  // 4 new words -> expandLearningSteps -> group of 3 (3 intros + 3 MC + 3 speak) + 1 (1 intro + 1 MC + 1 speak) = 12.
+  await settleHook(() => expect(result.current.total).toBe(12));
 });
 
 // --- correctness gate on the in-session known overlay ---

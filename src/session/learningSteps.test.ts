@@ -1,56 +1,75 @@
 import { expandLearningSteps } from './learningSteps';
 import type { ReviewItem } from '../types/reviewItem';
 
-function word(id: string, stage: ReviewItem['stage'] = 'new'): ReviewItem {
+function word(id: string, stage: ReviewItem['stage'] = 'new', imageUrl?: string): ReviewItem {
   return {
     id, type: 'word', stage, reps: 0, target: id, gloss: id,
     receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
+    ...(imageUrl ? { media: { imageUrl } } : {}),
   };
 }
-function phrase(id: string): ReviewItem {
+function phrase(id: string, componentLemmaIds: string[] = []): ReviewItem {
   return {
     id, type: 'phrase', stage: 'new', reps: 0, target: id, gloss: id,
     receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
+    componentLemmaIds,
   };
 }
 
 describe('expandLearningSteps', () => {
-  it('groups 3 new words: 3 intros then 3 retest quizzes, same ids', () => {
+  it('expands 3 new words into intros, MC retests, then speak retests', () => {
     const out = expandLearningSteps([word('a'), word('b'), word('c')], 3);
-    expect(out.map((i) => i.id)).toEqual(['a', 'b', 'c', 'a', 'b', 'c']);
-    expect(out.slice(0, 3).every((i) => !i.retest)).toBe(true);
-    expect(out.slice(3).every((i) => i.retest === true)).toBe(true);
+    expect(out.map((i) => `${i.id}:${i.retest ?? 'intro'}`)).toEqual([
+      'a:intro', 'b:intro', 'c:intro',
+      'a:mc', 'b:mc', 'c:mc',
+      'a:speak', 'b:speak', 'c:speak',
+    ]);
   });
 
   it('handles a remainder group smaller than groupSize', () => {
-    const out = expandLearningSteps([word('a'), word('b'), word('c'), word('d'), word('e')], 3);
-    expect(out.map((i) => i.id)).toEqual(['a', 'b', 'c', 'a', 'b', 'c', 'd', 'e', 'd', 'e']);
-    // The retest copies (positions 3-5 and 8-9) carry retest:true.
-    expect(out[3]!.retest).toBe(true);
-    expect(out[8]!.retest).toBe(true);
-  });
-
-  it('preserves the original item fields on the retest copy', () => {
-    const w = word('a');
-    const out = expandLearningSteps([w], 3);
-    expect(out[1]).toMatchObject({ id: 'a', type: 'word', target: 'a', retest: true });
+    const out = expandLearningSteps([word('a'), word('b'), word('c'), word('d')], 3);
+    expect(out.map((i) => `${i.id}:${i.retest ?? 'intro'}`)).toEqual([
+      'a:intro', 'b:intro', 'c:intro', 'a:mc', 'b:mc', 'c:mc', 'a:speak', 'b:speak', 'c:speak',
+      'd:intro', 'd:mc', 'd:speak',
+    ]);
   });
 
   it('passes non-new words through unchanged (already quizzes)', () => {
-    const review = word('r', 'review');
-    const out = expandLearningSteps([review], 3);
-    expect(out).toEqual([review]); // no retest copy
+    const out = expandLearningSteps([word('r', 'review')], 3);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.retest).toBeUndefined();
   });
 
-  it('passes phrases through unchanged and only groups the new-word runs', () => {
-    const out = expandLearningSteps([word('a'), phrase('p'), word('b')], 3);
-    expect(out.map((i) => i.id)).toEqual(['a', 'a', 'p', 'b', 'b']);
-    expect(out[1]!.retest).toBe(true); // a's quiz
-    expect(out[2]!.type).toBe('phrase'); // phrase untouched, no quiz copy
-    expect(out[4]!.retest).toBe(true); // b's quiz
+  it('passes picture words through single — pic-review is already a full loop', () => {
+    const out = expandLearningSteps([word('img', 'new', 'https://x/img.png')], 3);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.retest).toBeUndefined();
   });
 
-  it('returns [] for an empty batch', () => {
-    expect(expandLearningSteps([], 3)).toEqual([]);
+  it('expands a fully-known new phrase into its own hear→mc→speak arc', () => {
+    const known = new Set(['w1', 'w2']);
+    const out = expandLearningSteps([phrase('p', ['w1', 'w2'])], 3, known);
+    expect(out.map((i) => `${i.id}:${i.retest ?? 'intro'}`)).toEqual(['p:intro', 'p:mc', 'p:speak']);
+  });
+
+  it('passes a locked phrase (unknown component) through single', () => {
+    const out = expandLearningSteps([phrase('p', ['w1'])], 3, new Set());
+    expect(out).toHaveLength(1);
+    expect(out[0]!.retest).toBeUndefined();
+  });
+
+  it('emits a locked teaser in place without splitting the word group around it', () => {
+    // teaser p (unknown comp w2) sits between w1 and w2 — the word run stays one group
+    const out = expandLearningSteps(
+      [word('w1'), phrase('p', ['w2']), word('w2'), word('w3')],
+      3,
+      new Set(),
+    );
+    expect(out.map((i) => `${i.id}:${i.retest ?? 'intro'}`)).toEqual([
+      'p:intro',
+      'w1:intro', 'w2:intro', 'w3:intro',
+      'w1:mc', 'w2:mc', 'w3:mc',
+      'w1:speak', 'w2:speak', 'w3:speak',
+    ]);
   });
 });

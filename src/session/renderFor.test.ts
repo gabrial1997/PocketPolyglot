@@ -258,12 +258,12 @@ describe('renderFor — learning-step retest + audio-optional recognition', () =
   };
 
   it('a retest new word (no audio) routes to word/hear, not a learn card', () => {
-    const item = { ...base, id: 'a', type: 'word' as const, stage: 'new' as const, wordClass: 'concrete' as const, retest: true };
+    const item = { ...base, id: 'a', type: 'word' as const, stage: 'new' as const, wordClass: 'concrete' as const, retest: 'mc' as const };
     expect(renderFor(item)).toBe('word/hear');
   });
 
   it('a retest word with an image routes to word/pic-review', () => {
-    const item = { ...base, id: 'a', type: 'word' as const, stage: 'new' as const, retest: true, media: { imageUrl: 'x.png' } };
+    const item = { ...base, id: 'a', type: 'word' as const, stage: 'new' as const, retest: 'mc' as const, media: { imageUrl: 'x.png' } };
     expect(renderFor(item)).toBe('word/pic-review');
   });
 

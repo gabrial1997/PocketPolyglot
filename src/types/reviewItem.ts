@@ -107,8 +107,8 @@ export interface ReviewItem {
   productiveReps: number;
   translationVisibility: 'auto' | 'hint' | 'on-demand';
 
-  // In-session learning steps: a `retest` copy of a just-introduced new word. renderFor routes
-  // retest words to the recognition quiz (word/hear) instead of the intro card. Derived/in-memory
-  // only — never persisted.
-  retest?: boolean;
+  // In-session learning steps: a copy of a just-introduced item re-presented as a quiz step.
+  // 'mc' = the recognition/meaning MC step; 'speak' = the production (say-it) step.
+  // renderFor routes by this marker. Derived/in-memory only — never persisted.
+  retest?: 'mc' | 'speak';
 }
