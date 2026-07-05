@@ -28,3 +28,4 @@ yarn-error.*
 
 # Ephemeral live-session scratch (tunnel URL + PIDs — never commit)
 LIVE_SESSION.md
+.superpowers/
