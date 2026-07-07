@@ -2,9 +2,10 @@
 // rec -> result). Cards stay pure; this is ephemeral presentation only. Keyed on `stageKey`: when it
 // changes the new stage body fades in (~200ms); within a stage, children render live (unanimated) so
 // the waveform/mic stay reactive. Reduced motion → instant swap. Pure RN Animated (mirrors the
-// AccessibilityInfo probe pattern from GlideViewport.tsx).
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Animated, AccessibilityInfo, Platform } from 'react-native';
+// useReducedMotion probe shared with GlideViewport.tsx).
+import React, { useLayoutEffect, useRef, useState } from 'react';
+import { Animated, Platform } from 'react-native';
+import { useReducedMotion } from './useReducedMotion';
 
 const DURATION = 200;
 
@@ -17,16 +18,8 @@ export function StageFade({
 }): React.JSX.Element {
   const opacity = useRef(new Animated.Value(1)).current;
   const [animating, setAnimating] = useState(false);
-  const reduceMotion = useRef(false);
+  const reduceMotion = useReducedMotion();
   const mounted = useRef(false);
-
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled?.()
-      .then((on) => {
-        reduceMotion.current = !!on;
-      })
-      .catch(() => {});
-  }, []);
 
   // useLayoutEffect (not useEffect): apply opacity 0 + animating BEFORE the new stage paints. Under a
   // plain effect the new stage rendered once at full opacity (animating still false) and only then
@@ -52,7 +45,7 @@ export function StageFade({
     // Jest fake timers — same approach as GlideViewport.
     const done = setTimeout(() => setAnimating(false), DURATION + 20);
     return () => clearTimeout(done);
-  }, [stageKey, opacity]);
+  }, [stageKey, opacity, reduceMotion]); // reduceMotion is a stable ref — listed to satisfy exhaustive-deps
 
   return (
     <Animated.View testID="stage-fade" style={{ flex: 1, opacity: animating ? opacity : 1 }}>

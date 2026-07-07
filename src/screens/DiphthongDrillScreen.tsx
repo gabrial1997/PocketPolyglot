@@ -8,10 +8,12 @@
 // the card green and unlocks "Say it back".
 //
 // 2026-06-19 VISUAL SYNC: rebuilt to the mockup. MEET = "HARD COMBINATION" + DIPHTHONG tag, big serif
-// "ie", the lede, GlideTrack, outline-less PlayOrb 66 + SpeedChip; CONTRAST = "SOUND CHECK · THE GLIDE
-// VS FLAT Ē" + minimal-pair cards with glide/flat indicators; SAY = serif word with the ie in primary
-// + GlideTrack guide + MicOrb -> green ResultNote. Staged bottom CTAs match (Hear it in a word / Try
-// again / Say it back / Next combination).
+// combo, the lede, GlideTrack, outline-less PlayOrb 66 + SpeedChip; CONTRAST = a "SOUND CHECK" eyebrow
+// derived from the pair notes + minimal-pair cards with glide/flat indicators; SAY = serif word with
+// the combo in primary + GlideTrack guide + MicOrb -> green ResultNote. Staged bottom CTAs match
+// (Hear it in a word / Try again / Say it back / Next combination). The pair/glide data is generic —
+// all contrast copy renders from item fields (glide.combo/from/to, pair aNote/bNote), never
+// hard-coded phonetics.
 //
 // Per-side contrast copy is optional/additive on ReviewPair (handoff PATCH): aKind/bKind ('glide' |
 // 'flat'), aNote/bNote (the vowel, e.g. "ie" / "ē"), aEn/bEn (the gloss). All degrade gracefully.
@@ -24,15 +26,10 @@ import { CardIcon, ResultNote, WordTag } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { hexA, fonts } from '../theme/tokens';
 import type { RecordingCardProps } from './cardProps';
-import type { ReviewPair } from '../types/reviewItem';
 
 type Side = 'a' | 'b';
 type Phase = 'meet' | 'contrast' | 'say';
 type Say = 'idle' | 'rec' | 'done';
-type PairCopy = ReviewPair & {
-  aKind?: 'glide' | 'flat'; bKind?: 'glide' | 'flat';
-  aNote?: string; bNote?: string; aEn?: string; bEn?: string;
-};
 
 function GlideMini({ color }: { color: string }): React.JSX.Element {
   return <Svg width={30} height={16} viewBox="0 0 30 16"><Path d="M4 13 Q15 2 26 13" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" /></Svg>;
@@ -42,10 +39,11 @@ function FlatMini({ color }: { color: string }): React.JSX.Element {
 }
 
 export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Element {
-  const { item, onPlay, onStop, onPreload, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onPreload, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange, recConsent = true } = props;
+  // GDPR record gate: when false, hide the record affordance on the say stage.
   const T = useTheme();
   const glide = item.glide;
-  const pair = item.pair as PairCopy | undefined;
+  const pair = item.pair;
 
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
@@ -63,8 +61,13 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
     if (playing) { onStop?.(); stop(); }
     else play(() => onPlay('glide', speed), speed);
   };
-  // Warm the stimulus (native) clip on mount so the first orb tap starts without a load stall (bug 1).
+  // Stage transitions must silence the REAL clip too, not just the local soundbar gate —
+  // otherwise audio keeps sounding across the stage change (same pairing the replay toggles use).
+  const stopAll = (): void => { onStop?.(); stop(); };
+  // Warm the clips on mount so the first orb tap starts without a load stall (bug 1). The MEET
+  // phase's first tap plays the isolated GLIDE clip, so warm it first; native follows for contrast/say.
   useEffect(() => {
+    onPreload?.('glide');
     onPreload?.('native');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -85,7 +88,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
           </View>
           <Text style={[styles.combo, { color: T.ink, fontFamily: fonts.headline }]}>{glide?.combo ?? 'ie'}</Text>
           <Text style={[styles.lede, { color: T.sub }]}>
-            Not “ee” and not a flat “e” — it <Text style={{ color: T.ink, fontWeight: '600' }}>glides</Text> from {glide?.from ?? 'i'} to {glide?.to ?? 'e'} in one move.
+            One sound, not two — it <Text style={{ color: T.ink, fontWeight: '600' }}>glides</Text> from {glide?.from ?? 'i'} to {glide?.to ?? 'e'} in one move.
           </Text>
           <View style={styles.glideWrap}>
             <GlideTrack from={glide?.from} to={glide?.to} playing={playing} color={T.primary} />
@@ -95,7 +98,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
           <Text style={[styles.tapHint, { color: T.faint }]}>Tap to hear the glide</Text>
         </View>
         <View style={styles.footer}>
-          <Pressable accessibilityRole="button" onPress={() => { setPhase('contrast'); stop(); }} style={[styles.cta, { backgroundColor: T.primary }]}>
+          <Pressable accessibilityRole="button" onPress={() => { setPhase('contrast'); stopAll(); }} style={[styles.cta, { backgroundColor: T.primary }]}>
             <Text style={[styles.ctaText, { color: T.onPrimary }]}>Hear it in a word</Text>
             <CardIcon name="chevR" size={17} color={T.onPrimary} />
           </Pressable>
@@ -131,20 +134,23 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
           </View>
           <View style={styles.sayMic}>
             {say === 'done' ? (
-              <ResultNote>Clean glide — you held the <Text style={{ fontWeight: '700', color: T.ink }}>{combo}</Text>, not a flat ē.</ResultNote>
-            ) : (
+              <ResultNote>Clean glide — you held the <Text style={{ fontWeight: '700', color: T.ink }}>{combo}</Text> all the way through.</ResultNote>
+            ) : recConsent ? (
               <>
                 <MicOrb size={72} rec={say === 'rec'} onPress={() => { if (say === 'rec') { onRecordStop(); setSay('done'); } else { onRecordStart(); setSay('rec'); } }} />
                 <Text style={[styles.micHint, { color: say === 'rec' ? T.record : T.faint, fontWeight: say === 'rec' ? '600' : '400' }]}>
                   {say === 'rec' ? 'Listening… tap to stop' : 'Now say it — let it glide'}
                 </Text>
               </>
+            ) : (
+              <Text style={[styles.micHint, { color: T.faint }]}>Recording is off — turn it on in Settings to hear yourself.</Text>
             )}
           </View>
         </View>
         <View style={styles.footer}>
-          {say === 'done' ? (
-            <Pressable accessibilityRole="button" onPress={() => onComplete({ itemId: item.id, cardKind: 'diphthong', correct: !missed, spoke: true })} style={[styles.cta, { backgroundColor: T.primary }]}>
+          {say === 'done' || !recConsent ? (
+            // spoke is honest: true only when a take was actually recorded (never without consent).
+            <Pressable accessibilityRole="button" onPress={() => onComplete({ itemId: item.id, cardKind: 'diphthong', correct: !missed, spoke: say === 'done' })} style={[styles.cta, { backgroundColor: T.primary }]}>
               <Text style={[styles.ctaText, { color: T.onPrimary }]}>Next combination</Text>
               <CardIcon name="chevR" size={17} color={T.onPrimary} />
             </Pressable>
@@ -166,12 +172,17 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
   const sideData = (side: Side) => pair && (side === 'a'
     ? { lv: pair.a, kind: pair.aKind, note: pair.aNote, en: pair.aEn }
     : { lv: pair.b, kind: pair.bKind, note: pair.bNote, en: pair.bEn });
+  // The contrast eyebrow derives from the pair notes (the two vowels) when present, else the glide
+  // combo — the pair data is generic, so a fixed "THE GLIDE VS FLAT Ē" would lie for other pairs.
+  const contrastEyebrow = pair?.aNote && pair?.bNote
+    ? `Sound check · ${pair.aNote} vs ${pair.bNote}`.toUpperCase()
+    : `Sound check · ${glide?.combo ?? 'ie'}`.toUpperCase();
 
   return (
     <Screen>
       <View style={styles.body}>
         <View style={styles.headBlock}>
-          <Text style={[styles.eyebrow, { color: T.faint }]}>SOUND CHECK · THE GLIDE VS FLAT Ē</Text>
+          <Text style={[styles.eyebrow, { color: T.faint }]}>{contrastEyebrow}</Text>
           <Text style={[styles.prompt, { color: T.ink, fontFamily: fonts.headline }]}>Which did you hear?</Text>
         </View>
 
@@ -198,7 +209,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
             return (
               <Pressable key={side} accessibilityRole="button" disabled={picked !== null} onPress={() => choose(side)} style={[styles.contrastCard, { backgroundColor: bg, borderColor: bd }, picked === null ? T.shadow : null]}>
                 {accent ? (
-                  <View style={[styles.badge, { backgroundColor: T.good }]}><CardIcon name="check" size={16} color="#fff" sw={2.4} /></View>
+                  <View style={[styles.badge, { backgroundColor: T.good }]}><CardIcon name="check" size={16} color={T.onPrimary} sw={2.4} /></View>
                 ) : null}
                 <Text style={[styles.contrastWord, { color: accent ? T.good : T.ink, fontFamily: fonts.headline }]}>{d.lv}</Text>
                 {d.kind || d.note ? (
@@ -218,7 +229,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
             <Text style={[styles.feedback, { color: right ? T.good : T.record, textAlign: 'center' }]}>
               {right
                 ? <>Right — <Text style={{ fontFamily: fonts.headline, fontWeight: '600' }}>{pair?.correct === 'a' ? pair?.a : pair?.b}</Text> glides {glide?.from ?? 'i'} → {glide?.to ?? 'e'}.</>
-                : 'Not quite — give it another listen.'}
+                : 'Not quite — give it another try.'}
             </Text>
           ) : null}
         </View>
@@ -226,14 +237,14 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
 
       <View style={styles.footer}>
         {right ? (
-          <Pressable accessibilityRole="button" onPress={() => { setPhase('say'); stop(); }} style={[styles.cta, { backgroundColor: T.primary }]}>
+          <Pressable accessibilityRole="button" onPress={() => { setPhase('say'); stopAll(); }} style={[styles.cta, { backgroundColor: T.primary }]}>
             <CardIcon name="mic" size={18} color={T.onPrimary} />
             <Text style={[styles.ctaText, { color: T.onPrimary }]}>Say it back</Text>
           </Pressable>
         ) : picked !== null ? (
-          <Pressable accessibilityRole="button" onPress={() => { setPicked(null); stop(); }} style={[styles.cta, { backgroundColor: T.record }]}>
-            <CardIcon name="replay" size={18} color="#fff" />
-            <Text style={[styles.ctaText, { color: '#fff' }]}>Try again</Text>
+          <Pressable accessibilityRole="button" onPress={() => { setPicked(null); stopAll(); }} style={[styles.cta, { backgroundColor: T.record }]}>
+            <CardIcon name="replay" size={18} color={T.onPrimary} />
+            <Text style={[styles.ctaText, { color: T.onPrimary }]}>Try again</Text>
           </Pressable>
         ) : (
           <Pressable accessibilityRole="button" onPress={replayNative} style={[styles.ctaOutline, { borderColor: T.hair }]}>

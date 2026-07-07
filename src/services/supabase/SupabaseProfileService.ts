@@ -33,6 +33,24 @@ export class SupabaseProfileService implements ProfileService {
   }
 
   async deleteRecordings(): Promise<void> {
+    // GDPR deletion must cover the AUDIO OBJECTS, not just the rows: the voice data lives in the
+    // private `recordings` storage bucket (paths like `${userId}/${id}.m4a`, kept in
+    // recordings.storage_path). Read the paths, remove the objects, THEN delete the rows —
+    // storage first, so a failed remove never leaves orphaned audio behind unreachable rows.
+    const { data, error: readError } = await this.client
+      .from('recordings')
+      .select('storage_path')
+      .eq('user_id', this.userId);
+    if (readError) throw readError;
+
+    const paths = ((data ?? []) as { storage_path: string | null }[])
+      .map((row) => row.storage_path)
+      .filter((p): p is string => typeof p === 'string' && p.length > 0);
+    if (paths.length > 0) {
+      const { error: removeError } = await this.client.storage.from('recordings').remove(paths);
+      if (removeError) throw removeError;
+    }
+
     const { error } = await this.client.from('recordings').delete().eq('user_id', this.userId);
     if (error) throw error;
   }

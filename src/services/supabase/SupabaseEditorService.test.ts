@@ -117,6 +117,22 @@ it('edit(validReq) calls functions.invoke exactly once with content-edit and the
   expect((invokeCalls[0]!.options as { body: unknown }).body).toEqual(req);
 });
 
+it('edit(lemmas target) sends the WIRE request unmodified — no client-side column mapping', async () => {
+  // The wire contract field is 'target' (ReviewItem.target); the Edge Function maps it to
+  // the physical `lemma` column server-side (via validateContentEdit). The client must NOT
+  // pre-map, or the server would double-map / reject. This guards that boundary.
+  const { client, invokeCalls } = fakeClient();
+  const svc = new SupabaseEditorService(client as never, 'user-1');
+  const req = { table: 'lemmas' as const, id: VALID_UUID, fields: { target: 'labdien' } };
+  await svc.edit(req);
+  expect(invokeCalls).toHaveLength(1);
+  expect((invokeCalls[0]!.options as { body: unknown }).body).toEqual({
+    table: 'lemmas',
+    id: VALID_UUID,
+    fields: { target: 'labdien' }, // still the wire field, NOT { lemma: ... }
+  });
+});
+
 it('edit throws when invoke returns an error', async () => {
   const { client, queueInvokeResult } = fakeClient();
   queueInvokeResult({ data: null, error: { message: 'edge function error' } });

@@ -35,7 +35,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
   };
 }
 
-function renderCard(overrides: Partial<ReviewItem> = {}) {
+function renderCard(overrides: Partial<ReviewItem> = {}, extra: Partial<RecordingCardProps & ChoiceCardProps> = {}) {
   const props: RecordingCardProps & ChoiceCardProps = {
     item: fixtureItem(overrides),
     onPlay: jest.fn(),
@@ -44,6 +44,7 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
     onRecordStop: jest.fn(),
     onPlayCompare: jest.fn(),
     onComplete: jest.fn(),
+    ...extra,
   };
   const utils = render(
     <ThemeProvider>
@@ -270,5 +271,44 @@ describe('WordPicReview', () => {
     fireEvent.press(u.getByText('maize')); // wrong
     expect(u.props.onComplete).not.toHaveBeenCalled();
     expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
+  });
+
+  // ── recConsent gate (GDPR) ─────────────────────────────────────────────────
+  // When recConsent=false the MicOrb / record affordance must be hidden, the gate must say WHY,
+  // and the card must still complete via Continue — emitting spoke:false (nothing was recorded).
+
+  it('recConsent=false: record affordance not rendered and the gate explains that recording is off', () => {
+    const u = renderCard({}, { recConsent: false });
+    fireEvent.press(u.getByText('māja')); // choose -> (confirm) -> speak
+    advanceConfirm();
+    expect(u.queryByLabelText('Record')).toBeNull();
+    expect(u.queryByLabelText('Stop recording')).toBeNull();
+    expect(u.getByText('Recording is off — turn it on in Settings to hear yourself.')).toBeTruthy();
+    expect(u.props.onRecordStart).not.toHaveBeenCalled();
+  });
+
+  it('recConsent=false: Continue path completes and emits spoke:false (no recording happened)', () => {
+    const u = renderCard({}, { recConsent: false });
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm();
+    fireEvent.press(u.getByText('Continue')); // speak -> result (skips rec)
+    fireEvent.press(u.getByText('Continue')); // result -> onComplete
+    expect(u.props.onComplete).toHaveBeenCalledWith({
+      itemId: 'maja',
+      cardKind: 'word/pic-review',
+      correct: true,
+      spoke: false,
+    });
+    expect(u.props.onRecordStop).not.toHaveBeenCalled();
+  });
+
+  it('recConsent=false: result stage hides the "You" row and Play back-to-back (no take can exist)', () => {
+    const u = renderCard({}, { recConsent: false });
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm();
+    fireEvent.press(u.getByText('Continue')); // speak -> result
+    expect(u.queryByText('You')).toBeNull();
+    expect(u.queryByText('Play back-to-back')).toBeNull();
+    expect(u.getByText('Native')).toBeTruthy(); // the model stays available
   });
 });

@@ -99,6 +99,45 @@ Deno.test('(d) founder + valid lemma gloss_en edit → 200, applyUpdate called o
   assertEquals(calls[0]!.patch, { gloss_en: 'updated gloss' });
 });
 
+// (d2) founder + lemma TARGET edit → 200; the patch handed to applyUpdate must use the
+// PHYSICAL column `lemma` (lemmas has no `target` column — 0001_init.sql; the raw wire
+// field would make UPDATE lemmas SET target=… fail → 500 on every founder word edit).
+Deno.test('(d2) founder + lemma target edit → 200, applyUpdate patch remapped to { lemma }', async () => {
+  const calls: Array<{ table: string; id: string; patch: Record<string, string> }> = [];
+  const deps = makeFounderDeps((table, id, patch) => { calls.push({ table, id, patch }); });
+
+  const req = {
+    table: 'lemmas' as const,
+    id: VALID_UUID,
+    fields: { target: 'labdien' },
+  };
+  const result = await handleContentEdit(req, 'valid.jwt.token', deps);
+
+  assertEquals(result.status, 200);
+  assertEquals(result.body, { ok: true });
+  assertEquals(calls.length, 1);
+  assertEquals(calls[0]!.table, 'lemmas');
+  assertEquals(calls[0]!.patch, { lemma: 'labdien' });
+});
+
+// (d3) founder + PHRASE target edit → patch keeps `target` (phrases really has that column)
+Deno.test('(d3) founder + phrase target edit → 200, applyUpdate patch keeps { target }', async () => {
+  const calls: Array<{ table: string; id: string; patch: Record<string, string> }> = [];
+  const deps = makeFounderDeps((table, id, patch) => { calls.push({ table, id, patch }); });
+
+  const req = {
+    table: 'phrases' as const,
+    id: VALID_UUID,
+    fields: { target: 'Es dzeru kafiju' },
+  };
+  const result = await handleContentEdit(req, 'valid.jwt.token', deps);
+
+  assertEquals(result.status, 200);
+  assertEquals(calls.length, 1);
+  assertEquals(calls[0]!.table, 'phrases');
+  assertEquals(calls[0]!.patch, { target: 'Es dzeru kafiju' });
+});
+
 // (e) founder + qa_status-only minimal_pairs edit → 200, applyUpdate('minimal_pairs', id, {qa_status})
 Deno.test('(e) founder + minimal_pairs qa_status edit → 200, applyUpdate called once', async () => {
   const calls: Array<{ table: string; id: string; patch: Record<string, string> }> = [];

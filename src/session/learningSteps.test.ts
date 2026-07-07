@@ -52,8 +52,9 @@ describe('expandLearningSteps', () => {
     expect(out.map((i) => `${i.id}:${i.retest ?? 'intro'}`)).toEqual(['p:intro', 'q:intro']);
   });
 
-  it('emits a new phrase in place without splitting the word group around it', () => {
-    // phrase p sits between w1 and w2 — the word run stays one group
+  it('hoists a mid-run new phrase before the group word intros without splitting the group', () => {
+    // phrase p sits between w1 and w2 — the word run stays one group; p is emitted first
+    // (before w1's intro), since word intros only flush once the group closes
     const out = expandLearningSteps([word('w1'), phrase('p', ['w2']), word('w2'), word('w3')], 3);
     expect(out.map((i) => `${i.id}:${i.retest ?? 'intro'}`)).toEqual([
       'p:intro',

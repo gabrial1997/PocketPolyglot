@@ -24,9 +24,13 @@ export class SupabaseProgressService implements ProgressService {
     const row = data as Pick<UserCoverageRow, 'known_count' | 'total_count'> | null;
     if (!row) return { ...DEFAULT_COVERAGE };
 
+    // Guard 0 as well as null: while the content library is unpublished (all 'draft'),
+    // user_coverage.total_count is 0 — the client must never render "of the 0 most common
+    // words". Fall back to the ~1,000-word core size, same as a missing row.
+    const total = row.total_count != null && row.total_count > 0 ? row.total_count : DEFAULT_COVERAGE.total;
     return {
       known: row.known_count,
-      total: row.total_count ?? DEFAULT_COVERAGE.total,
+      total,
     };
   }
 }

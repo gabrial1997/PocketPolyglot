@@ -3,7 +3,7 @@
 import React from 'react';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
-import { radii, sizing } from '../theme/tokens';
+import { radii, sizing, type } from '../theme/tokens';
 
 export function CtaButton({
   title,
@@ -58,5 +58,6 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   icon: { marginRight: 8 },
-  text: { fontSize: 17, fontWeight: '600' },
+  // One step above body (kit CTA label = 17); no dedicated CTA size token in the type scale.
+  text: { fontSize: type.body + 1, fontWeight: '600' },
 });

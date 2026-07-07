@@ -1,5 +1,7 @@
 // word/say — production review, inverse (BACKEND_INTEGRATION §4). The GLOSS is the cue; choices are
-// WORDS. Stages choose -> speak -> rec -> result. Out: { correct, spoke:true, recording }.
+// WORDS. Stages choose -> speak -> rec -> result. Out: { correct, spoke, recording } — `spoke` is
+// honest: true only when a recording attempt actually happened this card (false on the
+// recConsent=false skip path).
 // LOCKED wrong-answer rule lives in useLoopStage (no advance / redden chosen / never reveal / remember).
 // Visual: matches mockup word/say (gloss cue + word list -> say it -> native/you compare).
 import React, { useEffect, useRef, useState } from 'react';
@@ -28,6 +30,10 @@ export function WordSay(props: Props): React.JSX.Element {
   // showGlossCue: whether the English gloss cue on the choose stage is visible.
   // auto = always; hint = after a miss (m.missed); on-demand = after explicit tap.
   const showGlossCue = shouldShowGloss(mode, m.missed, tappedReveal);
+  // Audio is a non-blocking backfill overlay: when the item has no envelope we hide the play orb
+  // + waveform + speed chip (and the "Native" compare row) — never a silent orb (hasAudio
+  // semantics per ReviewItem — `!!item.audio?.envelope`, same guard as WordPicReview).
+  const hasAudio = !!item.audio?.envelope;
   const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio?.envelope); // reactive soundbar gate
   // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
   const replay = (): void => {
@@ -35,8 +41,9 @@ export function WordSay(props: Props): React.JSX.Element {
     else play(() => onPlay('native', speed), speed);
   };
   // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
+  // Skip when audio-less so we never warm a non-existent clip.
   useEffect(() => {
-    onPreload?.('native');
+    if (hasAudio) onPreload?.('native');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const recStarted = useRef(false);
@@ -88,14 +95,30 @@ export function WordSay(props: Props): React.JSX.Element {
       {m.stage === 'speak' || m.stage === 'rec' ? (
         <>
           <CardBody>
-            <Text style={[styles.cueSmall, { color: T.sub }]}>{item.gloss}</Text>
+            {/* The gloss stays behind the same gate the choose stage enforced — never leak the
+                meaning the learner has not earned/requested (mirrors WordPicReview's speak stage). */}
+            {showGlossCue ? (
+              <Text style={[styles.cueSmall, { color: T.sub }]}>{item.gloss}</Text>
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setTappedReveal(true)}
+                style={[styles.revealBtn, { borderColor: T.hair }]}
+              >
+                <Text style={[styles.revealText, { color: T.sub }]}>Show meaning</Text>
+              </Pressable>
+            )}
             <WordHero size={52}>{item.target}</WordHero>
             {item.pron ? <GlossLine gloss={item.pron} size={13.5} /> : null}
-            <View style={styles.wave}>
-              <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={36} count={32} />
-            </View>
-            <PlayOrb size={58} filled={false} playing={playing} onPress={replay} />
-            <SpeedChip value={speed} onChange={changeSpeed} />
+            {hasAudio ? (
+              <>
+                <View style={styles.wave}>
+                  <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={36} count={32} />
+                </View>
+                <PlayOrb size={58} filled={false} playing={playing} onPress={replay} />
+                <SpeedChip value={speed} onChange={changeSpeed} />
+              </>
+            ) : null}
             {recConsent ? (
               <View style={styles.mic}>
                 <MicOrb rec={m.stage === 'rec'} onPress={() => { if (m.stage === 'rec') { onRecordStop(); m.finishRec(); } else { startRec(); } }} />
@@ -123,15 +146,19 @@ export function WordSay(props: Props): React.JSX.Element {
             <WordHero size={52}>{item.target}</WordHero>
             <GlossLine gloss={item.gloss} pron={item.pron} />
             <View style={styles.compare}>
-              <CompareRow label="Native" icon="speaker" envelope={item.audio?.envelope} onPress={() => onPlayCompare?.('native')} />
+              {/* No native clip -> no "Native" row (never a silent playback offer). */}
+              {hasAudio ? (
+                <CompareRow label="Native" icon="speaker" envelope={item.audio?.envelope} onPress={() => onPlayCompare?.('native')} />
+              ) : null}
               {/* No recording can exist without consent — never offer a "You" playback that is silent. */}
               {recConsent ? <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} /> : null}
             </View>
-            {recConsent ? <PlayBackToBack onPress={() => onPlayCompare?.('native')} /> : null}
+            {recConsent && hasAudio ? <PlayBackToBack onPress={() => onPlayCompare?.('native')} /> : null}
             <ResultNote>{loopResultNote(m.missed, item.reviewPreview)}</ResultNote>
           </CardBody>
           <CardFooter>
-            <CtaButton title="Continue" onPress={() => onComplete({ itemId: item.id, cardKind: 'word/say', correct: !m.missed, spoke: true })} />
+            {/* `spoke` is honest: true only when a recording attempt happened (recStarted). */}
+            <CtaButton title="Continue" onPress={() => onComplete({ itemId: item.id, cardKind: 'word/say', correct: !m.missed, spoke: recStarted.current })} />
           </CardFooter>
         </>
       ) : null}

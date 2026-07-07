@@ -17,7 +17,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     target: 'māja',
     gloss: 'house',
     pron: 'MAH-ya',
-    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3' },
+    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3', envelope: [0.2, 0.6, 1] },
     choices: [
       { value: 'maja', gloss: 'house', correct: true },
       { value: 'maize', gloss: 'bread', correct: false },
@@ -99,6 +99,18 @@ describe('WordHear', () => {
     expect(u.props.onAnswer).toHaveBeenCalledWith('maize', false);
     expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
     expect(u.getByText('house')).toBeTruthy();
+  });
+
+  it('the reddened wrong option is disabled — re-tapping it emits no duplicate onAnswer', () => {
+    const u = renderCard();
+    fireEvent.press(u.getByText('bread')); // wrong — reddens + disables
+    expect(u.props.onAnswer).toHaveBeenCalledTimes(1);
+    fireEvent.press(u.getByText('bread')); // re-tap the disabled red option
+    expect(u.props.onAnswer).toHaveBeenCalledTimes(1); // no duplicate event
+    // Try again re-enables it (the selection is cleared, retrieval can be re-attempted).
+    fireEvent.press(u.getByLabelText('Try again'));
+    fireEvent.press(u.getByText('bread'));
+    expect(u.props.onAnswer).toHaveBeenCalledTimes(2);
   });
 
   it('Try again clears the reddened selection', () => {
@@ -248,13 +260,14 @@ describe('WordHear', () => {
     expect(u.getByText(u.props.item?.target ?? 'kabinets')).toBeTruthy();
   });
 
-  it('renders without item.audio and tapping the orb does not throw', () => {
+  it('renders without item.audio: the silent play orb / waveform / speed chip are hidden', () => {
     const u = renderCard({ audio: undefined, target: 'kabinets' });
-    // The written word + choices still render.
+    // The written word + choices still render (the card stays answerable without audio).
     expect(u.getByText('kabinets')).toBeTruthy();
-    // Orb is present and tappable; with no audio it must not crash.
-    const orb = u.getByLabelText(/play|listen/i);
-    expect(() => fireEvent.press(orb)).not.toThrow();
+    expect(u.getByText('house')).toBeTruthy();
+    // No audio hero — never a silent orb (hasAudio guard, same as the learn cards).
+    expect(u.queryByLabelText(/play|listen/i)).toBeNull();
+    expect(u.queryByText('Tap to replay')).toBeNull();
   });
 
   // Fix 3: get_distractors can fail, leaving item.choices undefined or with a single entry — no

@@ -55,6 +55,9 @@ export function useLoopStage(): LoopMachine {
       // Ignore further taps once a correct pick is being confirmed (the choice is locked in).
       if (rightValue !== null) return;
       if (correct) {
+        // Clear a stale red highlight (wrong pick -> correct pick directly, skipping Try again):
+        // the confirm beat must show ONLY the green state, never green + red + retry note at once.
+        setWrongValue(null);
         setRightValue(value);
         setPicked(value);
         clearAdvance();

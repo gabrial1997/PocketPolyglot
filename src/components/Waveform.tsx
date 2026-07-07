@@ -25,7 +25,7 @@ function ppBars(seed: number, n: number): number[] {
   const centers = Array.from({ length: peaks }, () => 0.1 + rnd() * 0.8);
   const wid = Array.from({ length: peaks }, () => 0.1 + rnd() * 0.16);
   for (let i = 0; i < n; i++) {
-    const x = i / (n - 1);
+    const x = n === 1 ? 0 : i / (n - 1); // same n===1 guard as envBars — avoids a NaN bar height
     let env = 0;
     for (let p = 0; p < peaks; p++) {
       const d = (x - (centers[p] ?? 0)) / (wid[p] ?? 1);

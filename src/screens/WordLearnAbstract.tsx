@@ -52,7 +52,9 @@ export function WordLearnAbstract({ item, onPlay, onStop, onPreload, onComplete,
         ) : null}
       </CardBody>
       <CardFooter>
-        <FootNote>First review tomorrow.</FootNote>
+        {/* REAL projected first-review label carried on the item (computed from live FSRS state);
+            omitted entirely when absent — never a fabricated "tomorrow" claim. */}
+        {item.reviewPreview ? <FootNote>{item.reviewPreview.pass}.</FootNote> : null}
         <CtaButton title="Continue" onPress={() => onComplete({ itemId: item.id, cardKind: 'word/learn-abstract', spoke: false })} />
       </CardFooter>
     </Screen>

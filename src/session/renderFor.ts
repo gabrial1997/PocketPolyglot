@@ -50,8 +50,14 @@ export function renderFor(item: ReviewItem): ReviewCardKind {
   // Minimal-pair perception drill — a gliding combination (ie) gets the diphthong card.
   const hasAudio = !!item.audio?.envelope;
   if (item.type === 'pair' && hasAudio) return item.glide ? 'diphthong' : 'drill';
-  // audio-less pair is never selected (Module B gates pairs on audio); defensive fallback.
-  if (item.type === 'pair') return 'word/learn-concrete';
+  // Audio-less pair is never selected (Module B gates pairs on audio); defensive fallback.
+  // 'drill' keeps the fallback pair-shaped (silent play orb) — a word/learn-* kind here would
+  // render a word card with an empty gloss AND, if submitted, be miscounted by the
+  // introducedToday LIKE 'word/learn-%' new-word budget.
+  if (item.type === 'pair') return 'drill';
 
+  // Unreachable today: every item.type ('word' | 'phrase' | 'pair') returns above. 'pron'
+  // (PronounceScreen, GOP pronunciation scoring) is Phase 1 — nothing schedules it yet, so it is
+  // not reachable in the production loop. See WIRING_MAP §1 / BACKEND_INTEGRATION §4 (pron).
   return 'pron';
 }

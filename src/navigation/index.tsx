@@ -144,9 +144,12 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
   // Read GDPR recording consent ONCE per session mount from ProfileService (CLAUDE.md §GDPR).
   // Cards are pure — they receive the resolved boolean; they never call the service themselves.
   const { profile, editor } = useServices();
-  const [recConsent, setRecConsent] = useState<boolean>(true); // permissive default until resolved
+  // Fail-closed default (GDPR): until getRecConsent() resolves, cards see recConsent=false so no
+  // mic is ever shown to a user whose consent isn't confirmed (same safe default as
+  // src/onboarding/useRecordingAllowed.ts). A brief consent-off flash beats the reverse.
+  const [recConsent, setRecConsent] = useState<boolean>(false);
   useEffect(() => {
-    // Deliberately fail-closed (GDPR): if consent cannot be confirmed, recording is disabled.
+    // Also fail-closed on error: if consent cannot be confirmed, recording stays disabled.
     void profile.getRecConsent().then(setRecConsent).catch(() => setRecConsent(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -237,13 +240,17 @@ export function SessionHost({ onExit }: { onExit: () => void }): React.JSX.Eleme
 
   return (
     <Animated.View style={[styles.sessionShell, { opacity: exitOpacity }]}>
-      {/* GlideViewport owns "remount per CARD encounter": keyed off item id + kind, it freezes the
-          leaving card and glides in the entering one, so per-card ephemeral state (stage, first-try
-          miss, recording buffer) resets when the committed card changes. The kind MUST be part of
-          the key: a gated phrase keeps ONE row id across its locked -> unlock -> hear renders, so
-          keying on id alone left the unlock node frozen (the hear card never mounted, its audio
-          never replayed). See GlideViewport's same-key contract + StartingLoop.test.tsx. */}
-      <GlideViewport itemKey={`${session.current.item.id}:${session.current.kind}`}>
+      {/* GlideViewport owns "remount per CARD encounter": keyed off queue position + item id +
+          kind, it freezes the leaving card and glides in the entering one, so per-card ephemeral
+          state (stage, first-try miss, recording buffer) resets when the committed card changes.
+          The kind MUST be part of the key: a gated phrase keeps ONE row id across its locked ->
+          unlock -> hear renders, so keying on id alone left the unlock node frozen (the hear card
+          never mounted, its audio never replayed). The POSITION must be part of it too: adjacent
+          queue entries can legitimately share id+kind (e.g. a word arc whose MC step degraded to
+          the intro's fallback kind — intro word/hear followed by an mc-fallback word/hear after a
+          distractor-RPC failure), and id+kind alone left the second card showing the first card's
+          frozen completed state. See GlideViewport's same-key contract + StartingLoop.test.tsx. */}
+      <GlideViewport itemKey={`${session.step}:${session.current.item.id}:${session.current.kind}`}>
         <CardHost
           item={session.current.item}
           kind={session.current.kind}
@@ -367,9 +374,11 @@ function isPreview(): boolean {
 
 export function App(): React.JSX.Element {
   // Load the Spectral serif used for headlines/greetings before first paint (it was never loaded
-  // before, so headlines silently fell back to the system sans). Brief blank while it resolves.
-  const [fontsLoaded] = useFonts({ Spectral_500Medium: SpectralMedium });
-  if (!fontsLoaded) return <View style={styles.boot} />;
+  // before, so headlines silently fell back to the system sans). Brief blank while it resolves —
+  // but a load ERROR must not strand the app on the boot screen forever: proceed and let
+  // headlines fall back to the system font.
+  const [fontsLoaded, fontError] = useFonts({ Spectral_500Medium: SpectralMedium });
+  if (!fontsLoaded && !fontError) return <View style={styles.boot} />;
 
   if (isPreview()) {
     return (

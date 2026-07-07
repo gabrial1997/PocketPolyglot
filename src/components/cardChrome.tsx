@@ -9,7 +9,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, type ViewStyle, type DimensionValue } from 'react-native';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeProvider';
-import { hexA, fonts } from '../theme/tokens';
+import { hexA, fonts, type } from '../theme/tokens';
 import { LiveWaveform } from './LiveWaveform';
 import { usePlayClip, FRAME_MS } from './usePlayClip';
 import { PlayOrb } from './PlayOrb';
@@ -58,9 +58,9 @@ export function Eyebrow({ children }: { children: string }): React.JSX.Element {
   const T = useTheme();
   return <Text style={[chrome.eyebrow, { color: T.faint }]}>{children.toUpperCase()}</Text>;
 }
-export function WordHero({ children, size = 52 }: { children: React.ReactNode; size?: number }): React.JSX.Element {
+export function WordHero({ children, size = type.wordHero }: { children: React.ReactNode; size?: number }): React.JSX.Element {
   const T = useTheme();
-  return <Text style={{ color: T.ink, fontFamily: fonts.headline, fontSize: size, letterSpacing: -0.8, lineHeight: Math.round(size * 1.18), textAlign: 'center' }}>{children}</Text>;
+  return <Text style={{ color: T.ink, fontFamily: fonts.headline, fontSize: size, letterSpacing: type.wordHeroSpacing, lineHeight: Math.round(size * 1.18), textAlign: 'center' }}>{children}</Text>;
 }
 export function GlossLine({ gloss, pron, size = 16 }: { gloss: string; pron?: string; size?: number }): React.JSX.Element {
   const T = useTheme();
@@ -281,7 +281,7 @@ const chrome = StyleSheet.create({
   footer: { paddingBottom: 30, rowGap: 11 },
   headRow: { flexDirection: 'row', alignItems: 'center', columnGap: 10 },
   center: { textAlign: 'center' },
-  eyebrow: { fontSize: 12, fontWeight: '600', letterSpacing: 1.3, textAlign: 'center' },
+  eyebrow: { fontSize: type.eyebrow, fontWeight: '600', letterSpacing: type.eyebrowSpacing, textAlign: 'center' },
   caption: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
   footNote: { fontSize: 13.5, fontWeight: '500', textAlign: 'center' },
   litNote: { width: '100%', alignItems: 'center', rowGap: 3, marginTop: 2 },

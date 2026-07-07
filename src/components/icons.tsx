@@ -234,6 +234,22 @@ export function CheckIcon({ size = 19, color, strokeWidth = 2.4 }: IconProps): R
   );
 }
 
+export function BugIcon({ size = 20, color, strokeWidth = 1.8 }: IconProps): React.JSX.Element {
+  // Beta bug-report glyph (BugReportLayer FAB) — stroke style matches the rest of the set.
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {/* body */}
+      <Path d="M8 10.5a4 4 0 0 1 8 0v3.5a4 4 0 0 1-8 0z" stroke={color} strokeWidth={strokeWidth} strokeLinejoin="round" />
+      {/* antennae */}
+      <Path d="M9.6 7.2L7.8 4.8M14.4 7.2l1.8-2.4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* legs */}
+      <Path d="M8 11.5H4.8M8 14.5l-2.6 1.6M16 11.5h3.2M16 14.5l2.6 1.6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* wing seam */}
+      <Line x1={12} y1={9} x2={12} y2={16.5} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 export function TrashIcon({ size = 20, color, strokeWidth = 1.8 }: IconProps): React.JSX.Element {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

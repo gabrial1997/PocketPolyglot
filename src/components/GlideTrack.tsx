@@ -29,11 +29,12 @@ export function GlideTrack({
   from?: string;
   to?: string;
   playing?: boolean;
-  color: string;
+  /** Accent for the leading node/arc/dot. Defaults to the theme primary. */
+  color?: string;
   width?: number;
 }): React.JSX.Element {
   const T = useTheme();
-  const c = color || T.primary;
+  const c = color ?? T.primary;
 
   // Geometry (ported verbatim from kit.jsx GlideTrack).
   const H = 84;

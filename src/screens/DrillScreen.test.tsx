@@ -26,7 +26,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
   };
 }
 
-function renderCard(overrides: Partial<ReviewItem> = {}) {
+function renderCard(overrides: Partial<ReviewItem> = {}, extra: Partial<RecordingCardProps> = {}) {
   const props: RecordingCardProps = {
     item: fixtureItem(overrides),
     onPlay: jest.fn(),
@@ -34,6 +34,7 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
     onRecordStop: jest.fn(),
     onPlayCompare: jest.fn(),
     onComplete: jest.fn(),
+    ...extra,
   };
   const utils = render(
     <ThemeProvider>
@@ -80,12 +81,13 @@ describe('DrillScreen', () => {
     });
   });
 
-  it('a wrong pick does NOT advance and shows a non-revealing retry note', () => {
+  it('a wrong pick does NOT advance and shows the LOCKED retry copy (non-revealing)', () => {
     const u = renderCard();
     fireEvent.press(u.getByText('sīt')); // wrong side
     // Did not advance to the say-it step (no mic), and the correct side is not auto-revealed.
     expect(u.queryByLabelText('Record')).toBeNull();
-    expect(u.getByText('Not quite — listen again and try.')).toBeTruthy();
+    // LOCKED copy (CLAUDE.md wrong-answer rule) — exactly this string.
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
     // The correct side stays a normal, tappable option (not highlighted green).
     expect(u.getByText('sit')).toBeTruthy();
   });
@@ -124,5 +126,33 @@ describe('DrillScreen', () => {
     runLoop(u);
     expect(u.props.onRecordStop).toHaveBeenCalledTimes(1);
     expect(u.props.onRecordStop).not.toHaveBeenCalledWith('stub://recording');
+  });
+
+  it('stage transitions stop REAL playback via onStop, not just the local soundbar gate', () => {
+    const u = renderCard({}, { onStop: jest.fn() });
+    fireEvent.press(u.getByLabelText('Play')); // start the clip
+    fireEvent.press(u.getByText('sit')); // correct -> "Say it back" CTA
+    fireEvent.press(u.getByText('Say it back')); // discriminate -> say-it stage
+    expect(u.props.onStop).toHaveBeenCalled();
+  });
+
+  // ── recConsent gate (GDPR) ─────────────────────────────────────────────────
+  // When recConsent=false the MicOrb must be hidden on the say-it-back stage, the gate must say
+  // WHY, and the card must still complete via Next pair — emitting spoke:false (nothing recorded).
+
+  it('recConsent=false: no record affordance, an honest explanation, and completion with spoke:false', () => {
+    const u = renderCard({}, { recConsent: false });
+    fireEvent.press(u.getByText('sit')); // correct side
+    fireEvent.press(u.getByText('Say it back')); // -> say-it stage
+    expect(u.queryByLabelText('Record')).toBeNull();
+    expect(u.getByText('Recording is off — turn it on in Settings to hear yourself.')).toBeTruthy();
+    fireEvent.press(u.getByText('Next pair')); // honest non-recording completion path
+    expect(u.props.onComplete).toHaveBeenCalledWith({
+      itemId: 'sit-sip',
+      cardKind: 'drill',
+      correct: true,
+      spoke: false,
+    });
+    expect(u.props.onRecordStart).not.toHaveBeenCalled();
   });
 });

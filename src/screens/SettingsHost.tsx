@@ -54,6 +54,11 @@ export function SettingsHost(): React.JSX.Element {
   // skip-day or reset.
   const [resetError, setResetError] = useState(false);
 
+  // Surfaces a failed deleteRecordings() attempt (GDPR deletion) the same way — a swallowed .catch
+  // would leave the learner believing their voice data was gone when it wasn't. Cleared on the
+  // next successful delete.
+  const [deleteRecordingsError, setDeleteRecordingsError] = useState(false);
+
   const dev = __DEV__
     ? {
         simulatedDateLabel:
@@ -92,8 +97,12 @@ export function SettingsHost(): React.JSX.Element {
         void profile.setRecConsent(next).catch(() => setRecConsent(!next));
       }}
       onDeleteRecordings={() => {
-        void profile.deleteRecordings().catch(() => {});
+        void profile
+          .deleteRecordings()
+          .then(() => setDeleteRecordingsError(false))
+          .catch(() => setDeleteRecordingsError(true));
       }}
+      deleteRecordingsError={deleteRecordingsError}
       onSignOut={() => {
         void signOut();
       }}

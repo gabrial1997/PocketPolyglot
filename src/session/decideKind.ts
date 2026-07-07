@@ -16,13 +16,13 @@ export function decideKind(
   item: ReviewItem,
   known: ReadonlySet<string>,
   revealed: ReadonlySet<string>,
-): { kind: CardKind; nowUnlocked: boolean } {
+): { kind: CardKind } {
   if (item.type === 'phrase' && item.componentLemmaIds) {
     const { locked } = lockState(item.componentLemmaIds, known);
-    if (locked) return { kind: 'phrase/locked', nowUnlocked: false };
+    if (locked) return { kind: 'phrase/locked' };
     if (item.stage === 'new' && !item.retest && !revealed.has(item.id)) {
-      return { kind: 'phrase/unlock', nowUnlocked: true };
+      return { kind: 'phrase/unlock' };
     }
   }
-  return { kind: renderFor(item), nowUnlocked: false };
+  return { kind: renderFor(item) };
 }

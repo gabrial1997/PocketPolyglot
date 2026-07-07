@@ -6,14 +6,22 @@
 // 2026-06-19 VISUAL SYNC: rebuilt to the mockup (screens-phrase.jsx `PhraseUnlock`). One bloom ring
 // (animated), the orb with the unlock glyph, "PHRASE UNLOCKED" rising in over the phrase + "You know
 // all its words now.", and a bottom auto-advance line ("Hearing it…") whose fill animates once.
-// Entrances are gated on reduced-motion (they settle to the visible end-state).
+// Entrances are gated on reduced-motion via a mount-time AccessibilityInfo probe (same pattern as
+// StageFade): with reduce-motion on, everything jumps straight to the visible end-state.
+// All animations (bloom/rise/fill) finish before the controller's 1800ms auto-advance
+// (UNLOCK_DELAY_MS in src/session/cardWiring.ts) so the fill line actually completes on screen.
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, Easing, StyleSheet, type DimensionValue } from 'react-native';
+import { View, Text, Animated, AccessibilityInfo, Easing, StyleSheet, type DimensionValue } from 'react-native';
 import { Screen } from '../components';
 import { CardIcon, PhraseLine } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { hexA } from '../theme/tokens';
 import type { PhraseGateProps } from './cardProps';
+
+/** Fill-line timing: delay + duration must complete comfortably before the controller's
+ *  UNLOCK_DELAY_MS (1800ms) auto-advance — otherwise the fill can never reach 100% on screen. */
+export const FILL_DELAY_MS = 400;
+export const FILL_DURATION_MS = 1000;
 
 export function PhraseUnlock({ item, onUnlocked }: PhraseGateProps): React.JSX.Element {
   const T = useTheme();
@@ -26,11 +34,34 @@ export function PhraseUnlock({ item, onUnlocked }: PhraseGateProps): React.JSX.E
   const fill = useRef(new Animated.Value(0)).current;
   const rise = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(bloom, { toValue: 1, duration: 1400, delay: 250, easing: Easing.bezier(0.2, 0.6, 0.3, 1), useNativeDriver: true }),
-      Animated.timing(rise, { toValue: 1, duration: 600, delay: 500, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.timing(fill, { toValue: 1, duration: 2400, delay: 1000, easing: Easing.linear, useNativeDriver: false }),
-    ]).start();
+    let cancelled = false;
+    const settle = (): void => {
+      // Reduced motion: jump straight to the end-state (bloom faded out, text risen, fill full).
+      bloom.setValue(1);
+      rise.setValue(1);
+      fill.setValue(1);
+    };
+    const animate = (): void => {
+      // Every timing ends before the controller's 1800ms UNLOCK_DELAY_MS auto-advance.
+      Animated.parallel([
+        Animated.timing(bloom, { toValue: 1, duration: 1400, delay: 250, easing: Easing.bezier(0.2, 0.6, 0.3, 1), useNativeDriver: true }),
+        Animated.timing(rise, { toValue: 1, duration: 600, delay: 500, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(fill, { toValue: 1, duration: FILL_DURATION_MS, delay: FILL_DELAY_MS, easing: Easing.linear, useNativeDriver: false }),
+      ]).start();
+    };
+    // Mount-time reduced-motion probe (same pattern as StageFade); on failure, default to animating.
+    AccessibilityInfo.isReduceMotionEnabled?.()
+      .then((on) => {
+        if (cancelled) return;
+        if (on) settle();
+        else animate();
+      })
+      .catch(() => {
+        if (!cancelled) animate();
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [bloom, fill, rise]);
 
   const riseStyle = {
@@ -61,7 +92,7 @@ export function PhraseUnlock({ item, onUnlocked }: PhraseGateProps): React.JSX.E
 
         <Animated.Text style={[styles.unlocked, { color: T.primary }, riseStyle]}>PHRASE UNLOCKED</Animated.Text>
         <Animated.View style={[{ marginTop: 16 }, riseStyle]}>
-          <PhraseLine phrase={item.target} highlight={(item as { newForm?: string }).newForm} size={32} />
+          <PhraseLine phrase={item.target} highlight={item.newForm} size={32} />
         </Animated.View>
         <Animated.Text style={[styles.meaning, { color: T.sub }, riseStyle]}>{item.gloss}</Animated.Text>
         <Animated.Text style={[styles.sub, { color: T.faint }, riseStyle]}>You know all its words now.</Animated.Text>

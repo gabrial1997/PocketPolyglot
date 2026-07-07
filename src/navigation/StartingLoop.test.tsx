@@ -194,6 +194,52 @@ it('locked -> learn 3 words -> unlock -> hear: the hear card actually appears (n
   expect(play.mock.calls.length).toBe(after); // no further plays — not looping
 });
 
+// Remount-key regression (2026-07-06): adjacent queue entries can legitimately share id + kind —
+// a new word with NO wordClass renders its INTRO as word/hear (renderFor's learn templates all
+// require a wordClass, so it falls through), and its MC retest copy is also word/hear. With the
+// viewport keyed on id:kind alone the second encounter never remounted: the learner stared at the
+// first card's completed (green, disabled) state and the session froze. The key now includes the
+// queue position (session.step), so every position remounts.
+it('intro word/hear followed by a same-kind MC retest: the retest remounts fresh (no frozen card)', async () => {
+  const play = jest.fn(async () => {});
+  const noClassWord: ReviewItem = {
+    id: 'w1',
+    type: 'word',
+    stage: 'new',
+    reps: 0,
+    // Deliberately NO wordClass: the intro and the MC retest both render word/hear (same id+kind).
+    target: 'w1',
+    gloss: 'w1',
+    audio: { nativeUrl: 'w1.mp3' },
+    choices: [
+      { value: 'w1', gloss: 'w1', correct: true },
+      { value: 'other-w1', gloss: 'other-w1', correct: false },
+    ],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
+  };
+  const onExit = jest.fn();
+  const u = render(
+    <ThemeProvider>
+      <ServiceProvider services={fakeServices([noClassWord], play)}>
+        <SessionHost onExit={onExit} />
+      </ServiceProvider>
+    </ThemeProvider>,
+  );
+
+  // Encounter 1: the intro, rendered as a word/hear MC quiz (kind word/hear, id w1).
+  await submitMcRetest(u, 'w1');
+  // Encounter 2: the MC retest copy — SAME id + kind. The frozen-card symptom: the choices stayed
+  // green + disabled from encounter 1, this press did nothing, and the session never finished.
+  await submitMcRetest(u, 'w1');
+  // Encounter 3: the speak retest (word/say — the item has >=2 choices).
+  await submitSpeakRetest(u, 'w1');
+
+  // All three expanded steps completed -> the batch is done -> SessionHost bounces home.
+  await settle(() => expect(onExit).toHaveBeenCalled());
+});
+
 // Mirrors the SEEDED golden-slice walk after the Task 5 re-tune: the FIRST unlock the user meets is
 // 'Vienu kafiju, lūdzu.' (ph-kafija). Its components are viens/kafija/ludzu, but viens + kafija are
 // in knownForTestUser, so only ONE word (ludzu) must be learned in-session before the unlock fires.

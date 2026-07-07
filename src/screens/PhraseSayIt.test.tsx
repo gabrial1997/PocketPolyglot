@@ -121,7 +121,8 @@ describe('PhraseSayIt', () => {
 
   // ── recConsent gate (Task E3) ────────────────────────────────────────────────
   // When recConsent=false the MicOrb / record affordance must be hidden; "Show the phrase" still
-  // reaches the compare stage, and self-rate good/again still emits { cardKind:'phrase/sayit', spoke:true, selfRating }.
+  // reaches the compare stage, and self-rate good/again still emits { cardKind:'phrase/sayit',
+  // selfRating } — with an HONEST spoke:false (no recording happened).
 
   it('recConsent=false: MicOrb not rendered on the cue stage', () => {
     const u = renderCard({}, { recConsent: false });
@@ -143,28 +144,67 @@ describe('PhraseSayIt', () => {
     expect(u.queryByLabelText('Record')).toBeNull();
   });
 
-  it('recConsent=false: self-rate "good" emits { cardKind:phrase/sayit, spoke:true, selfRating:good }', () => {
+  it('recConsent=false: self-rate "good" emits an HONEST { spoke:false, selfRating:good }', () => {
     const u = renderCard({}, { recConsent: false });
     fireEvent.press(u.getByText('Show the phrase'));
     fireEvent.press(u.getByText('Got it'));
     expect(u.props.onComplete).toHaveBeenCalledWith({
       itemId: 'labrit',
       cardKind: 'phrase/sayit',
-      spoke: true,
+      spoke: false,
       selfRating: 'good',
     });
   });
 
-  it('recConsent=false: self-rate "again" emits { cardKind:phrase/sayit, spoke:true, selfRating:again }', () => {
+  it('recConsent=false: self-rate "again" emits an HONEST { spoke:false, selfRating:again }', () => {
     const u = renderCard({}, { recConsent: false });
     fireEvent.press(u.getByText('Show the phrase'));
     fireEvent.press(u.getByText('Not yet'));
     expect(u.props.onComplete).toHaveBeenCalledWith({
       itemId: 'labrit',
       cardKind: 'phrase/sayit',
-      spoke: true,
+      spoke: false,
       selfRating: 'again',
     });
+  });
+
+  // ── honest `spoke` + recorder safety + rating finality ───────────────────────
+
+  it('skipping via "Show the phrase" WITHOUT recording emits an honest spoke:false (consent on)', () => {
+    const u = renderCard(); // recConsent defaults to true
+    fireEvent.press(u.getByText('Show the phrase')); // cue -> compare, no recording
+    expect(u.props.onRecordStart).not.toHaveBeenCalled();
+    fireEvent.press(u.getByText('Got it'));
+    expect(u.props.onComplete).toHaveBeenCalledWith({
+      itemId: 'labrit',
+      cardKind: 'phrase/sayit',
+      spoke: false,
+      selfRating: 'good',
+    });
+  });
+
+  it('"Show the phrase" mid-recording stops the recorder (captures the take, no leak) and keeps spoke:true', () => {
+    const u = renderCard();
+    fireEvent.press(u.getByLabelText('Record')); // cue -> rec
+    fireEvent.press(u.getByText('Show the phrase')); // mid-rec skip: must stop the recording first
+    expect(u.props.onRecordStop).toHaveBeenCalledTimes(1);
+    // Compare stage reached with the take captured; the attempt counts as spoken.
+    fireEvent.press(u.getByText('Got it'));
+    expect(u.props.onComplete).toHaveBeenCalledWith(
+      expect.objectContaining({ cardKind: 'phrase/sayit', spoke: true, selfRating: 'good' }),
+    );
+  });
+
+  it('the rating is final: a second tap on either button never fires onComplete again', () => {
+    const u = renderCard();
+    toRating(u);
+    fireEvent.press(u.getByText('Got it'));
+    fireEvent.press(u.getByText('Got it')); // re-tap
+    fireEvent.press(u.getByText('Not yet')); // the other button, after rating
+    expect(u.props.onComplete).toHaveBeenCalledTimes(1);
+    expect(u.props.onComplete).toHaveBeenCalledWith(
+      expect.objectContaining({ selfRating: 'good' }),
+    );
   });
 
   // ── recConsent gate, beta fix 2026-07-05 ──────────────────────────────────────

@@ -23,8 +23,8 @@ export function HomeScreen({
   reviewCount = 0,
   knownCount = 0,
   totalWords = 1000,
-  podcastTitle = 'Rīta saruna',
-  podcastSubtitle = '3 min · only words you know',
+  podcastTitle,
+  podcastSubtitle,
   onStart,
   onOpenPodcast,
 }: {
@@ -35,6 +35,7 @@ export function HomeScreen({
   reviewCount?: number;
   knownCount?: number;
   totalWords?: number;
+  /** Real episode title from the host; the teaser is HIDDEN when no episode exists (honest). */
   podcastTitle?: string;
   podcastSubtitle?: string;
   onStart?: () => void;
@@ -91,22 +92,25 @@ export function HomeScreen({
 
       <View style={styles.spacer} />
 
-      {/* Podcast teaser */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${podcastTitle} — ${podcastSubtitle}`}
-        onPress={onOpenPodcast}
-        style={[styles.podcast, { backgroundColor: T.surface, borderColor: T.hair }]}
-      >
-        <View style={[styles.podIcon, { backgroundColor: T.primarySoft }]}>
-          <SoundIcon size={22} color={T.primary} />
-        </View>
-        <View style={styles.podText}>
-          <Text style={[styles.podTitle, { color: T.ink }]}>{podcastTitle}</Text>
-          <Text style={[styles.podSub, { color: T.faint }]}>{podcastSubtitle}</Text>
-        </View>
-        <ChevronRightIcon size={18} color={T.faint} />
-      </Pressable>
+      {/* Podcast teaser — only when a REAL episode exists (no fabricated "Rīta saruna" default);
+          the Listen tab remains reachable via the tab bar either way. */}
+      {podcastTitle ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={podcastSubtitle ? `${podcastTitle} — ${podcastSubtitle}` : podcastTitle}
+          onPress={onOpenPodcast}
+          style={[styles.podcast, { backgroundColor: T.surface, borderColor: T.hair }]}
+        >
+          <View style={[styles.podIcon, { backgroundColor: T.primarySoft }]}>
+            <SoundIcon size={22} color={T.primary} />
+          </View>
+          <View style={styles.podText}>
+            <Text style={[styles.podTitle, { color: T.ink }]}>{podcastTitle}</Text>
+            {podcastSubtitle ? <Text style={[styles.podSub, { color: T.faint }]}>{podcastSubtitle}</Text> : null}
+          </View>
+          <ChevronRightIcon size={18} color={T.faint} />
+        </Pressable>
+      ) : null}
 
       {/* Coverage progress (NOT a score — % of everyday speech covered) */}
       <View style={styles.progress}>

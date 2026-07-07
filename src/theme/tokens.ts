@@ -149,14 +149,12 @@ export const radii = {
   choice: 16,
   cta: 18,
   pill: 99,
-  device: 48,
 } as const;
 
 export const sizing = {
   ctaHeight: 56,
   choiceMinHeight: 52,
   choiceBorder: 1.5,
-  hitTarget: 44,
   playOrb: 76, // kit PlayOrb default; visually scaled x1.15 inside the orb
   micOrb: 76,
 } as const;

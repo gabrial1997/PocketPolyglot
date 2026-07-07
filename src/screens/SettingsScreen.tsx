@@ -28,6 +28,10 @@ export interface SettingsScreenProps {
   recConsent: boolean;
   onToggleConsent: (next: boolean) => void;
   onDeleteRecordings: () => void;
+  /** Set by the host when the last deleteRecordings() attempt failed; cleared on the next
+   *  successful delete. Surfaced on the row (rather than a swallowed .catch) so the learner is
+   *  never left believing their recordings were deleted when they weren't (GDPR). */
+  deleteRecordingsError?: boolean;
   onSignOut: () => void;
   /** Dev-only controls (host passes this ONLY under __DEV__; absent in production). */
   dev?: {
@@ -228,7 +232,7 @@ function ProfileSettings(props: SettingsScreenProps & { onBack: () => void }): R
           />
           <SettRow
             icon="trash"
-            title="Delete my recordings"
+            title={props.deleteRecordingsError ? 'Delete failed — tap to retry' : 'Delete my recordings'}
             danger
             chevron={false}
             isLast
@@ -312,8 +316,8 @@ function LogoutSheet({
           onPress={onConfirm}
           style={[styles.confirmBtn, { backgroundColor: T.record }]}
         >
-          <LogoutIcon size={18} color="#FFFFFF" />
-          <Text style={styles.confirmText}>Log out</Text>
+          <LogoutIcon size={18} color={T.onPrimary} />
+          <Text style={[styles.confirmText, { color: T.onPrimary }]}>Log out</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -415,7 +419,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 4,
   },
-  confirmText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  confirmText: { fontSize: 16, fontWeight: '600' },
   cancelBtn: {
     alignItems: 'center',
     justifyContent: 'center',

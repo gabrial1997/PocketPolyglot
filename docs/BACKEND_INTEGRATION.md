@@ -48,7 +48,7 @@ type CardKind =
   | 'word/learn-concrete' | 'word/learn-abstract' | 'word/learn-function'
   | 'word/pic-review' | 'word/hear' | 'word/say'
   | 'phrase/hear' | 'phrase/meaning' | 'phrase/sayit'
-  | 'drill' | 'pron';
+  | 'drill' | 'diphthong' | 'pron';
 
 function renderFor(item: ReviewItem): CardKind {
   if (item.stage === 'new') {
@@ -166,7 +166,19 @@ hands back (or hides it).
 - **Stages:** pick `a|b` → say-it-back (`idle → rec → done`).
 - **Out:** `{ correct, spoke:true, recording }`.
 
+### `diphthong` (ie-glide drill)
+- **Trigger:** a `pair` item **with audio** whose `glide` field is set — `renderFor()` routes it
+  here instead of `drill` (a pair without `glide` stays a plain `drill`).
+- **In:** `item.pair` + `item.glide` (`{ combo, from, to, audioUrl? }`; the isolated-glide clip
+  falls back to the native clip when unseeded).
+- **Stages:** meet the glide → contrast (pick `a|b`) → say-it-back.
+- **Out:** `{ correct, spoke:true, recording }` — same shape as `drill`.
+- **Component:** `DiphthongDrillScreen` — `src/screens/DiphthongDrillScreen.tsx`.
+
 ### `pron`
+> **Status: not yet reachable in the production loop (Phase 1).** `renderFor()` never returns
+> `'pron'` today — every `item.type` resolves to another kind first. The registry entry and this
+> contract stand ready for Phase 1, when GOP scoring lands and pronunciation items get scheduled.
 - **In:** `item.audio.nativeUrl`.
 - **Out:** `{ spoke:true, recording }` for server-side pronunciation scoring (the
   waveform/pitch compare in the mock is illustrative; real scoring is backend).

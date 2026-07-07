@@ -52,10 +52,17 @@ export function useSession(): SessionState {
   // Continue (submit/advance firing twice on the same card before it re-renders) can't skip an item
   // or double-post. Reset whenever `pos` changes (i.e. a fresh card is shown).
   const advancing = useRef(false);
+  // Refresh generation: bumped when reload()'s known.refresh() lands. `known` is a stable service
+  // instance whose all() returns a mutable internal set, so neither `pos` (still 0) nor `known`
+  // changes after the first load — without this tick the FIRST card's knownUnion would be computed
+  // from the pre-refresh set and never recomputed (a fully-known phrase at position 0 rendered
+  // phrase/locked and was silently dropped by advance()).
+  const [knownGen, setKnownGen] = useState(0);
 
   const reload = useCallback(async () => {
     setLoading(true);
     await known.refresh();
+    setKnownGen((g) => g + 1); // the persisted known set just (re)loaded — recompute knownUnion
     const items = await srs.getDueBatch();
     setQueue(expandLearningSteps(items, LEARNING_STEP_GROUP_SIZE));
     setPos(0);
@@ -78,10 +85,11 @@ export function useSession(): SessionState {
   // The known-word set the gate sees = the persisted store UNION the in-session overlay. Recomputed
   // on every position change — `learned`/`revealed` are refs that mutate between renders, and a
   // re-queued phrase is the SAME object at two positions, so `pos` (not `item`) is the reliable
-  // signal that we have moved to a fresh encounter.
+  // signal that we have moved to a fresh encounter. `knownGen` covers the remaining gap: position 0
+  // never changes across reload(), so the refresh tick forces the post-refresh recompute there.
   const knownUnion = useMemo(
     () => new Set<string>([...known.all(), ...learned.current]),
-    [pos, known], // eslint-disable-line react-hooks/exhaustive-deps
+    [pos, known, knownGen], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const kind: CardKind | null = useMemo(() => {

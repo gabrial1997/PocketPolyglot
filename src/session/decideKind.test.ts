@@ -19,9 +19,7 @@ it('locked while any word unknown', () => {
 it('reveals unlock ONCE for ANY new unlocked phrase — building blocks: arriving IS the unlock', () => {
   // No prior locked sighting required: a phrase admitted with already-known blocks
   // (learned on earlier days) still opens with the chime + reveal.
-  const r = decideKind(phrase(), allKnown, empty);
-  expect(r.kind).toBe('phrase/unlock');
-  expect(r.nowUnlocked).toBe(true);
+  expect(decideKind(phrase(), allKnown, empty).kind).toBe('phrase/unlock');
 });
 
 it('after the unlock is revealed, resolves to the review kind (hear for a new phrase)', () => {

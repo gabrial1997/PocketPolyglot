@@ -2,9 +2,15 @@
 // the injected services and renders the PURE HomeScreen via props. The screen never touches a
 // service. Home reuses srs.getDueSummary() + progress.getCoverage() (NOT a ReviewItem/CardResult).
 // `name` is supplied by the caller (derived from the signed-in user) — never hard-coded. LOCKED: no gamification.
+//
+// Loading/error are explicit (hostStates): a failed core fetch shows a retryable error instead of
+// silently rendering "0 words" defaults. The podcast teaser reuses PodcastService — it shows the
+// REAL episode title when one exists and is simply hidden otherwise (honest omission; the Listen
+// tab still reaches the pod screen).
 import React, { useEffect, useState } from 'react';
 import { useServices } from '../services/ServiceProvider';
 import { HomeScreen } from './HomeScreen';
+import { HostLoading, HostError } from './hostStates';
 
 /** Time-of-day Latvian greeting. Morning → Labrīt, daytime → Labdien, evening → Labvakar. */
 function greetingFor(hour: number): string {
@@ -24,6 +30,11 @@ function formatDate(d: Date): string {
   }
 }
 
+type State =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ready'; newCount: number; reviewCount: number; known: number; total: number };
+
 export function HomeHost({
   name,
   onStart,
@@ -33,12 +44,10 @@ export function HomeHost({
   onStart?: () => void;
   onOpenPodcast?: () => void;
 }): React.JSX.Element {
-  const { srs, progress } = useServices();
-  const [summary, setSummary] = useState<{ newCount: number; reviewCount: number }>({
-    newCount: 0,
-    reviewCount: 0,
-  });
-  const [coverage, setCoverage] = useState<{ known: number; total: number }>({ known: 0, total: 1000 });
+  const { srs, progress, podcast } = useServices();
+  const [state, setState] = useState<State>({ status: 'loading' });
+  const [podcastTitle, setPodcastTitle] = useState<string | undefined>(undefined);
+  const [attempt, setAttempt] = useState(0);
 
   const now = new Date();
   const greeting = greetingFor(now.getHours());
@@ -46,36 +55,50 @@ export function HomeHost({
 
   useEffect(() => {
     let active = true;
-    void srs
-      .getDueSummary()
-      .then((s) => {
-        if (active) setSummary(s);
+    setState({ status: 'loading' });
+    Promise.all([srs.getDueSummary(), progress.getCoverage()])
+      .then(([s, c]) => {
+        if (active)
+          setState({
+            status: 'ready',
+            newCount: s.newCount,
+            reviewCount: s.reviewCount,
+            known: c.known,
+            total: c.total,
+          });
       })
       .catch(() => {
-        /* keep defaults on failure */
+        if (active) setState({ status: 'error' });
       });
-    void progress
-      .getCoverage()
-      .then((c) => {
-        if (active) setCoverage(c);
+    // Teaser data is supplementary: no episode (or a failed fetch) just hides the teaser —
+    // an honest omission, never a fabricated title.
+    podcast
+      .getEpisode()
+      .then((e) => {
+        if (active) setPodcastTitle(e.title && e.audioUrl ? e.title : undefined);
       })
       .catch(() => {
-        /* keep defaults on failure */
+        if (active) setPodcastTitle(undefined);
       });
     return () => {
       active = false;
     };
-  }, [srs, progress]);
+  }, [srs, progress, podcast, attempt]);
+
+  if (state.status === 'loading') return <HostLoading />;
+  if (state.status === 'error') return <HostError onRetry={() => setAttempt((a) => a + 1)} />;
 
   return (
     <HomeScreen
       greeting={greeting}
       name={name}
       dateLabel={dateLabel}
-      newCount={summary.newCount}
-      reviewCount={summary.reviewCount}
-      knownCount={coverage.known}
-      totalWords={coverage.total}
+      newCount={state.newCount}
+      reviewCount={state.reviewCount}
+      knownCount={state.known}
+      totalWords={state.total}
+      podcastTitle={podcastTitle}
+      podcastSubtitle={podcastTitle ? 'AI episode' : undefined}
       onStart={onStart}
       onOpenPodcast={onOpenPodcast}
     />

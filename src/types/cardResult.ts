@@ -9,5 +9,7 @@ export interface CardResult {
   spoke?: boolean; // did the user record an attempt
   recording?: Blob | string; // audio blob or uploaded URL, for pron scoring
   selfRating?: 'good' | 'again'; // phrase say-it self rating
+  // Deferred: no card measures or populates this yet, so the DB column is always null today.
+  // Kept because the column exists (BACKEND_INTEGRATION §3) — wire it up before relying on it.
   latencyMs?: number;
 }

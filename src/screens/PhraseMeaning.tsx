@@ -21,6 +21,10 @@ export function PhraseMeaning({ item, onPlay, onStop, onPreload, onAnswer, onCom
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
+  // Audio is a non-blocking backfill overlay: when the item has no envelope we hide the play orb
+  // + waveform + speed chip and keep the phrase + choices (hasAudio semantics per ReviewItem —
+  // `!!item.audio?.envelope`, same guard as the learn cards / WordPicReview).
+  const hasAudio = !!item.audio?.envelope;
   const { playing, positionMs, rate, play, stop: stopGate } = usePlayClip(item.audio?.envelope); // reactive soundbar gate
   // The orb is a play/pause toggle (bug 3): tapping mid-clip stops the voice; tapping at rest replays.
   const replay = (): void => {
@@ -28,8 +32,9 @@ export function PhraseMeaning({ item, onPlay, onStop, onPreload, onAnswer, onCom
     else play(() => onPlay('native', speed), speed);
   };
   // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
+  // Skip when audio-less so we never warm a non-existent clip.
   useEffect(() => {
-    onPreload?.('native');
+    if (hasAudio) onPreload?.('native');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [wrongValue, setWrongValue] = useState<string | null>(null);
@@ -64,16 +69,20 @@ export function PhraseMeaning({ item, onPlay, onStop, onPreload, onAnswer, onCom
           <Text style={[styles.phrase, { color: T.ink }]}>{item.target}</Text>
         </View>
 
-        {/* compact audio row */}
-        <View style={styles.audioRow}>
-          <PlayOrb size={46} playing={playing} onPress={replay} />
-          <View style={{ flex: 1 }}>
-            <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={34} count={36} />
-          </View>
-        </View>
-        <View style={{ marginTop: 12 }}>
-          <SpeedChip value={speed} onChange={changeSpeed} />
-        </View>
+        {/* compact audio row — hidden entirely when the item has no audio (never a silent orb) */}
+        {hasAudio ? (
+          <>
+            <View style={styles.audioRow}>
+              <PlayOrb size={46} playing={playing} onPress={replay} />
+              <View style={{ flex: 1 }}>
+                <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={34} count={36} />
+              </View>
+            </View>
+            <View style={{ marginTop: 12 }}>
+              <SpeedChip value={speed} onChange={changeSpeed} />
+            </View>
+          </>
+        ) : null}
 
         <View style={{ marginTop: 30 }}>
           <PromptText variant="serif">What does it mean?</PromptText>

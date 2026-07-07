@@ -130,3 +130,31 @@ describe('usePlayClip real-position bridge', () => {
     expect(result.current.rate).toBe(0.7);
   });
 });
+
+describe('usePlayClip single-channel claim', () => {
+  it('a play() on one instance settles every other mounted instance immediately', () => {
+    const env = new Array(10).fill(0.5);
+    const { result } = renderHook(() => ({ a: usePlayClip(env), b: usePlayClip(env) }));
+
+    act(() => result.current.a.play());
+    expect(result.current.a.playing).toBe(true);
+
+    act(() => result.current.b.play()); // b claims the single channel
+    expect(result.current.b.playing).toBe(true);
+    expect(result.current.a.playing).toBe(false); // a settled — one channel, one lit bar
+
+    act(() => result.current.a.play()); // and back
+    expect(result.current.a.playing).toBe(true);
+    expect(result.current.b.playing).toBe(false);
+  });
+
+  it('replaying the SAME instance does not cancel itself', () => {
+    const env = new Array(10).fill(0.5); // 500ms gate
+    const { result } = renderHook(() => usePlayClip(env));
+    act(() => result.current.play());
+    act(() => result.current.play()); // tap-to-replay claims again
+    expect(result.current.playing).toBe(true);
+    act(() => { jest.advanceTimersByTime(520); });
+    expect(result.current.playing).toBe(false);
+  });
+});

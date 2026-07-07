@@ -1,7 +1,7 @@
 // EditSheet — pure presentational edit sheet: text inputs for editable fields + qa_status stepper.
 // PURE: no service imports, no fetch. Data-in / events-out via onSubmit/onCancel only.
 // Import EDITABLE_FIELDS_BY_TABLE + QA_ORDER from contentEdit (single source of truth).
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -67,6 +67,18 @@ export function EditSheet({
 
   // qa_status state.
   const [qaStatus, setQaStatus] = useState<QaStatus>(initial.qa_status);
+
+  // Re-seed when the sheet is retargeted at a DIFFERENT item while staying mounted (`initial`
+  // identity / table change). Without this, stale field values from the previous item would
+  // submit as edits against the new one.
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    for (const col of editableFields) {
+      init[col] = initial[col] ?? '';
+    }
+    setFieldValues(init as Record<EditableFieldKey, string>);
+    setQaStatus(initial.qa_status);
+  }, [initial, editableFields]);
 
   // Stepper helpers.
   const qaIndex = QA_ORDER.indexOf(qaStatus);

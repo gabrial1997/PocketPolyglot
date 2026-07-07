@@ -7,7 +7,7 @@
 // dzert") + the in-phrase form ("It appears here as 'dzeru'."). Calm, nothing to dwell on, so the
 // advance is a faint text button — not the filled CTA.
 //
-// Dynamic hint fields are optional/additive on ReviewItem (see front-end-sync handoff PATCH):
+// Dynamic hint fields are optional on ReviewItem (typed there directly):
 //   lockRemaining?: number — words still to learn (default 1)
 //   lockLemma?: string     — the dictionary form to go learn (e.g. "dzert")
 //   newForm?: string       — how it appears inflected in this phrase (e.g. "dzeru")
@@ -19,14 +19,10 @@ import { CardIcon, Eyebrow, PhraseLine } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import type { PhraseGateProps } from './cardProps';
-import type { ReviewItem } from '../types/reviewItem';
-
-type LockExtra = { lockRemaining?: number; lockLemma?: string; newForm?: string };
 
 export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.Element {
   const T = useTheme();
-  const x = item as ReviewItem & LockExtra;
-  const remaining = x.lockRemaining ?? 1;
+  const remaining = item.lockRemaining ?? 1;
 
   return (
     <Screen>
@@ -40,10 +36,10 @@ export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.El
         <View style={styles.hintRow}>
           <CardIcon name="lock" size={15} color={T.faint} />
           <Text style={[styles.hint, { color: T.sub }]}>
-            {x.lockLemma ? (
+            {item.lockLemma ? (
               <>
                 {remaining} {remaining === 1 ? 'word' : 'words'} to go — learn{' '}
-                <Text style={{ fontFamily: fonts.headline, fontWeight: '600', color: T.ink }}>{x.lockLemma}</Text>
+                <Text style={{ fontFamily: fonts.headline, fontWeight: '600', color: T.ink }}>{item.lockLemma}</Text>
               </>
             ) : (
               'Unlocks when you know its words.'
@@ -51,8 +47,8 @@ export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.El
           </Text>
         </View>
 
-        {x.newForm ? (
-          <Text style={[styles.appears, { color: T.faint }]}>It appears here as “{x.newForm}”.</Text>
+        {item.newForm ? (
+          <Text style={[styles.appears, { color: T.faint }]}>It appears here as “{item.newForm}”.</Text>
         ) : null}
       </View>
 

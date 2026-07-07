@@ -3,9 +3,12 @@
 // Phase 0: STORE + COMPARE ONLY — no scoring, no Whisper/GOP/ML anywhere.
 //
 // Contract (RecorderService):
-//   start(): request permission, ensure record audio mode once, create a fresh AudioRecorder per
-//            take, prepareToRecordAsync() then record(). Throws if permission denied.
-//   stop():  await recorder.stop(), return recorder.uri (string). Throws if uri is null.
+//   start(): request permission, ensure record audio mode once, stop+release any still-active
+//            recorder (never leave a hot mic behind), create a fresh AudioRecorder per take,
+//            prepareToRecordAsync() then record(). Throws if permission denied.
+//   stop():  await recorder.stop(), always restore playback audio mode (finally), return
+//            recorder.uri (string). Throws if uri is null; a second stop() throws 'No active
+//            recorder' — the reference is cleared on the first stop.
 //   isRecording(): returns the internal flag — does NOT trust the SharedObject across awaits.
 //
 // Note: AudioRecorder is exposed as AudioModule.AudioRecorder (not a direct named value export —
@@ -36,8 +39,19 @@ export class ExpoRecorderService implements RecorderService {
     // 2. Ensure record audio mode exactly once per service instance.
     await this.ensureRecordMode();
 
-    // 3. Release the previous recorder if one exists (one recorder instance per take).
+    // 3. Stop + release the previous recorder if one is still active (one recorder instance per
+    //    take). Just nulling the reference would leave the old NATIVE recorder holding the mic
+    //    open for the rest of the session.
+    const previous = this.recorder;
     this.recorder = null;
+    this.recording = false;
+    if (previous) {
+      try {
+        await previous.stop();
+      } catch {
+        // Already stopped/released — nothing to clean up.
+      }
+    }
 
     // 4. Create a fresh AudioRecorder, prepare, then record.
     const recorder = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -48,21 +62,27 @@ export class ExpoRecorderService implements RecorderService {
   }
 
   async stop(): Promise<string> {
+    // Clear the reference up front so a second stop() throws 'No active recorder' instead of
+    // "succeeding" with a stale uri from the finished take.
     const recorder = this.recorder;
+    this.recorder = null;
     this.recording = false;
 
     if (!recorder) {
       throw new Error('No active recorder — call start() first.');
     }
 
-    await recorder.stop();
-
-    // Restore playback routing. iOS leaves the session in playAndRecord (earpiece / ducked output)
-    // after recording, which makes every subsequent clip quiet for the rest of the session. Reset
-    // BEFORE the uri check so the session is always cleaned up, even on an interrupted/null take.
-    // Clear the guard so the next start() re-applies record mode (allowsRecording:true).
-    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
-    this.recordModeReady = false;
+    try {
+      await recorder.stop();
+    } finally {
+      // Restore playback routing. iOS leaves the session in playAndRecord (earpiece / ducked
+      // output) after recording, which makes every subsequent clip quiet for the rest of the
+      // session. Reset in a FINALLY so the session is always cleaned up — even when recorder.stop()
+      // rejects or the take is interrupted/null. Clear the guard so the next start() re-applies
+      // record mode (allowsRecording:true).
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+      this.recordModeReady = false;
+    }
 
     const uri = recorder.uri;
     if (uri === null) {

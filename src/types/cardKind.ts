@@ -27,6 +27,3 @@ export type PhraseGateKind = 'phrase/locked' | 'phrase/unlock';
 
 /** Every wireable card screen (Tier A). */
 export type CardKind = ReviewCardKind | PhraseGateKind;
-
-/** Tier-B standalone screens — NOT cards, not in the review loop (WIRING_MAP §3). */
-export type StandaloneScreen = 'home' | 'pod' | 'prog';

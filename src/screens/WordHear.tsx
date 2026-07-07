@@ -39,11 +39,16 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
   // retrieval — onComplete carries no `correct` field, so it neither counts as a rep
   // (repKind requires correct===true) nor advances any recall/unlock gate.
   const hasChoices = (item.choices?.length ?? 0) >= 2;
+  // Audio is a non-blocking backfill overlay: when the item has no envelope we hide the play orb
+  // + waveform + speed chip and keep the word, choices and gloss (hasAudio semantics per
+  // ReviewItem — `!!item.audio?.envelope`, same guard as the learn cards / WordPicReview).
+  const hasAudio = !!item.audio?.envelope;
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
+  // Skip when audio-less so we never warm a non-existent clip.
   useEffect(() => {
-    onPreload?.('native');
+    if (hasAudio) onPreload?.('native');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -75,12 +80,16 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
       <CardBody>
         <Eyebrow>Listen — which meaning?</Eyebrow>
         <Text style={[styles.headword, { color: T.ink }]}>{item.target}</Text>
-        <View style={styles.wave}>
-          <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={48} count={42} />
-        </View>
-        <PlayOrb size={64} playing={playing} onPress={replay} />
-        <SpeedChip value={speed} onChange={changeSpeed} />
-        <Caption>Tap to replay</Caption>
+        {hasAudio ? (
+          <>
+            <View style={styles.wave}>
+              <LiveWaveform envelope={item.audio?.envelope} playing={playing} positionMs={positionMs} rate={rate} frameMs={FRAME_MS} height={48} count={42} />
+            </View>
+            <PlayOrb size={64} playing={playing} onPress={replay} />
+            <SpeedChip value={speed} onChange={changeSpeed} />
+            <Caption>Tap to replay</Caption>
+          </>
+        ) : null}
         {!hasChoices ? (
           <GlossLine gloss={item.gloss ?? ''} pron={item.pron} />
         ) : showChoices ? (
@@ -90,7 +99,7 @@ export function WordHear({ item, onPlay, onStop, onPreload, onAnswer, onComplete
                 key={c.value}
                 label={c.gloss ?? c.value}
                 state={c.value === correctValue ? 'correct' : c.value === wrongValue ? 'wrong' : 'idle'}
-                disabled={correctValue !== null}
+                disabled={c.value === wrongValue || correctValue !== null}
                 onPress={() => pick(c.value, c.correct)}
               />
             ))}

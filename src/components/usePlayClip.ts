@@ -17,6 +17,21 @@ export function clipMs(envelope?: number[]): number {
   return envelope && envelope.length ? envelope.length * FRAME_MS + TAIL_MS : FALLBACK_MS;
 }
 
+// ── single audio channel ────────────────────────────────────────────────────
+// There is ONE playback channel (one global PlaybackStatus), so at most one hook instance may
+// hold its gate open at a time. Without this, two sibling CompareRows could both stay lit —
+// the stale one satisfying `realDriven` against the OTHER clip's positionMs. play() claims the
+// channel; every other mounted instance settles immediately. Module-level (not context) so it
+// works with or without a PlaybackProvider (tests, the card gallery).
+let claimSeq = 0;
+const claimListeners = new Set<(claim: number) => void>();
+function claimChannel(owner: { current: number }): number {
+  const claim = ++claimSeq;
+  owner.current = claim; // set BEFORE notifying so the claimant skips its own broadcast
+  claimListeners.forEach((l) => l(claim));
+  return claim;
+}
+
 /**
  * Drives a soundbar's `playing` flag (and real `positionMs` when available) for one clip at a time.
  * - `play(fire?, rate?)` fires the supplied playback callback (e.g. `() => onPlay('native')`),
@@ -39,6 +54,7 @@ export function usePlayClip(envelope?: number[]): {
   const [timerPlaying, setTimerPlaying] = useState(false);
   const [rate, setRate] = useState(1);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const myClaim = useRef(0);
 
   const clear = useCallback((): void => {
     if (timer.current) {
@@ -47,10 +63,24 @@ export function usePlayClip(envelope?: number[]): {
     }
   }, []);
 
+  // Another instance claimed the channel → settle this one's gate at once (single channel).
+  useEffect(() => {
+    const onClaim = (claim: number): void => {
+      if (claim === myClaim.current) return; // our own play()
+      clear();
+      setTimerPlaying(false);
+    };
+    claimListeners.add(onClaim);
+    return () => {
+      claimListeners.delete(onClaim);
+    };
+  }, [clear]);
+
   const play = useCallback(
     (fire?: () => void, playRate = 1): void => {
       fire?.();
       clear();
+      claimChannel(myClaim);
       setRate(playRate);
       setTimerPlaying(true);
       // Fallback gate (timer mode). Scaled by 1/rate so a slowed clip lights the bar longer (bug 5).

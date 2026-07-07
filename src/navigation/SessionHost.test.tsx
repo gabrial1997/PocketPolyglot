@@ -190,6 +190,51 @@ it('bounces to home on an empty batch — via effect, not the misleading prog sc
 });
 
 // ---------------------------------------------------------------------------
+// GDPR fail-closed recConsent default
+// ---------------------------------------------------------------------------
+
+it('GDPR fail-closed: cards see recConsent=false until getRecConsent() resolves (no mic flash)', async () => {
+  // A word/say card (review, odd total reps, >=2 choices) — its speak stage gates the mic on
+  // recConsent. Consent NEVER resolves in this render (a slow/hung profile fetch): the
+  // pre-resolution default must be FALSE, so a possibly non-consented user is never shown a mic.
+  const sayItem: ReviewItem = {
+    ...itemA,
+    id: 'say',
+    media: undefined, // no image, so renderFor picks word/say (odd reps + choices), not pic-review
+    receptiveReps: 2,
+    productiveReps: 1,
+  };
+  const services = fakeServices([sayItem, itemB]);
+  services.profile.getRecConsent = () => new Promise<boolean>(() => {});
+  const u = render(
+    <ThemeProvider>
+      <ServiceProvider services={services}>
+        <EditorProvider>
+          <SessionHost onExit={() => undefined} />
+        </EditorProvider>
+      </ServiceProvider>
+    </ThemeProvider>,
+  );
+
+  // word/say choose stage; pick the correct word, then wait out the green confirm beat.
+  await settle(() => expect(u.getByText('Which word says it?')).toBeTruthy());
+  fireEvent.press(u.getByText('māja'));
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, CONFIRM_MS + 30));
+  });
+
+  // Speak stage while consent is STILL unresolved: the recording-off caption (recConsent=false
+  // branch), never the live-mic prompt. With the old permissive default this showed the mic.
+  await settle(() =>
+    expect(
+      u.getAllByText('Recording is off — turn it on in Settings to hear yourself.').length,
+    ).toBeGreaterThanOrEqual(1),
+  );
+  expect(u.queryByText('Now say it')).toBeNull();
+  expect(u.queryByLabelText('Record')).toBeNull();
+});
+
+// ---------------------------------------------------------------------------
 // F7 — founder flag/edit affordance
 // ---------------------------------------------------------------------------
 

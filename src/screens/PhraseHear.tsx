@@ -5,7 +5,8 @@
 // 2026-06-19 VISUAL SYNC: rebuilt to the mockup (screens-phrase.jsx `PhraseHear`). Eyebrow
 // "NEW PHRASE"; PhraseLine with the just-learned word in primary + underlined; the "dzert, here as
 // 'dzeru'" hint; audio hero (soundbar + PlayOrb 78 + SpeedChip); "Show meaning" toggle; footer
-// "First review tomorrow." + Continue. Soundbar gate timing preserved from the prior card.
+// shows the REAL projected first review (item.reviewPreview) — never a fabricated "tomorrow" —
+// + Continue. Soundbar gate timing preserved from the prior card.
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, SpeedChip, LiveWaveform, CtaButton, usePlayClip, FRAME_MS, type Speed } from '../components';
@@ -13,13 +14,9 @@ import { CardIcon, Eyebrow, PhraseLine, LiteralNote } from '../components/cardCh
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import type { BaseCardProps } from './cardProps';
-import type { ReviewItem } from '../types/reviewItem';
-
-type HearExtra = { newForm?: string; newLemma?: string };
 
 export function PhraseHear({ item, onPlay, onStop, onPreload, onComplete, speed: speedProp, onSpeedChange }: BaseCardProps): React.JSX.Element {
   const T = useTheme();
-  const x = item as ReviewItem & HearExtra;
   const env = item.audio?.envelope;
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
@@ -53,13 +50,13 @@ export function PhraseHear({ item, onPlay, onStop, onPreload, onComplete, speed:
         <Eyebrow>New phrase</Eyebrow>
 
         <View style={{ marginTop: 22 }}>
-          <PhraseLine phrase={item.target} highlight={x.newForm} size={34} />
+          <PhraseLine phrase={item.target} highlight={item.newForm} size={34} />
         </View>
 
-        {x.newLemma || x.newForm ? (
+        {item.newLemma || item.newForm ? (
           <Text style={[styles.hint, { color: T.faint }]}>
-            <Text style={{ fontFamily: fonts.headline, fontWeight: '600', color: T.primary }}>{x.newLemma ?? x.newForm}</Text>
-            {x.newForm ? `, here as “${x.newForm}”` : ''}
+            <Text style={{ fontFamily: fonts.headline, fontWeight: '600', color: T.primary }}>{item.newLemma ?? item.newForm}</Text>
+            {item.newForm ? `, here as “${item.newForm}”` : ''}
           </Text>
         ) : null}
 
@@ -107,9 +104,11 @@ export function PhraseHear({ item, onPlay, onStop, onPreload, onComplete, speed:
       </View>
 
       <View style={styles.footer}>
-        <Text style={[styles.review, { color: T.faint }]}>
-          First review <Text style={{ color: T.sub, fontWeight: '600' }}>tomorrow</Text>.
-        </Text>
+        {/* REAL projected first-review label carried on the item (computed from live FSRS state);
+            omitted entirely when absent — never a fabricated "tomorrow" claim. */}
+        {item.reviewPreview ? (
+          <Text style={[styles.review, { color: T.faint }]}>{item.reviewPreview.pass}.</Text>
+        ) : null}
         <CtaButton title="Continue" onPress={() => onComplete({ itemId: item.id, cardKind: 'phrase/hear', spoke: false })} />
       </View>
     </Screen>

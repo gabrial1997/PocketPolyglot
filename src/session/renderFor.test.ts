@@ -198,14 +198,16 @@ describe('renderFor', () => {
         ),
       ).toBe('drill');
     });
-    it('pair without audio -> word/learn-concrete (guard: audio-less pair must not reach a gated kind)', () => {
+    it('pair without audio -> drill (defensive fallback stays pair-shaped)', () => {
       // B2 should never produce an audio-less pair, but renderFor guards defensively.
-      // Must NOT route to drill, diphthong, or pron (all gated kinds requiring audio).
+      // The fallback must stay pair-shaped: a word/learn-* kind would render a word card with an
+      // empty gloss AND its submitted cardKind would corrupt the introducedToday
+      // LIKE 'word/learn-%' new-word budget with a pair id.
       const result = renderFor(
         noAudioItem({ type: 'pair', pair: { a: 'lapa', b: 'ļauj', correct: 'a', audioUrl: 'p.mp3' } }),
       );
-      expect(result).toBe('word/learn-concrete');
-      expect(result).not.toBe('drill');
+      expect(result).toBe('drill');
+      expect(result).not.toMatch(/^word\/learn-/);
       expect(result).not.toBe('diphthong');
       expect(result).not.toBe('pron');
     });
