@@ -5,13 +5,31 @@ function fakeClient() {
   const calls: { table: string; op: string; payload?: unknown; eq?: [string, unknown] }[] = [];
   // nextSelectRows: a queue — each call to maybeSingle() pops the front; if empty uses the last set.
   let nextSelectRows: (Record<string, unknown> | null)[] = [{ rec_consent: true }];
+  // nextListRows: returned when a select chain is awaited DIRECTLY (a LIST select, no
+  // maybeSingle — e.g. deleteRecordings' storage_path read).
+  let nextListRows: Record<string, unknown>[] = [];
   // nextError: consumed by the next awaitable terminal (maybeSingle / eq-on-update-delete / insert).
   let nextError: { code?: string; message?: string } | null = null;
   // nextWriteError: consumed ONLY by write terminals (insert resolver and update/delete .eq() terminal).
   // Does NOT affect maybeSingle() so read-modify-write tests can let the read succeed and the write fail.
   let nextWriteError: { code?: string; message?: string } | null = null;
+  // nextStorageError: consumed ONLY by the next storage remove() call.
+  let nextStorageError: { message?: string } | null = null;
 
   const client = {
+    storage: {
+      from(bucket: string) {
+        return {
+          remove(paths: string[]) {
+            // Recorded into the SAME calls array so tests can assert ordering vs table ops.
+            calls.push({ table: `storage:${bucket}`, op: 'remove', payload: paths });
+            const err = nextStorageError;
+            nextStorageError = null;
+            return Promise.resolve({ data: null, error: err });
+          },
+        };
+      },
+    },
     from(table: string) {
       const ctx: { table: string; op: string; payload?: unknown; eq?: [string, unknown] } = { table, op: '' };
       const builder: Record<string, unknown> = {
@@ -61,6 +79,13 @@ function fakeClient() {
           nextError = null;
           return { data: err ? null : row, error: err };
         },
+        then(resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) {
+          // Awaiting the select chain directly = a LIST select (real supabase builders are
+          // thenables). Resolves { data: rows[], error } like PostgREST does.
+          const err = nextError;
+          nextError = null;
+          return Promise.resolve({ data: err ? null : nextListRows, error: err }).then(resolve, reject);
+        },
       };
       return builder;
     },
@@ -84,6 +109,10 @@ function fakeClient() {
      * One-shot: cleared after consumption.
      */
     setNextWriteError: (code: string, message = 'injected write error') => { nextWriteError = { code, message }; },
+    /** Rows returned when a select chain is awaited directly (LIST select, no maybeSingle). */
+    setListRows: (rows: Record<string, unknown>[]) => { nextListRows = [...rows]; },
+    /** Inject an error to be returned by the next storage remove(). One-shot. */
+    setStorageError: (message = 'injected storage error') => { nextStorageError = { message }; },
   };
 }
 
@@ -121,12 +150,62 @@ it('setRecConsent(false) clears rec_consent_at', async () => {
   expect((update?.payload as { rec_consent_at: string | null }).rec_consent_at).toBeNull();
 });
 
-it('deleteRecordings deletes the user rows', async () => {
-  const { client, calls } = fakeClient();
+// --- GDPR deleteRecordings: the AUDIO OBJECTS must go, not just the rows ---
+
+it('deleteRecordings removes the storage objects for the user, THEN deletes the rows', async () => {
+  const { client, calls, setListRows } = fakeClient();
+  setListRows([{ storage_path: 'user-1/rec-a.m4a' }, { storage_path: 'user-1/rec-b.m4a' }]);
   const svc = new SupabaseProfileService(client as never, 'user-1');
   await svc.deleteRecordings();
-  const del = calls.find((c) => c.op === 'delete');
-  expect(del).toMatchObject({ table: 'recordings', eq: ['user_id', 'user-1'] });
+  // Reads the user's storage paths first…
+  expect(calls[0]).toMatchObject({ table: 'recordings', op: 'select', eq: ['user_id', 'user-1'] });
+  // …removes the audio objects from the private bucket…
+  const removeIdx = calls.findIndex((c) => c.op === 'remove');
+  expect(calls[removeIdx]).toMatchObject({
+    table: 'storage:recordings',
+    payload: ['user-1/rec-a.m4a', 'user-1/rec-b.m4a'],
+  });
+  // …and only THEN deletes the rows (storage first — never orphan audio behind deleted rows).
+  const deleteIdx = calls.findIndex((c) => c.op === 'delete');
+  expect(deleteIdx).toBeGreaterThan(removeIdx);
+  expect(calls[deleteIdx]).toMatchObject({ table: 'recordings', eq: ['user_id', 'user-1'] });
+});
+
+it('deleteRecordings still deletes the rows when the user has no storage objects (empty case)', async () => {
+  const { client, calls, setListRows } = fakeClient();
+  setListRows([]);
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await svc.deleteRecordings();
+  expect(calls.find((c) => c.op === 'remove')).toBeUndefined(); // no pointless remove([]) call
+  expect(calls.find((c) => c.op === 'delete')).toMatchObject({ table: 'recordings', eq: ['user_id', 'user-1'] });
+});
+
+it('deleteRecordings skips null/empty storage_path values but removes the real ones', async () => {
+  const { client, calls, setListRows } = fakeClient();
+  setListRows([{ storage_path: null }, { storage_path: 'user-1/rec-a.m4a' }, { storage_path: '' }]);
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await svc.deleteRecordings();
+  expect(calls.find((c) => c.op === 'remove')).toMatchObject({ payload: ['user-1/rec-a.m4a'] });
+});
+
+it('deleteRecordings THROWS when the storage remove fails — and leaves the rows in place', async () => {
+  // A swallowed storage failure would delete the rows and leave the learner's voice data orphaned
+  // in the bucket while the app claims it is gone. Callers handle the thrown error.
+  const { client, calls, setListRows, setStorageError } = fakeClient();
+  setListRows([{ storage_path: 'user-1/rec-a.m4a' }]);
+  setStorageError('bucket unavailable');
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await expect(svc.deleteRecordings()).rejects.toMatchObject({ message: 'bucket unavailable' });
+  expect(calls.find((c) => c.op === 'delete')).toBeUndefined();
+});
+
+it('deleteRecordings throws when the storage_path read fails', async () => {
+  const { client, calls, setNextError } = fakeClient();
+  setNextError('42501', 'permission denied');
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await expect(svc.deleteRecordings()).rejects.toMatchObject({ code: '42501' });
+  expect(calls.find((c) => c.op === 'remove')).toBeUndefined();
+  expect(calls.find((c) => c.op === 'delete')).toBeUndefined();
 });
 
 // --- D1b: getProfile + ensureProfile ---

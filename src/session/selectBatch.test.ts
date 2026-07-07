@@ -368,11 +368,11 @@ describe('selectBatch', () => {
       expect(ids).toContain('w3');
     });
 
-    it('respects pre-seeded todaysSemanticFields from earlier sessions', () => {
+    it('respects a pre-seeded todaysSemanticFields set (per-batch seed; production always passes empty)', () => {
       const ctx = baseCtx({
         accountAgeDays: 1,
         introducedToday: 0,
-        todaysSemanticFields: new Set(['food']), // already admitted today
+        todaysSemanticFields: new Set(['food']), // seeded by the caller for this batch
       });
 
       const candidates: Candidate[] = [
@@ -504,8 +504,8 @@ describe('selectBatch', () => {
   // 12. Review-eligibility filter
   // -------------------------------------------------------------------------
   describe('review-eligibility filter', () => {
-    it('keeps an audio-less + image-less WORD due ref (now reviewable via the written word)', () => {
-      const audiolessWord = makeDueRef('w-kept', { kind: 'word', hasAudioEnvelope: false, hasImage: false });
+    it('keeps an audio-less WORD due ref (now reviewable via the written word)', () => {
+      const audiolessWord = makeDueRef('w-kept', { kind: 'word', hasAudioEnvelope: false });
       const ctx = baseCtx();
 
       const result = selectBatch({ due: [audiolessWord], candidates: [], ctx });
@@ -514,8 +514,8 @@ describe('selectBatch', () => {
       expect(result.due[0]?.id).toBe('w-kept');
     });
 
-    it('keeps an audio-less + image-less PHRASE due ref (reviewable via the written phrase)', () => {
-      const audiolessPhrase = makeDueRef('p-kept', { kind: 'phrase', hasAudioEnvelope: false, hasImage: false });
+    it('keeps an audio-less PHRASE due ref (reviewable via the written phrase)', () => {
+      const audiolessPhrase = makeDueRef('p-kept', { kind: 'phrase', hasAudioEnvelope: false });
       const ctx = baseCtx();
 
       const result = selectBatch({ due: [audiolessPhrase], candidates: [], ctx });
@@ -525,7 +525,7 @@ describe('selectBatch', () => {
     });
 
     it('drops an audio-less PAIR due ref (perception drills genuinely need the clip)', () => {
-      const audiolessPair = makeDueRef('pair-dropped', { kind: 'pair', hasAudioEnvelope: false, hasImage: false });
+      const audiolessPair = makeDueRef('pair-dropped', { kind: 'pair', hasAudioEnvelope: false });
       const ctx = baseCtx();
 
       const result = selectBatch({ due: [audiolessPair], candidates: [], ctx });
@@ -534,24 +534,8 @@ describe('selectBatch', () => {
       expect(result.order.find(o => o.id === 'pair-dropped')).toBeUndefined();
     });
 
-    it('keeps an image-only due ref (no audio envelope)', () => {
-      const imageOnlyDue = makeDueRef('kept', {
-        hasAudioEnvelope: false,
-        hasImage: true,
-      });
-      const ctx = baseCtx();
-
-      const result = selectBatch({ due: [imageOnlyDue], candidates: [], ctx });
-
-      expect(result.due).toHaveLength(1);
-      expect(result.due[0]?.id).toBe('kept');
-    });
-
-    it('keeps an audio-only due ref (no image)', () => {
-      const audioOnlyDue = makeDueRef('kept2', {
-        hasAudioEnvelope: true,
-        hasImage: false,
-      });
+    it('keeps an audio-carrying due ref', () => {
+      const audioOnlyDue = makeDueRef('kept2', { hasAudioEnvelope: true });
       const ctx = baseCtx();
 
       const result = selectBatch({ due: [audioOnlyDue], candidates: [], ctx });

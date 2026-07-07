@@ -124,4 +124,38 @@ describe('DiphthongDrillScreen', () => {
       spoke: true,
     });
   });
+
+  it('preloads the GLIDE clip on mount — the meet phase’s first tap plays the glide, not native', () => {
+    const u = renderCard({}, { onPreload: jest.fn() });
+    expect(u.props.onPreload).toHaveBeenCalledWith('glide');
+    expect(u.props.onPreload).toHaveBeenCalledWith('native');
+  });
+
+  it('stage transitions stop REAL playback via onStop, not just the local soundbar gate', () => {
+    const u = renderCard({}, { onStop: jest.fn() });
+    fireEvent.press(u.getByLabelText('Play')); // start the glide clip on the meet stage
+    fireEvent.press(u.getByText('Hear it in a word')); // meet -> contrast
+    expect(u.props.onStop).toHaveBeenCalled();
+  });
+
+  // ── recConsent gate (GDPR) ─────────────────────────────────────────────────
+  // When recConsent=false the MicOrb must be hidden on the say stage, the gate must say WHY, and
+  // the card must still complete via Next combination — emitting spoke:false (nothing recorded).
+
+  it('recConsent=false: no record affordance, an honest explanation, and completion with spoke:false', () => {
+    const u = renderCard({}, { recConsent: false });
+    toContrast(u);
+    fireEvent.press(u.getByText('lieta')); // correct side
+    fireEvent.press(u.getByText('Say it back')); // -> say stage
+    expect(u.queryByLabelText('Record')).toBeNull();
+    expect(u.getByText('Recording is off — turn it on in Settings to hear yourself.')).toBeTruthy();
+    fireEvent.press(u.getByText('Next combination')); // honest non-recording completion path
+    expect(u.props.onComplete).toHaveBeenCalledWith({
+      itemId: 'lieta-leta',
+      cardKind: 'diphthong',
+      correct: true,
+      spoke: false,
+    });
+    expect(u.props.onRecordStart).not.toHaveBeenCalled();
+  });
 });

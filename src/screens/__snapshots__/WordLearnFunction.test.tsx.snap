@@ -53,7 +53,7 @@ exports[`WordLearnFunction renders the example sentences from item data (snapsho
           style={
             [
               {
-                "fontSize": 12,
+                "fontSize": 11.5,
                 "fontWeight": "600",
                 "letterSpacing": 1.3,
                 "textAlign": "center",
@@ -1588,22 +1588,6 @@ exports[`WordLearnFunction renders the example sentences from item data (snapsho
         ]
       }
     >
-      <Text
-        style={
-          [
-            {
-              "fontSize": 13.5,
-              "fontWeight": "500",
-              "textAlign": "center",
-            },
-            {
-              "color": "rgba(26,39,51,0.34)",
-            },
-          ]
-        }
-      >
-        First review tomorrow.
-      </Text>
       <View
         accessibilityRole="button"
         accessibilityState={

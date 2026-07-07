@@ -118,9 +118,12 @@ async function settle(check: () => void, stepMs = 25, maxSteps = 200) {
   check(); // final attempt: throw the real assertion error if still failing
 }
 
-// choose -> speak -> rec -> result -> Continue, optionally missing the first answer.
+// choose -> speak -> result -> Continue, optionally missing the first answer.
 // A correct pick holds a CONFIRM_MS green beat before advancing to speak; this suite runs on REAL
-// timers, so wait out that window before reaching for the (speak-stage) Record control.
+// timers, so wait out that window before reaching for the speak-stage CTA. recConsent is FALSE in
+// these fakes (fail-closed GDPR default; getRecConsent() also resolves false), so the speak stage
+// shows a plain "Continue" CTA instead of the mic — no Record/Stop affordance ever renders.
+const REC_OFF_CAPTION = 'Recording is off — turn it on in Settings to hear yourself.';
 async function completeCard(
   u: ReturnType<typeof renderHost>,
   correctLabel: string,
@@ -132,9 +135,17 @@ async function completeCard(
   await act(async () => {
     await new Promise((r) => setTimeout(r, CONFIRM_MS + 30));
   });
-  fireEvent.press(u.getByLabelText('Record'));
-  fireEvent.press(u.getByLabelText('Stop recording'));
-  fireEvent.press(u.getByText('Continue'));
+  // Speak stage (recConsent=false): the recording-off caption + a plain Continue.
+  await settle(() => expect(u.getAllByText(REC_OFF_CAPTION).length).toBeGreaterThanOrEqual(1));
+  let continues = u.getAllByText('Continue');
+  fireEvent.press(continues[continues.length - 1]);
+  // Result stage: the recording-off caption is gone; its Continue completes the card.
+  await settle(() => {
+    expect(u.queryByText(REC_OFF_CAPTION)).toBeNull();
+    expect(u.getAllByText('Continue').length).toBeGreaterThanOrEqual(1);
+  });
+  continues = u.getAllByText('Continue');
+  fireEvent.press(continues[continues.length - 1]);
 }
 
 it('starts each item fresh — stage/miss/recording do not leak across cards', async () => {

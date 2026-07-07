@@ -17,7 +17,8 @@ function renderScreen(props: React.ComponentProps<typeof ProgressScreen>) {
 describe('ProgressScreen (honest coverage)', () => {
   it('a brand-new user sees 0% and NO fabricated frequency bands', () => {
     const u = renderScreen({ known: 0, total: 1000 });
-    expect(u.getByText('0')).toBeTruthy(); // hero percent
+    // "0" appears as both the hero percent and the known-word count — both honest zeros.
+    expect(u.getAllByText('0').length).toBeGreaterThanOrEqual(1);
     expect(u.getByText(/of the 1,000 most common words/)).toBeTruthy();
     // The old hard-coded band defaults must never appear without real data.
     expect(u.queryByText('Top 100')).toBeNull();

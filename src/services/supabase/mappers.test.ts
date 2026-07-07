@@ -437,11 +437,37 @@ describe('records misses (lapses)', () => {
 // --- helpers ----------------------------------------------------------------
 
 describe('nextReviewLabel', () => {
-  const now = new Date('2026-06-14T12:00:00Z');
+  // Local-time constructors (not UTC strings): the label is local-calendar-day aware, so the
+  // fixtures must be pinned to local wall-clock times to stay TZ-independent.
+  const noon = new Date(2026, 5, 14, 12, 0, 0);
   it('formats singular / plural / same-day', () => {
-    expect(nextReviewLabel(new Date('2026-06-15T12:00:00Z'), now)).toBe('Next review in 1 day');
-    expect(nextReviewLabel(new Date('2026-06-19T12:00:00Z'), now)).toBe('Next review in 5 days');
-    expect(nextReviewLabel(new Date('2026-06-14T18:00:00Z'), now)).toBe('Next review later today');
+    expect(nextReviewLabel(new Date(2026, 5, 15, 12, 0, 0), noon)).toBe('Next review in 1 day');
+    expect(nextReviewLabel(new Date(2026, 5, 19, 12, 0, 0), noon)).toBe('Next review in 5 days');
+    expect(nextReviewLabel(new Date(2026, 5, 14, 18, 0, 0), noon)).toBe('Next review later today');
+  });
+
+  it('is day-boundary aware: a 10h interval at 8pm lands tomorrow morning, not "later today"', () => {
+    const eightPm = new Date(2026, 5, 14, 20, 0, 0);
+    const sixAmNextDay = new Date(2026, 5, 15, 6, 0, 0); // 10h later, past local midnight
+    expect(nextReviewLabel(sixAmNextDay, eightPm)).toBe('Next review in 1 day');
+  });
+
+  it('stays "later today" for a short interval that does NOT cross local midnight', () => {
+    const eightPm = new Date(2026, 5, 14, 20, 0, 0);
+    const elevenFiftyPm = new Date(2026, 5, 14, 23, 50, 0);
+    expect(nextReviewLabel(elevenFiftyPm, eightPm)).toBe('Next review later today');
+  });
+
+  it('counts local midnights crossed, not elapsed hours (30h at 6pm → in 2 days)', () => {
+    const sixPm = new Date(2026, 5, 14, 18, 0, 0);
+    const thirtyHoursLater = new Date(2026, 5, 16, 0, 0, 0); // crosses the 15th AND 16th midnights
+    expect(nextReviewLabel(thirtyHoursLater, sixPm)).toBe('Next review in 2 days');
+  });
+
+  it('an overdue due date reads "later today"', () => {
+    const noon14 = new Date(2026, 5, 14, 12, 0, 0);
+    const yesterday = new Date(2026, 5, 13, 12, 0, 0);
+    expect(nextReviewLabel(yesterday, noon14)).toBe('Next review later today');
   });
 });
 

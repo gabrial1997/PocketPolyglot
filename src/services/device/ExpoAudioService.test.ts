@@ -169,3 +169,35 @@ describe('ExpoAudioService.subscribe', () => {
     expect(seen).toHaveLength(0);
   });
 });
+
+describe('ensureAudioMode retry (silent-switch config)', () => {
+  // The ready flag is module-scoped, so this suite re-requires a FRESH module instance (and a
+  // fresh expo-audio mock) via resetModules — the earlier suites have already flipped the flag.
+  it('retries setAudioModeAsync after a failed attempt, and stops once it succeeds', async () => {
+    jest.resetModules();
+    // Re-require the mocked expo-audio (new mock fns from the factory) BEFORE the service.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const expoAudio = require('expo-audio') as {
+      setAudioModeAsync: jest.Mock;
+      createAudioPlayer: jest.Mock;
+    };
+    expoAudio.setAudioModeAsync.mockRejectedValueOnce(new Error('audio session busy'));
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { ExpoAudioService: FreshService } = require('./ExpoAudioService') as {
+      ExpoAudioService: new () => import('./ExpoAudioService').ExpoAudioService;
+    };
+    const svc = new FreshService();
+
+    // First play: config rejects. play() must still resolve (playback proceeds un-configured).
+    await expect(svc.play('a.mp3')).resolves.toBeUndefined();
+    expect(expoAudio.setAudioModeAsync).toHaveBeenCalledTimes(1);
+
+    // Second play: the flag must NOT have been latched by the failure — config is retried.
+    await svc.play('a.mp3');
+    expect(expoAudio.setAudioModeAsync).toHaveBeenCalledTimes(2);
+
+    // Third play: the successful attempt latched the flag — no further calls.
+    await svc.play('a.mp3');
+    expect(expoAudio.setAudioModeAsync).toHaveBeenCalledTimes(2);
+  });
+});

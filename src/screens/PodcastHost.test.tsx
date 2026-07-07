@@ -85,7 +85,8 @@ describe('PodcastHost', () => {
     expect(await u.findByText('No episode yet')).toBeTruthy();
     // The old mockup sample data must never surface.
     expect(u.queryByText('Rīta saruna')).toBeNull();
-    expect(u.queryByText(/built from/)).toBeNull();
+    expect(u.queryByText(/\d+ words/)).toBeNull(); // the fabricated "built from 92 words" line
+    expect(u.queryByText('3 min')).toBeNull();
     expect(u.queryByLabelText('Play')).toBeNull();
   });
 

@@ -41,18 +41,22 @@ export class SupabaseRecordingUploader implements RecordingUploader {
       const id: string = randomUuid();
       const storage_path = `${this.userId}/${id}.m4a`;
 
-      // Resolve bytes: string URI → fetch; Blob → use directly.
-      let blob: Blob;
+      // Resolve upload bytes. React Native cannot reliably materialise a Blob from a
+      // fetch(file://…) response (SupabaseBugReportService uploads decoded ArrayBuffer bytes
+      // for the same reason), so the file-URI path reads the response as an ArrayBuffer and
+      // uploads raw bytes. A real Blob (web callers) is uploaded directly.
+      let body: Blob | ArrayBuffer;
       if (typeof recording === 'string') {
-        blob = await fetch(recording).then(r => r.blob());
+        body = await fetch(recording).then(r => r.arrayBuffer());
       } else {
-        blob = recording;
+        body = recording;
       }
 
-      // Upload to the private bucket.
+      // Upload to the private bucket. NB: 'audio/mp4' is the registered MIME type for an
+      // .m4a (MPEG-4 audio) container — 'audio/m4a' is not a real MIME type.
       const { error: uploadError } = await this.client.storage
         .from('recordings')
-        .upload(storage_path, blob, { contentType: 'audio/m4a', upsert: false });
+        .upload(storage_path, body, { contentType: 'audio/mp4', upsert: false });
 
       if (uploadError) {
         // Do not throw — the session must still advance.
@@ -77,7 +81,7 @@ export class SupabaseRecordingUploader implements RecordingUploader {
 
       return id;
     } catch {
-      // Backstop for any thrown rejection (e.g. fetch network error, r.blob() rejection).
+      // Backstop for any thrown rejection (e.g. fetch network error, r.arrayBuffer() rejection).
       // Returns null so the session always advances.
       return null;
     }

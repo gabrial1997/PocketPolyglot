@@ -4,14 +4,15 @@
 // NEVER score / score_payload. No upload + no insert without consent.
 //
 // The Supabase client is faked with chainable builders for .storage.from().upload()/.remove()
-// and .from('recordings').insert(). global fetch is mocked to return a fake Blob.
+// and .from('recordings').insert(). global fetch is mocked to return fake ArrayBuffer bytes
+// (the RN-safe file-URI path — fetch(file://).blob() is unreliable in React Native).
 
 import { SupabaseRecordingUploader } from './SupabaseRecordingUploader';
 
 // ---------------------------------------------------------------------------
-// Fake Blob helper
+// Fake bytes helper
 // ---------------------------------------------------------------------------
-const FAKE_BLOB = new Blob(['audio-data'], { type: 'audio/m4a' });
+const FAKE_BYTES: ArrayBuffer = new TextEncoder().encode('audio-data').buffer as ArrayBuffer;
 
 // ---------------------------------------------------------------------------
 // Fake Supabase client builder
@@ -23,14 +24,14 @@ function makeFakeClient(opts: {
 }) {
   // Track calls for assertions.
   const calls = {
-    storageUpload: null as { path: string; blob: Blob; options: Record<string, unknown> } | null,
+    storageUpload: null as { path: string; body: Blob | ArrayBuffer; options: Record<string, unknown> } | null,
     storageRemove: null as string[] | null,
     recordingsInsert: null as Record<string, unknown> | null,
   };
 
   const storageFrom = (_bucket: string) => ({
-    upload: async (path: string, blob: Blob, options: Record<string, unknown>) => {
-      calls.storageUpload = { path, blob, options };
+    upload: async (path: string, body: Blob | ArrayBuffer, options: Record<string, unknown>) => {
+      calls.storageUpload = { path, body, options };
       return { data: { path }, error: opts.uploadError ?? null };
     },
     remove: async (paths: string[]) => {
@@ -63,11 +64,12 @@ function makeFakeClient(opts: {
 }
 
 // ---------------------------------------------------------------------------
-// Mock global fetch
+// Mock global fetch — the uploader reads the response as ArrayBuffer bytes (RN-safe),
+// never as a Blob.
 // ---------------------------------------------------------------------------
-function mockFetch(blob: Blob = FAKE_BLOB) {
+function mockFetch(bytes: ArrayBuffer = FAKE_BYTES) {
   const fetchMock = jest.fn().mockResolvedValue({
-    blob: jest.fn().mockResolvedValue(blob),
+    arrayBuffer: jest.fn().mockResolvedValue(bytes),
   });
   global.fetch = fetchMock as unknown as typeof fetch;
   return fetchMock;
@@ -129,7 +131,11 @@ describe('SupabaseRecordingUploader.upload()', () => {
     // storage.upload must have been called with path `${userId}/<uuid>.m4a`
     expect(calls.storageUpload).not.toBeNull();
     expect(calls.storageUpload!.path).toMatch(new RegExp(`^${USER_ID}/[0-9a-f-]+\\.m4a$`));
-    expect(calls.storageUpload!.options).toMatchObject({ contentType: 'audio/m4a', upsert: false });
+    // 'audio/mp4' is the registered MIME type for an .m4a container ('audio/m4a' is not).
+    expect(calls.storageUpload!.options).toMatchObject({ contentType: 'audio/mp4', upsert: false });
+
+    // The file-URI path must upload raw ArrayBuffer bytes (RN-safe), not a fetched Blob.
+    expect(calls.storageUpload!.body).toBe(FAKE_BYTES);
 
     // returned id must match the path segment after user_id/
     expect(result).toBeDefined();
@@ -221,7 +227,7 @@ describe('SupabaseRecordingUploader.upload()', () => {
       USER_ID,
       async () => true,
     );
-    const blob = new Blob(['direct-audio'], { type: 'audio/m4a' });
+    const blob = new Blob(['direct-audio'], { type: 'audio/mp4' });
     const result = await uploader.upload(blob);
 
     // fetch must NOT have been called (blob is used directly)
@@ -229,7 +235,7 @@ describe('SupabaseRecordingUploader.upload()', () => {
 
     // storage.upload must have been called with the blob
     expect(calls.storageUpload).not.toBeNull();
-    expect(calls.storageUpload!.blob).toBe(blob);
+    expect(calls.storageUpload!.body).toBe(blob);
     expect(result).not.toBeNull();
   });
 
@@ -264,6 +270,25 @@ describe('SupabaseRecordingUploader.upload()', () => {
     expect(rejectingFetch).toHaveBeenCalledWith('file:///recording.m4a');
 
     // insert must NOT have been called (we never got past fetch)
+    expect(calls.recordingsInsert).toBeNull();
+  });
+
+  it('string URI + arrayBuffer() REJECTS → upload() RESOLVES to null (never throws)', async () => {
+    // fetch resolves but reading the body fails (e.g. the file vanished mid-read).
+    const fetchMock = jest.fn().mockResolvedValue({
+      arrayBuffer: jest.fn().mockRejectedValue(new Error('read failed')),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const { client, calls } = makeFakeClient({});
+    const uploader = new SupabaseRecordingUploader(
+      client as never,
+      USER_ID,
+      async () => true,
+    );
+
+    await expect(uploader.upload('file:///recording.m4a')).resolves.toBeNull();
+    expect(calls.storageUpload).toBeNull();
     expect(calls.recordingsInsert).toBeNull();
   });
 });

@@ -119,6 +119,27 @@ describe('ExpoRecorderService.start()', () => {
     await svc.start();
     expect(MockAudioRecorder).toHaveBeenCalledTimes(2);
   });
+
+  it('stops the previous recorder when start() is called while one is still active (no hot mic left behind)', async () => {
+    // Just nulling the reference would leave the old NATIVE recorder holding the mic open forever.
+    const svc = new ExpoRecorderService();
+    await svc.start();
+    const first = lastFakeRecorder();
+    await svc.start(); // second take without stop() in between
+    expect(first?.stop).toHaveBeenCalledTimes(1);
+    expect(MockAudioRecorder).toHaveBeenCalledTimes(2);
+    expect(svc.isRecording()).toBe(true); // the NEW take is live
+  });
+
+  it('still starts the new take when releasing the stale previous recorder throws', async () => {
+    const svc = new ExpoRecorderService();
+    await svc.start();
+    const first = lastFakeRecorder();
+    first!.stop.mockRejectedValueOnce(new Error('already released'));
+    await svc.start();
+    expect(MockAudioRecorder).toHaveBeenCalledTimes(2);
+    expect(svc.isRecording()).toBe(true);
+  });
 });
 
 describe('ExpoRecorderService.stop()', () => {
@@ -159,5 +180,21 @@ describe('ExpoRecorderService.stop()', () => {
     mockSetAudioMode.mockClear();
     await expect(svc.stop()).rejects.toThrow(/uri/i);
     expect(mockSetAudioMode).toHaveBeenCalledWith({ allowsRecording: false, playsInSilentMode: true });
+  });
+
+  it('restores playback audio mode even when recorder.stop() rejects (finally, never ducked routing)', async () => {
+    const svc = new ExpoRecorderService();
+    await svc.start();
+    lastFakeRecorder()!.stop.mockRejectedValueOnce(new Error('native stop failed'));
+    mockSetAudioMode.mockClear();
+    await expect(svc.stop()).rejects.toThrow('native stop failed');
+    expect(mockSetAudioMode).toHaveBeenCalledWith({ allowsRecording: false, playsInSilentMode: true });
+  });
+
+  it('a second stop() throws "No active recorder" instead of succeeding with a stale uri', async () => {
+    const svc = new ExpoRecorderService();
+    await svc.start();
+    await expect(svc.stop()).resolves.toBe('file:///tmp/test.m4a');
+    await expect(svc.stop()).rejects.toThrow(/no active recorder/i);
   });
 });

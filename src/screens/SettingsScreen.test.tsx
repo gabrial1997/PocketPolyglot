@@ -56,6 +56,23 @@ it('Delete my recordings calls onDeleteRecordings', () => {
   expect(props.onDeleteRecordings).toHaveBeenCalledTimes(1);
 });
 
+// GDPR: a failed deletion must be visible on the row — never a silent no-op the learner reads
+// as "my recordings are gone".
+it('deleteRecordingsError shows "Delete failed — tap to retry" and the tap retries', () => {
+  const { u, props } = setup({ deleteRecordingsError: true });
+  fireEvent.press(u.getByLabelText('Open profile'));
+  expect(u.queryByText('Delete my recordings')).toBeNull();
+  fireEvent.press(u.getByText('Delete failed — tap to retry'));
+  expect(props.onDeleteRecordings).toHaveBeenCalledTimes(1);
+});
+
+it('without deleteRecordingsError, the row reads the normal "Delete my recordings" label', () => {
+  const { u } = setup({ deleteRecordingsError: false });
+  fireEvent.press(u.getByLabelText('Open profile'));
+  expect(u.getByText('Delete my recordings')).toBeTruthy();
+  expect(u.queryByText('Delete failed — tap to retry')).toBeNull();
+});
+
 it('log out → sheet confirm calls onSignOut', () => {
   const { u, props } = setup();
   fireEvent.press(u.getByLabelText('Log out'));
