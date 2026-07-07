@@ -77,7 +77,6 @@ function makeDueRef(
     id,
     kind: 'word',
     hasAudioEnvelope: true,
-    hasImage: false,
     ...overrides,
   };
 }
@@ -108,7 +107,7 @@ describe('selectBatch', () => {
     it('returns all review-eligible due items, newAllowance 0, admittedNew empty', () => {
       const dueToday = DUE_FLOOD_MULTIPLIER * REVIEW_BUDGET + 1; // just above threshold
       const due: DueRef[] = Array.from({ length: 5 }, (_, i) =>
-        makeDueRef(`due-${i}`, { hasAudioEnvelope: true, hasImage: false }),
+        makeDueRef(`due-${i}`, { hasAudioEnvelope: true }),
       );
       // candidates available
       const candidates: Candidate[] = [makeWord('w1', 1)];

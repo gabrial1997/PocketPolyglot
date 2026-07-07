@@ -27,7 +27,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
   };
 }
 
-function renderCard(overrides: Partial<ReviewItem> = {}) {
+function renderCard(overrides: Partial<ReviewItem> = {}, extra: Partial<RecordingCardProps> = {}) {
   const props: RecordingCardProps = {
     item: fixtureItem(overrides),
     onPlay: jest.fn(),
@@ -35,6 +35,7 @@ function renderCard(overrides: Partial<ReviewItem> = {}) {
     onRecordStop: jest.fn(),
     onPlayCompare: jest.fn(),
     onComplete: jest.fn(),
+    ...extra,
   };
   const utils = render(
     <ThemeProvider>
@@ -77,11 +78,12 @@ describe('DiphthongDrillScreen', () => {
     expect(u.getByText('lēta')).toBeTruthy();
   });
 
-  it('a WRONG pick shows the non-revealing retry note and does NOT call onComplete', () => {
+  it('a WRONG pick shows the LOCKED retry copy (non-revealing) and does NOT call onComplete', () => {
     const u = renderCard();
     toContrast(u);
     fireEvent.press(u.getByText('lēta')); // wrong side ('b')
-    expect(u.getByText('Not quite — give it another listen.')).toBeTruthy();
+    // LOCKED copy (CLAUDE.md wrong-answer rule) — exactly this string.
+    expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
     // Did not advance to the say-it step (no Say-it CTA), and onComplete never fired.
     expect(u.queryByText('Say it back')).toBeNull();
     expect(u.props.onComplete).not.toHaveBeenCalled();
