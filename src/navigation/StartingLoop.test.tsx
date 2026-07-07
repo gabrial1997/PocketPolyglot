@@ -27,7 +27,10 @@ const word = (id: string): ReviewItem => ({
   target: id,
   gloss: id,
   pron: id,
-  audio: { nativeUrl: `${id}.mp3` },
+  // envelope required: word/say's result stage only offers the "Native" compare row when the item
+  // has real audio (hasAudio = !!envelope — never a silent playback offer), and submitSpeakRetest
+  // uses that row as its result-stage marker.
+  audio: { nativeUrl: `${id}.mp3`, envelope: [0.2, 0.6, 1] },
   // choices required: the word/hear retest card (expanded by expandLearningSteps) is a MC quiz and
   // needs choices to be completable. One correct option matching the gloss suffices.
   choices: [{ value: id, gloss: id, correct: true }, { value: `other-${id}`, gloss: `other-${id}`, correct: false }],
@@ -210,7 +213,8 @@ it('intro word/hear followed by a same-kind MC retest: the retest remounts fresh
     // Deliberately NO wordClass: the intro and the MC retest both render word/hear (same id+kind).
     target: 'w1',
     gloss: 'w1',
-    audio: { nativeUrl: 'w1.mp3' },
+    // envelope so the word/say result stage offers the "Native" row (submitSpeakRetest's marker).
+    audio: { nativeUrl: 'w1.mp3', envelope: [0.2, 0.6, 1] },
     choices: [
       { value: 'w1', gloss: 'w1', correct: true },
       { value: 'other-w1', gloss: 'other-w1', correct: false },

@@ -34,11 +34,16 @@ function applyOrder(rows: Row[], orderBys: OrderBy[]): Row[] {
   });
 }
 
+// PostgREST silently truncates un-ranged selects at (by default) 1000 rows. The fake mirrors
+// that so unbounded-query bugs are reproducible in tests (see the pagination regressions below).
+const POSTGREST_DEFAULT_ROW_CAP = 1000;
+
 // A chainable, thenable query builder. Query methods return `this`; awaiting resolves the canned
 // `{ data, error }`. `.order()` actually sorts (so the due_at + item_id tiebreak is exercised, as
-// Postgres would); `.in()` filters the canned rows to the requested ids.
-function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: null }>) {
-  let rows: Row[] = [...(tables[table] ?? [])];
+// Postgres would); `.in()` filters the canned rows on the requested column. Passing an entry in
+// `errors` makes every query against that table resolve `{ data: null, error }` — supabase-js
+// never throws, so this is how a failed query presents to the service.
+function makeBuilder(table: string, tables: Record<string, Row[]>, errors?: Record<string, object>) {
   const orderBys: OrderBy[] = [];
   let countMode = false;
   let orFilter: string | null = null;
@@ -50,6 +55,8 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
   let limitVal: number | null = null;
   let rangeStart: number | null = null;
   let rangeEnd: number | null = null;
+  let inCol: string | null = null;
+  let inIds: string[] | null = null;
 
   // Mimic Postgres LIKE: '%' is a wildcard, everything else matched literally.
   const likeToRegExp = (pattern: string) =>
@@ -102,10 +109,19 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
         return false;
       }));
     }
+    // in filter
+    if (inCol !== null && inIds !== null) {
+      const col = inCol;
+      const ids = inIds;
+      r = r.filter(row => ids.includes(row[col] as string));
+    }
     return r;
   };
 
   const resolved = () => {
+    if (errors?.[table]) {
+      return { data: null, error: errors[table] as object, count: null };
+    }
     const filtered = applyFilters(tables[table] ?? []);
     const sorted = applyOrder(filtered, orderBys);
     let paged: Row[];
@@ -114,7 +130,8 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
     } else if (limitVal !== null) {
       paged = sorted.slice(0, limitVal);
     } else {
-      paged = sorted;
+      // No explicit range/limit → PostgREST's silent default cap applies.
+      paged = sorted.slice(0, POSTGREST_DEFAULT_ROW_CAP);
     }
     if (countMode) {
       return { data: null, count: paged.length, error: null };
@@ -164,20 +181,18 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
       orderBys.push({ col, ascending: opts?.ascending !== false, nullsFirst: opts?.nullsFirst === true });
       return builder;
     },
-    in: (_col: string, ids: string[]) => {
-      rows = (tables[table] ?? []).filter((r) => ids.includes(r.id as string));
-      // reset rows reference so resolved() uses this filtered set
-      tables[`__in_filtered_${table}`] = rows;
-      // Override resolved for the .in() case: return filtered rows
-      const inResolved = () => ({ data: applyOrder(rows, orderBys), error: null, count: null });
-      const inBuilder: Record<string, unknown> = {
-        ...builder,
-        then: (resolve: (v: { data: Row[]; error: null }) => unknown) => resolve(inResolved()),
-        maybeSingle: async () => ({ data: applyOrder(rows, orderBys)[0] ?? null, error: null }),
-      };
-      return inBuilder;
+    in: (col: string, ids: string[]) => {
+      // Column-aware (a real .in() filters the named column, e.g. phrase_id) and composable:
+      // it records the filter and returns the SAME builder, so .order()/.range() chained after
+      // .in() keep working — required by the paginated .in() queries under test.
+      inCol = col;
+      inIds = ids;
+      return builder;
     },
     maybeSingle: async () => {
+      if (errors?.[table]) {
+        return { data: null, error: errors[table] as object };
+      }
       const filtered = applyFilters(tables[table] ?? []);
       const sorted = applyOrder(filtered, orderBys);
       return { data: sorted[0] ?? null, error: null };

@@ -57,7 +57,7 @@ exports[`DrillScreen renders the pick stage from item.pair (snapshot) 1`] = `
             ]
           }
         >
-          SOUND CHECK · CONSONANT
+          SOUND CHECK · SIT VS SĪT
         </Text>
         <Text
           style={
