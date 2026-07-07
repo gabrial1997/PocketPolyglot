@@ -23,6 +23,32 @@ import type { RecordingCardProps } from './cardProps';
 
 const COMPARE_MS = 1700; // play native+you back-to-back, then complete
 
+// Hoisted out of the render body (a component defined inside render remounts on every render).
+// The "You" take has no precomputed envelope, so its bar honestly rests rather than faking motion
+// (locked constraint: the soundbar moves with REAL amplitude only) — callers pass envelope only
+// for the Native row.
+function Row({ icon, label, you, playing, envelope }: {
+  icon: 'speaker' | 'mic';
+  label: string;
+  you?: boolean;
+  playing: boolean;
+  envelope?: number[];
+}): React.JSX.Element {
+  const T = useTheme();
+  return (
+    <View style={[styles.row, { backgroundColor: T.surface, borderColor: you ? hexA(T.primary, 0.4) : T.hair }, T.shadow]}>
+      <View style={styles.rowHead}>
+        <View style={[styles.chip, { backgroundColor: you ? T.primarySoft : T.sunken }]}>
+          <CardIcon name={icon} size={17} color={you ? T.primary : T.sub} />
+        </View>
+        <Text style={[styles.rowLabel, { color: T.ink }]}>{label}</Text>
+        <Text style={[styles.rowTime, { color: T.faint }]}>0:01</Text>
+      </View>
+      <LiveWaveform envelope={envelope} playing={playing} frameMs={FRAME_MS} height={42} count={40} />
+    </View>
+  );
+}
+
 export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
   const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange, recConsent = true } = props;
   // GDPR record gate: when false, hide the Record control. Native A/B row still playable.
@@ -55,21 +81,6 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
     timers.current.push(setTimeout(() => { setPlayingSide(null); onComplete({ itemId: item.id, cardKind: 'pron', spoke: true }); }, nativeDur + half));
   };
 
-  const Row = ({ icon, label, you, playing }: { icon: 'speaker' | 'mic'; label: string; you?: boolean; playing: boolean }): React.JSX.Element => (
-    <View style={[styles.row, { backgroundColor: T.surface, borderColor: you ? hexA(T.primary, 0.4) : T.hair }, T.shadow]}>
-      <View style={styles.rowHead}>
-        <View style={[styles.chip, { backgroundColor: you ? T.primarySoft : T.sunken }]}>
-          <CardIcon name={icon} size={17} color={you ? T.primary : T.sub} />
-        </View>
-        <Text style={[styles.rowLabel, { color: T.ink }]}>{label}</Text>
-        <Text style={[styles.rowTime, { color: T.faint }]}>0:01</Text>
-      </View>
-      {/* The "You" take has no precomputed envelope, so its bar honestly rests rather than faking
-          motion (locked constraint: the soundbar moves with REAL amplitude only). */}
-      <LiveWaveform envelope={you ? undefined : item.audio?.envelope} playing={playing} frameMs={FRAME_MS} height={42} count={40} />
-    </View>
-  );
-
   return (
     <Screen>
       <View style={styles.body}>
@@ -86,7 +97,7 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
               the learner can still hear the model. With consent the row is not interactive here;
               Compare drives A/B playback (native → you) as normal. */}
           {recConsent ? (
-            <Row icon="speaker" label="Native" playing={playingSide === 'native'} />
+            <Row icon="speaker" label="Native" playing={playingSide === 'native'} envelope={item.audio?.envelope} />
           ) : (
             <Pressable
               accessibilityRole="button"
@@ -99,7 +110,7 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
                 timers.current.push(setTimeout(() => setPlayingSide(null), (COMPARE_MS / 2) / speed));
               }}
             >
-              <Row icon="speaker" label="Native" playing={playingSide === 'native'} />
+              <Row icon="speaker" label="Native" playing={playingSide === 'native'} envelope={item.audio?.envelope} />
             </Pressable>
           )}
           {recorded ? (

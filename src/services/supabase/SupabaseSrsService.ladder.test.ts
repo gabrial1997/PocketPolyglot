@@ -189,7 +189,6 @@ function makeBuilder(table: string, tables: Record<string, Row[]>) {
 function fakeClient(
   tables: Record<string, Row[]>,
   rpcResults?: Record<string, unknown[]>,
-  now?: Date,
 ) {
   return {
     from: (table: string) => makeBuilder(table, tables),
@@ -200,8 +199,12 @@ function fakeClient(
       void args;
       return { data: [], error: null };
     },
-    _now: now,
   } as never;
+}
+
+/** Service under test, clock pinned via the documented nowFn constructor injection. */
+function makeSvc(tables: Record<string, Row[]>, now: Date) {
+  return new SupabaseSrsService(fakeClient(tables), 'u1', undefined, () => now);
 }
 
 // --- helpers ---
@@ -276,7 +279,7 @@ describe('SupabaseSrsService.getDueBatch — C2 ladder reps from review_log', ()
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, NOW), 'u1');
+    const svc = makeSvc(tables, NOW);
     const batch = await svc.getDueBatch();
     const item = batch.find(i => i.id === 'word-a');
     expect(item).toBeDefined();
@@ -299,7 +302,7 @@ describe('SupabaseSrsService.getDueBatch — C2 ladder reps from review_log', ()
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, NOW), 'u1');
+    const svc = makeSvc(tables, NOW);
     const batch = await svc.getDueBatch();
     const item = batch.find(i => i.id === 'word-b');
     expect(item).toBeDefined();
@@ -318,7 +321,7 @@ describe('SupabaseSrsService.getDueBatch — C2 ladder reps from review_log', ()
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, NOW), 'u1');
+    const svc = makeSvc(tables, NOW);
     const batch = await svc.getDueBatch();
     const item = batch.find(i => i.id === 'word-c');
     expect(item).toBeDefined();
@@ -342,7 +345,7 @@ describe('SupabaseSrsService.getDueBatch — C2 ladder reps from review_log', ()
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, NOW), 'u1');
+    const svc = makeSvc(tables, NOW);
     const batch = await svc.getDueBatch();
     const item = batch.find(i => i.id === 'word-d');
     expect(item).toBeDefined();
@@ -365,7 +368,7 @@ describe('SupabaseSrsService.getDueBatch — C2 ladder reps from review_log', ()
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, NOW), 'u1');
+    const svc = makeSvc(tables, NOW);
     const batch = await svc.getDueBatch();
     const item = batch.find(i => i.id === 'ph-e');
     expect(item).toBeDefined();
@@ -387,7 +390,7 @@ describe('SupabaseSrsService.getDueBatch — C2 ladder reps from review_log', ()
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, NOW), 'u1');
+    const svc = makeSvc(tables, NOW);
     const batch = await svc.getDueBatch();
     const item = batch.find(i => i.id === 'pair-f');
     expect(item).toBeDefined();

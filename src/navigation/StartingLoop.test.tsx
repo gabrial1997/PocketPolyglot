@@ -232,11 +232,23 @@ it('intro word/hear followed by a same-kind MC retest: the retest remounts fresh
     </ThemeProvider>,
   );
 
-  // Encounter 1: the intro, rendered as a word/hear MC quiz (kind word/hear, id w1).
-  await submitMcRetest(u, 'w1');
-  // Encounter 2: the MC retest copy — SAME id + kind. The frozen-card symptom: the choices stayed
-  // green + disabled from encounter 1, this press did nothing, and the session never finished.
-  await submitMcRetest(u, 'w1');
+  // Encounter 1: the intro, rendered as a word/hear MC quiz (kind word/hear, id w1). Answer it.
+  // (submitMcRetest can't drive back-to-back SAME-word encounters — its presence check would pass
+  // on the still-showing first card before the 500ms advance delay fires — so walk manually.)
+  await settle(() => expect(u.getAllByText('w1').length).toBeGreaterThanOrEqual(1));
+  let matches = u.getAllByText('w1');
+  fireEvent.press(matches[matches.length - 1]);
+
+  // Wait for the deck to ADVANCE to position 2 (the MC retest). Same id + kind, so the card text
+  // cannot distinguish the encounters — the SessionTop step counter can.
+  await settle(() => expect(u.getByText('2')).toBeTruthy());
+
+  // Encounter 2: the MC retest copy — SAME id + kind — must be a FRESH card. The frozen-card
+  // symptom: encounter 1's completed card (green, disabled choices) stayed the rendered node, this
+  // press hit a disabled choice, and the session never finished.
+  matches = u.getAllByText('w1'); // during the glide the entering (fresh) card is the last match
+  fireEvent.press(matches[matches.length - 1]);
+
   // Encounter 3: the speak retest (word/say — the item has >=2 choices).
   await submitSpeakRetest(u, 'w1');
 
