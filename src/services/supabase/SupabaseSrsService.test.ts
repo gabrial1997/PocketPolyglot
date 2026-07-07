@@ -214,31 +214,53 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, errors?: Reco
       }
       return { error: null };
     },
-    then: (resolve: (v: { data: Row[] | null; error: null; count: number | null }) => unknown) =>
+    then: (resolve: (v: { data: Row[] | null; error: object | null; count: number | null }) => unknown) =>
       resolve(resolved()),
   };
 
-  void rpcFn; // suppress unused warning
   return builder;
 }
 
+// An rpc entry is either canned result rows, or `{ error }` — mirroring how a failed RPC
+// presents through supabase-js (it resolves { data: null, error }, it never throws).
+type RpcEntry = unknown[] | { error: object };
+
 function fakeClient(
   tables: Record<string, Row[]>,
-  rpcResults?: Record<string, unknown[]>,
-  now?: Date,
+  rpcResults?: Record<string, RpcEntry>,
+  errors?: Record<string, object>,
 ) {
   return {
-    from: (table: string) => makeBuilder(table, tables),
+    from: (table: string) => makeBuilder(table, tables, errors),
     rpc: async (name: string, args?: Record<string, unknown>) => {
-      if (rpcResults && name in rpcResults) {
-        return { data: rpcResults[name], error: null };
+      void args;
+      const entry = rpcResults?.[name];
+      if (entry && !Array.isArray(entry) && 'error' in entry) {
+        return { data: null, error: entry.error };
+      }
+      if (entry) {
+        return { data: entry, error: null };
       }
       // get_distractors returns nothing here — choices degrade gracefully (not under test).
-      void args;
       return { data: [], error: null };
     },
-    _now: now,
   } as never;
+}
+
+// Build the service under test with the documented nowFn injection (dev time travel) — the only
+// clock hook the service supports.
+function makeSvc(
+  tables: Record<string, Row[]>,
+  rpcResults?: Record<string, RpcEntry>,
+  now?: Date,
+  errors?: Record<string, object>,
+) {
+  return new SupabaseSrsService(
+    fakeClient(tables, rpcResults, errors),
+    'u1',
+    undefined,
+    now ? () => now : undefined,
+  );
 }
 
 // review_state rows in a SCRAMBLED input order, with due_at offsets that encode the intended walk:
@@ -297,7 +319,7 @@ describe('SupabaseSrsService.getDueBatch ordering', () => {
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date(1_900_000_000_000 + 1_000_000_000)), 'u1');
+    const svc = makeSvc(tables, {}, new Date(1_900_000_000_000 + 1_000_000_000));
 
     const batch = await svc.getDueBatch();
 
@@ -322,7 +344,7 @@ describe('SupabaseSrsService.getDueBatch ordering', () => {
       known_lemmas: [],
       profiles: [{ id: 'u1', created_at: new Date().toISOString() }],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
 
     const batch = await svc.getDueBatch();
 
@@ -471,7 +493,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     // All 15 due items must appear (reviews are uncapped)
@@ -584,7 +606,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     const ids = batch.map(i => i.id);
@@ -613,7 +635,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [{ id: 'u1', created_at: new Date().toISOString() }],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     // Batch is new items only; must be in utility_rank order
@@ -710,7 +732,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [{ id: 'u1', created_at: new Date().toISOString() }],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     // Must include lemma-6 through lemma-10 (never introduced) not lemma-1 through lemma-5 (already introduced)
@@ -908,7 +930,7 @@ describe('SupabaseSrsService drill seeding', () => {
       minimal_pairs: [drillRow('drill-1')],
       ...emptyContent(),
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
 
     await svc.getDueBatch();
 
@@ -936,7 +958,7 @@ describe('SupabaseSrsService drill seeding', () => {
       minimal_pairs: [drillRow('drill-1')],
       ...emptyContent(),
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
 
     await svc.getDueBatch();
 
@@ -1024,7 +1046,7 @@ describe('SupabaseSrsService.getDueBatch — recognition-only filter (Task 4)', 
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     // Without the filter: both template rows produce two DueRefs → item appears twice. FAIL.
@@ -1044,7 +1066,7 @@ describe('SupabaseSrsService.getDueBatch — recognition-only filter (Task 4)', 
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     expect(batch).toHaveLength(1);
@@ -1100,7 +1122,7 @@ describe('SupabaseSrsService.getDueBatch — recognition-only filter (Task 4)', 
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     // Without fix: fallback returns both rows → enrichAndReorder sees 2 orderedStates entries
