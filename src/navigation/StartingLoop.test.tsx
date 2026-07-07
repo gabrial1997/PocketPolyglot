@@ -241,7 +241,7 @@ it('intro word/hear followed by a same-kind MC retest: the retest remounts fresh
 
   // Wait for the deck to ADVANCE to position 2 (the MC retest). Same id + kind, so the card text
   // cannot distinguish the encounters — the SessionTop step counter can.
-  await settle(() => expect(u.getByText('2')).toBeTruthy());
+  await settle(() => expect(u.getByText('2/3')).toBeTruthy());
 
   // Encounter 2: the MC retest copy — SAME id + kind — must be a FRESH card. The frozen-card
   // symptom: encounter 1's completed card (green, disabled choices) stayed the rendered node, this
