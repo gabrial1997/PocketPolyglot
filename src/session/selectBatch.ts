@@ -40,13 +40,6 @@ export interface DueRef {
   id: string;
   kind: 'word' | 'phrase' | 'pair';
   hasAudioEnvelope: boolean;
-  /**
-   * @deprecated Never read by selectBatch (the review-eligibility filter keys on kind +
-   * hasAudioEnvelope only) and no longer populated by SupabaseSrsService. Kept as an optional
-   * field solely because SupabaseEditorService.serving.test.ts (outside this change's ownership)
-   * still constructs DueRefs with it; drop the field once that fixture is cleaned up.
-   */
-  hasImage?: boolean;
 }
 
 export interface SelectContext {
