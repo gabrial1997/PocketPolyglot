@@ -65,7 +65,7 @@ function fakeServices(batch: ReviewItem[], isEditorResult = false): ServiceBundl
       getDueSummary: async () => ({ newCount: 0, reviewCount: 0 }),
     },
     known: { has: () => false, all: () => new Set<string>(), refresh: async () => {} },
-    progress: { getCoverage: async () => ({ known: 0, total: 1000 }) },
+    progress: { getCoverage: async () => ({ total: 1000, knownRanks: [] as number[] }) },
     podcast: { getEpisode: async () => ({ title: 'x', transcript: '', audioUrl: 'x' }) },
     profile: { getRecConsent: async () => false, setRecConsent: async () => {}, deleteRecordings: async () => {}, getProfile: async () => null, ensureProfile: async () => {}, setSeenDiacritics: async () => {}, setConsent: async () => {} },
     editor: { isEditor: async () => isEditorResult, edit: async () => {} },
