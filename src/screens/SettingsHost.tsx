@@ -164,7 +164,7 @@ export function SettingsHost(): React.JSX.Element {
         if (!email) return;
         supabase.auth
           .resetPasswordForEmail(email)
-          .then(({ error }: { error: unknown }) => setPasswordResetState(error ? 'error' : 'sent'))
+          .then(({ error }) => setPasswordResetState(error ? 'error' : 'sent'))
           .catch(() => setPasswordResetState('error'));
       }}
       passwordResetState={passwordResetState}
