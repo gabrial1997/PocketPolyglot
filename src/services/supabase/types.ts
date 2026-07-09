@@ -110,13 +110,6 @@ export interface PodcastEpisodeRow {
   created_at: string;
 }
 
-/** public.user_coverage view — progress screen. One row per user (absent if no known lemmas). */
-export interface UserCoverageRow {
-  user_id: string;
-  known_count: number;
-  total_count: number;
-}
-
 /** public.known_lemmas view — the phrase-unlock gate. */
 export interface KnownLemmaRow {
   user_id: string;

@@ -59,7 +59,7 @@ The prototype renders all seven as equal artboards. For wiring they split into t
 |---|---|---|
 | `home` | due-card counts (new vs review), streak, today's batch summary | `SrsService.getDueBatch()` summary + `ProfileService` for streak |
 | `pod` (podcast) | a generated episode (audio URL + transcript) built from the known-word set | `PodcastService.getEpisode()` |
-| `prog` (progress) | coverage of the 1,000 core words (known count / total) | `ProgressService.getCoverage()` or derive from `KnownWordsStore` |
+| `prog` (progress) | coverage of the 1,000 core words: corpus size + the known words' frequency ranks (hero %, band bars, and the dot grid all derive from the ranks) | `ProgressService.getCoverage()` → `{ total, knownRanks }` (spec 2026-07-06) |
 
 `BACKEND_INTEGRATION.md` §2–4 intentionally covers only Tier A. That's why `home`, `pod`, and `prog` don't appear in the `CardKind` union — they aren't cards. Wire them as ordinary screens with the data above; they don't post `CardResult`.
 

@@ -33,7 +33,7 @@ function formatDate(d: Date): string {
 type State =
   | { status: 'loading' }
   | { status: 'error' }
-  | { status: 'ready'; newCount: number; reviewCount: number; known: number; total: number };
+  | { status: 'ready'; newCount: number; reviewCount: number; total: number; knownRanks: number[] };
 
 export function HomeHost({
   name,
@@ -63,8 +63,8 @@ export function HomeHost({
             status: 'ready',
             newCount: s.newCount,
             reviewCount: s.reviewCount,
-            known: c.known,
             total: c.total,
+            knownRanks: c.knownRanks,
           });
       })
       .catch(() => {
@@ -95,7 +95,7 @@ export function HomeHost({
       dateLabel={dateLabel}
       newCount={state.newCount}
       reviewCount={state.reviewCount}
-      knownCount={state.known}
+      knownCount={state.knownRanks.length}
       totalWords={state.total}
       podcastTitle={podcastTitle}
       podcastSubtitle={podcastTitle ? 'AI episode' : undefined}

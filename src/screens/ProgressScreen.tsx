@@ -3,49 +3,41 @@
 // speech the learner can already follow. NOT a card.
 //
 // 2026-06-19 VISUAL SYNC: rebuilt to the mockup (screens-b.jsx `ProgressScreen`). "Progress" serif
-// title; the hero stat (big serif % in primary) + "of everyday Latvian speech you can already
-// follow." + "<known> of the <total> most common words"; a coverage grid derived from `total`
-// (known dots in primary, fading by frequency); frequency bands with progress bars (a completed
-// band shows good + check) — rendered ONLY when real band data is supplied.
+// title; the hero stat (big serif "62%" in primary) + "of everyday Latvian speech you can already
+// follow." + "615 of the 1,000 most common words"; a 1000-dot coverage grid (known dots in primary,
+// fading by frequency); four frequency bands with progress bars (a completed band shows good + check).
 // The bottom Today/Listen/Progress tab bar is app navigation chrome (mounted by the navigator), not
 // this screen — omitted here, matching the HomeScreen drop-in.
-//
-// 2026-07-06 HONESTY FIX: the mockup's hard-coded sample data (615 known, fabricated per-band
-// percentages) is gone — every number rendered here comes in via props from the host.
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Screen } from '../components';
 import { CardIcon } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
-
-export interface CoverageBand {
-  label: string;
-  sub: string;
-  pct: number;
-}
+import { computeBands } from './coverageBands';
 
 const COLS = 40;
-const MAX_ROWS = 25;
-const MAX_DOTS = COLS * MAX_ROWS; // layout cap — one dot per core word up to 1,000
+const ROWS = 25;
 
 export function ProgressScreen({
-  known,
-  total,
-  bands,
+  total = 1000,
+  knownRanks = [],
 }: {
-  known: number;
-  total: number;
-  /** Per-band coverage. OMITTED unless a service supplies REAL band data — never fabricated. */
-  bands?: CoverageBand[];
+  /** Size of the core-word corpus (spec 2026-07-06). */
+  total?: number;
+  /** Frequency ranks (1-based) of the learner's known words — drives hero, bands, and grid. */
+  knownRanks?: number[];
 }): React.JSX.Element {
   const T = useTheme();
+  const known = knownRanks.length;
   const pct = total > 0 ? Math.round((known / total) * 100) : 0;
-  // The dot grid mirrors `total` (capped for layout); when capped, lit dots scale
-  // proportionally so the grid can never overstate (or understate) coverage.
-  const dotCount = Math.max(0, Math.min(total, MAX_DOTS));
-  const lit = total > 0 ? Math.min(dotCount, Math.round((known / total) * dotCount)) : 0;
-  const dots = useMemo(() => Array.from({ length: dotCount }, (_, i) => i < lit), [dotCount, lit]);
+  const bands = useMemo(() => computeBands(knownRanks, total), [knownRanks, total]);
+  // Dot i (0-based) = frequency rank i+1 — a known word lights its TRUE slot on the
+  // most-common → rarer axis, not a sequential fill.
+  const dots = useMemo(() => {
+    const knownSet = new Set(knownRanks);
+    return Array.from({ length: COLS * ROWS }, (_, i) => knownSet.has(i + 1));
+  }, [knownRanks]);
 
   return (
     <Screen>
@@ -62,59 +54,56 @@ export function ProgressScreen({
           <Text style={{ color: T.ink, fontWeight: '600' }}>{known}</Text> of the {total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')} most common words
         </Text>
 
-        {/* coverage grid — one dot per core word (derived from `total`, capped for layout) */}
-        {dotCount > 0 ? (
-          <View style={[styles.gridCard, { backgroundColor: T.surface, borderColor: T.hair }, T.shadow]}>
-            <View style={styles.grid} testID="coverage-grid">
-              {dots.map((on, i) => (
+        {/* 1000-dot coverage grid */}
+        <View style={[styles.gridCard, { backgroundColor: T.surface, borderColor: T.hair }, T.shadow]}>
+          <View style={styles.grid}>
+            {dots.map((on, i) => (
+              <View
+                key={i}
+                style={{
+                  width: `${100 / COLS}%`,
+                  aspectRatio: 1,
+                  padding: 1.2,
+                }}
+              >
                 <View
-                  key={i}
                   style={{
-                    width: `${100 / COLS}%`,
-                    aspectRatio: 1,
-                    padding: 1.2,
+                    flex: 1,
+                    borderRadius: 99,
+                    backgroundColor: on ? T.primary : (T.dark ? 'rgba(255,255,255,0.08)' : 'rgba(26,39,51,0.07)'),
+                    // Fade by rank position (most-common brightest), matching the axis labels.
+                    opacity: on ? 0.5 + 0.5 * (1 - i / (COLS * ROWS)) : 1,
                   }}
-                >
-                  <View
-                    style={{
-                      flex: 1,
-                      borderRadius: 99,
-                      backgroundColor: on ? T.primary : (T.dark ? 'rgba(255,255,255,0.08)' : 'rgba(26,39,51,0.07)'),
-                      opacity: on ? 0.5 + 0.5 * (1 - i / Math.max(1, lit)) : 1,
-                    }}
-                  />
-                </View>
-              ))}
-            </View>
-            <View style={styles.gridLabels}>
-              <Text style={[styles.gridLabel, { color: T.faint }]}>most common</Text>
-              <Text style={[styles.gridLabel, { color: T.faint }]}>rarer</Text>
-            </View>
+                />
+              </View>
+            ))}
           </View>
-        ) : null}
+          <View style={styles.gridLabels}>
+            <Text style={[styles.gridLabel, { color: T.faint }]}>most common</Text>
+            <Text style={[styles.gridLabel, { color: T.faint }]}>rarer</Text>
+          </View>
+        </View>
 
-        {/* frequency bands — rendered ONLY from real, supplied band data (no fabricated defaults) */}
-        {bands && bands.length > 0 ? (
-          <View style={styles.bands}>
-            {bands.map((b, i) => {
-              const done = b.pct >= 100;
-              return (
-                <View key={i} style={styles.bandRow}>
-                  <View style={styles.bandMeta}>
-                    <Text style={[styles.bandLabel, { color: T.ink }]}>{b.label}</Text>
-                    <Text style={[styles.bandSub, { color: T.faint }]}>{b.sub}</Text>
-                  </View>
-                  <View style={[styles.bandTrack, { backgroundColor: T.dark ? 'rgba(255,255,255,0.07)' : 'rgba(26,39,51,0.06)' }]}>
-                    <View style={{ width: `${b.pct}%`, height: '100%', borderRadius: 99, backgroundColor: done ? T.good : T.primary }} />
-                  </View>
-                  <View style={styles.bandPct}>
-                    {done ? <CardIcon name="check" size={16} color={T.good} sw={2.4} /> : <Text style={[styles.bandPctText, { color: T.sub }]}>{b.pct}%</Text>}
-                  </View>
+        {/* frequency bands */}
+        <View style={styles.bands}>
+          {bands.map((b, i) => {
+            const done = b.pct >= 100;
+            return (
+              <View key={i} style={styles.bandRow}>
+                <View style={styles.bandMeta}>
+                  <Text style={[styles.bandLabel, { color: T.ink }]}>{b.label}</Text>
+                  <Text style={[styles.bandSub, { color: T.faint }]}>{b.sub}</Text>
                 </View>
-              );
-            })}
-          </View>
-        ) : null}
+                <View style={[styles.bandTrack, { backgroundColor: T.dark ? 'rgba(255,255,255,0.07)' : 'rgba(26,39,51,0.06)' }]}>
+                  <View style={{ width: `${b.pct}%`, height: '100%', borderRadius: 99, backgroundColor: done ? T.good : T.primary }} />
+                </View>
+                <View style={styles.bandPct}>
+                  {done ? <CardIcon name="check" size={16} color={T.good} sw={2.4} /> : <Text style={[styles.bandPctText, { color: T.sub }]}>{b.pct}%</Text>}
+                </View>
+              </View>
+            );
+          })}
+        </View>
       </View>
     </Screen>
   );
