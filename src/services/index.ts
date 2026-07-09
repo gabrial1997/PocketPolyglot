@@ -105,6 +105,8 @@ export interface ProfileSnapshot {
   recConsent: boolean;
   trainingConsent: boolean;
   seenDiacritics: boolean;
+  /** Has the user already been shown (and decided on) the consent onboarding step? */
+  seenConsent: boolean;
 }
 
 /** Tier-B `settings` screen: GDPR recording consent + deletion (CLAUDE.md). NOT a card. */
@@ -123,6 +125,10 @@ export interface ProfileService {
   /** Mark that the user has seen the diacritics intro. Merges seenDiacritics=true into settings
    *  WITHOUT clobbering other keys (esp. settings.editor — Module F's gate). */
   setSeenDiacritics(): Promise<void>;
+  /** Mark that the user has been shown (and decided on) the consent onboarding step. Merges
+   *  seenConsent=true into settings WITHOUT clobbering other keys. Called on BOTH accept and
+   *  decline — this only records that the learner decided, not what they decided. */
+  setSeenConsent(): Promise<void>;
   /** Onboarding write: set both rec_consent + training_consent in one update, stamping/clearing
    *  rec_consent_at. Keep setRecConsent for the Settings tab (single flag). */
   setConsent(input: { rec: boolean; training: boolean }): Promise<void>;

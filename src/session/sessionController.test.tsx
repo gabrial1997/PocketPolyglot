@@ -43,7 +43,7 @@ function fakeServices(batch: ReviewItem[], known: ReadonlySet<string>): ServiceB
     known: { has: (id) => known.has(id), all: () => known, refresh: async () => {} },
     progress: { getCoverage: async () => ({ total: 1000, knownRanks: [] as number[] }) },
     podcast: { getEpisode: async () => ({ title: 'x', transcript: '', audioUrl: 'x' }) },
-    profile: { getRecConsent: async () => false, setRecConsent: async () => {}, deleteRecordings: async () => {}, getProfile: async () => null, ensureProfile: async () => {}, setSeenDiacritics: async () => {}, setConsent: async () => {}, deleteAccount: async () => {} },
+    profile: { getRecConsent: async () => false, setRecConsent: async () => {}, deleteRecordings: async () => {}, getProfile: async () => null, ensureProfile: async () => {}, setSeenDiacritics: async () => {}, setSeenConsent: async () => {}, setConsent: async () => {}, deleteAccount: async () => {} },
     editor: { isEditor: async () => false, edit: async () => {} },
     bugReport: { submit: async () => {} },
   };

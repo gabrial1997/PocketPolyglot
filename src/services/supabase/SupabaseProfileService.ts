@@ -70,6 +70,7 @@ export class SupabaseProfileService implements ProfileService {
       recConsent: row.rec_consent ?? false,
       trainingConsent: row.training_consent ?? false,
       seenDiacritics: row.settings?.seenDiacritics === true,
+      seenConsent: row.settings?.seenConsent === true,
     };
   }
 
@@ -101,6 +102,28 @@ export class SupabaseProfileService implements ProfileService {
     const { error: writeError } = await this.client
       .from('profiles')
       .update({ settings: { ...current, seenDiacritics: true } })
+      .eq('id', this.userId);
+    if (writeError) throw writeError;
+  }
+
+  // --- Task 5: setSeenConsent (settings-merge, mirrors setSeenDiacritics) ---
+
+  async setSeenConsent(): Promise<void> {
+    // Same read-modify-write settings merge as setSeenDiacritics (single-user build; preserves
+    // settings.editor and seenDiacritics).
+    const { data: readData, error: readError } = await this.client
+      .from('profiles')
+      .select('settings')
+      .eq('id', this.userId)
+      .maybeSingle();
+    if (readError) throw readError;
+    if (!readData) {
+      throw new Error('setSeenConsent: no profile row for user; call ensureProfile() first');
+    }
+    const current = (readData as { settings: Record<string, unknown> | null }).settings ?? {};
+    const { error: writeError } = await this.client
+      .from('profiles')
+      .update({ settings: { ...current, seenConsent: true } })
       .eq('id', this.userId);
     if (writeError) throw writeError;
   }

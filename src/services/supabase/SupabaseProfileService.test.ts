@@ -223,11 +223,27 @@ it('deleteRecordings throws when the storage_path read fails', async () => {
 
 it('getProfile reads rec_consent, training_consent and settings.seenDiacritics', async () => {
   const { client, calls, setRow } = fakeClient();
-  setRow({ rec_consent: true, training_consent: false, settings: { seenDiacritics: true } });
+  setRow({ rec_consent: true, training_consent: false, settings: { seenDiacritics: true, seenConsent: true } });
   const svc = new SupabaseProfileService(client as never, 'user-1');
   const snap = await svc.getProfile();
-  expect(snap).toEqual({ recConsent: true, trainingConsent: false, seenDiacritics: true });
+  expect(snap).toEqual({ recConsent: true, trainingConsent: false, seenDiacritics: true, seenConsent: true });
   expect(calls[0]).toMatchObject({ table: 'profiles', op: 'select', eq: ['id', 'user-1'] });
+});
+
+it('getProfile maps settings.seenConsent === true to seenConsent', async () => {
+  const { client, setRow } = fakeClient();
+  setRow({ rec_consent: false, training_consent: false, settings: { seenConsent: true } });
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  const snap = await svc.getProfile();
+  expect(snap?.seenConsent).toBe(true);
+});
+
+it('getProfile treats missing settings.seenConsent as false', async () => {
+  const { client, setRow } = fakeClient();
+  setRow({ rec_consent: false, training_consent: false, settings: {} });
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  const snap = await svc.getProfile();
+  expect(snap?.seenConsent).toBe(false);
 });
 
 it('getProfile returns null when no row exists', async () => {
@@ -304,6 +320,39 @@ it('setSeenDiacritics surfaces a write error from the update', async () => {
   setNextWriteError('42501', 'permission denied');
   const svc = new SupabaseProfileService(client as never, 'user-1');
   await expect(svc.setSeenDiacritics()).rejects.toMatchObject({ code: '42501' });
+});
+
+// --- D3c/Task 5: setSeenConsent (settings-merge, mirrors setSeenDiacritics) ---
+
+it('setSeenConsent merges settings.seenConsent=true and preserves other keys', async () => {
+  const { client, calls, setRows } = fakeClient();
+  // First maybeSingle() call (the read) returns existing settings.
+  // The update path does NOT call maybeSingle() — it resolves via .eq() directly.
+  setRows([{ settings: { editor: true, seenDiacritics: true } }]);
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await svc.setSeenConsent();
+  const upd = calls.find((c) => c.op === 'update');
+  expect(upd?.table).toBe('profiles');
+  expect(upd?.eq).toEqual(['id', 'user-1']);
+  const settings = (upd?.payload as { settings: Record<string, unknown> }).settings;
+  expect(settings).toEqual({ editor: true, seenDiacritics: true, seenConsent: true });
+});
+
+it('setSeenConsent throws when no profile row exists (enforces ensureProfile invariant)', async () => {
+  const { client, setRow } = fakeClient();
+  setRow(null);
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await expect(svc.setSeenConsent()).rejects.toThrow('setSeenConsent: no profile row for user');
+});
+
+it('setSeenConsent surfaces a write error from the update', async () => {
+  const { client, setRow, setNextWriteError } = fakeClient();
+  // READ succeeds: maybeSingle() returns a real row and does NOT consume nextWriteError.
+  setRow({ settings: {} });
+  // WRITE fails: the update's .eq() terminal consumes nextWriteError — not the read path.
+  setNextWriteError('42501', 'permission denied');
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await expect(svc.setSeenConsent()).rejects.toMatchObject({ code: '42501' });
 });
 
 // --- D3a: setConsent (rec + training + timestamp) ---

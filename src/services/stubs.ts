@@ -110,6 +110,7 @@ export class StubProfileService implements ProfileService {
   private consent = false;
   private trainingConsent = false;
   private seenDiacritics = false;
+  private seenConsent = true;
 
   async getRecConsent(): Promise<boolean> {
     return this.consent;
@@ -127,6 +128,7 @@ export class StubProfileService implements ProfileService {
       recConsent: this.consent,
       trainingConsent: this.trainingConsent,
       seenDiacritics: this.seenDiacritics,
+      seenConsent: this.seenConsent,
     };
   }
   async ensureProfile(): Promise<void> {
@@ -136,6 +138,11 @@ export class StubProfileService implements ProfileService {
   // D2a: setSeenDiacritics (settings-merge, editor-safe — in-memory only for stub)
   async setSeenDiacritics(): Promise<void> {
     this.seenDiacritics = true;
+  }
+
+  // Task 5: setSeenConsent (settings-merge, editor-safe — in-memory only for stub)
+  async setSeenConsent(): Promise<void> {
+    this.seenConsent = true;
   }
 
   // D3a: setConsent (rec + training)
