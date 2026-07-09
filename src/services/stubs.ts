@@ -8,6 +8,7 @@ import type {
   SrsService,
   KnownWordsStore,
   ProgressService,
+  ProgressCoverage,
   PodcastService,
   ProfileService,
   ProfileSnapshot,
@@ -93,8 +94,8 @@ export class StubKnownWordsStore implements KnownWordsStore {
 }
 
 export class StubProgressService implements ProgressService {
-  async getCoverage(): Promise<{ known: number; total: number }> {
-    return { known: 0, total: 1000 }; // real impl: known_lemmas count vs core list (schema §3)
+  async getCoverage(): Promise<ProgressCoverage> {
+    return { total: 1000, knownRanks: [] }; // real impl: known_lemmas ranks vs core list (schema §3)
   }
 }
 

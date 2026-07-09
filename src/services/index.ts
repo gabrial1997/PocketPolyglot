@@ -43,9 +43,17 @@ export interface KnownWordsStore {
   refresh(): Promise<void>;
 }
 
+/** Coverage of the core-word corpus for the `prog` screen (spec 2026-07-06). */
+export interface ProgressCoverage {
+  /** Size of the core-word corpus (lemmas with a frequency rank; 1,000 in v1). */
+  total: number;
+  /** Frequency ranks (1-based) of the learner's KNOWN lemmas, ascending. Length = words known. */
+  knownRanks: number[];
+}
+
 /** Tier-B `prog` screen: coverage of the ~1,000 core words (WIRING_MAP §3). NOT a card. */
 export interface ProgressService {
-  getCoverage(): Promise<{ known: number; total: number }>;
+  getCoverage(): Promise<ProgressCoverage>;
 }
 
 /** Tier-B `pod` screen: a generated episode built from the known-word set (WIRING_MAP §3). */
