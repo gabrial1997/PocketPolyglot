@@ -40,7 +40,6 @@ export interface DueRef {
   id: string;
   kind: 'word' | 'phrase' | 'pair';
   hasAudioEnvelope: boolean;
-  hasImage: boolean; // !!media?.imageUrl
 }
 
 export interface SelectContext {
@@ -53,7 +52,11 @@ export interface SelectContext {
   knownLemmaIds: Set<string>;
   /** lemma ids with ≥1 successful recall (review_log correct=true), for the i+1 anchor check. */
   recalledLemmaIds: Set<string>;
-  /** semantic_fields already admitted today (persisted from earlier sessions, optional seed). */
+  /**
+   * semantic_fields already admitted, seeding the diversity gate. NB: despite the name, this is
+   * per-BATCH only in production — SupabaseSrsService always passes a fresh empty set, so the
+   * gate spreads fields within one batch and does NOT persist across sessions or days.
+   */
   todaysSemanticFields: Set<string>;
 }
 
@@ -227,6 +230,12 @@ export function selectBatch(input: {
   // -------------------------------------------------------------------------
   // Pass 3 — PAIRS (unchanged rules): audio-gated; embedded after their blocked
   // lemma when it was admitted, otherwise standalone (orphaned).
+  //
+  // NB: this pass is DORMANT in production. No service code populates pair
+  // candidates or Candidate.blocksLemmaId — minimal-pair drills enter the loop
+  // via ensureDrillsSeeded's review_state rows (the due path), not as new
+  // candidates. Kept (and unit-tested) pending the phoneme-block candidate
+  // wiring that will feed it.
   // -------------------------------------------------------------------------
   const pairsByBlockedLemma = new Map<string, Candidate[]>();
   const orphanedPairs: Candidate[] = [];

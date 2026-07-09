@@ -5,8 +5,9 @@
 //
 // New PHRASES are NOT expanded here: every new phrase first renders the one-time
 // 'phrase/unlock' reveal (decideKind), and the controller's unlock advance inserts the
-// phrase's own hear → MC → speak arc (requeueArcNext). They pass through in place and are
-// transparent to word grouping — a teaser-before-word unit must not split a word run.
+// phrase's own hear → MC → speak arc (requeueArcNext). A phrase met mid-run is emitted
+// immediately — i.e. HOISTED before the intros of any words already gathered for the group —
+// and is transparent to word grouping: a teaser-before-word unit must not split a word run.
 // Picture words pass through single: word/pic-review already runs a full loop.
 // Pure — no clock, no services.
 import type { ReviewItem } from '../types/reviewItem';
@@ -29,8 +30,10 @@ export function expandLearningSteps(batch: ReviewItem[], groupSize: number): Rev
       i++;
       continue;
     }
-    // Gather up to groupSize new words; new phrases between them (locked teasers or
-    // batch-admitted unlocks) are emitted in place (transparent) so they don't split the run.
+    // Gather up to groupSize new words; a new phrase met mid-run (a locked teaser or a
+    // batch-admitted unlock) is pushed to `out` immediately — since the gathered words' intros
+    // are only flushed after the group closes, the phrase lands BEFORE those intros (hoisted
+    // ahead of the group, not literally in place) — so it doesn't split the word run.
     const group: ReviewItem[] = [];
     while (i < batch.length && group.length < groupSize) {
       const next = batch[i]!;

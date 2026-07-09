@@ -31,7 +31,7 @@ exports[`EditSheet (f) snapshot — lemmas sheet 1`] = `
         style={
           [
             {
-              "fontSize": 12,
+              "fontSize": 11.5,
               "fontWeight": "600",
               "letterSpacing": 1.3,
               "textAlign": "center",

@@ -122,6 +122,10 @@ export function createCardHandlers(deps: {
     onPlayCompare: (which, rate) => {
       const url = which === 'you' ? store.current : item.audio?.nativeUrl;
       // A SpeedChip rate slows the native model only; the user's own take always plays natural.
+      // KNOWN PLATFORM HOLE: on web, RecorderService.stop() returns a Blob, so the string guard
+      // makes onPlayCompare('you') a silent no-op there (AudioService.play takes a URL). iOS —
+      // the shipping target — returns a file URI and works. Web Blob playback (objectURL or a
+      // web-aware AudioService) is deliberately deferred; do not "fix" by passing the Blob through.
       if (typeof url === 'string' && url) {
         void audio.play(url, which === 'native' && rate != null ? { rate } : undefined);
       }

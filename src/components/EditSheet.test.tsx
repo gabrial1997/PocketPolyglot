@@ -143,6 +143,40 @@ describe('EditSheet', () => {
     expect('qa_status' in call2).toBe(false);
   });
 
+  // (g) retarget while mounted: `initial` identity change re-seeds fields + qa_status, so stale
+  //     values from the previous item never submit as edits against the new one.
+  it('(g) re-seeds fields and qa_status when retargeted at a different item while mounted', () => {
+    const onSubmit = jest.fn();
+    const onCancel = jest.fn();
+    const u = renderSheet({ table: 'lemmas', initial: lemmaInitial, onSubmit, onCancel });
+
+    // Tester types into the sheet for item #1…
+    fireEvent.changeText(u.getByTestId('input-gloss_en'), 'stale edit');
+
+    // …then the sheet stays mounted but is pointed at item #2.
+    const nextInitial: EditSheetProps['initial'] = {
+      gloss_en: 'water',
+      target: 'ūdens',
+      usage_note: '',
+      literal_gloss: undefined,
+      qa_status: 'native_ok',
+    };
+    u.rerender(
+      <ThemeProvider>
+        <EditSheet table="lemmas" initial={nextInitial} onSubmit={onSubmit} onCancel={onCancel} />
+      </ThemeProvider>,
+    );
+
+    // Fields show the NEW item's values, not the stale draft.
+    expect(u.getByTestId('input-gloss_en').props.value).toBe('water');
+    expect(u.getByTestId('input-target').props.value).toBe('ūdens');
+
+    // Submitting untouched emits an empty patch against the new baseline — no phantom edits.
+    fireEvent.press(u.getByTestId('submit-button'));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0][0]).toEqual({});
+  });
+
   // (f) snapshot of the lemmas sheet
   it('(f) snapshot — lemmas sheet', () => {
     const u = renderSheet({

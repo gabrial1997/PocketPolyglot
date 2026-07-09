@@ -371,6 +371,51 @@ it('phrase/locked with no component ahead: advance() does not re-queue the phras
   expect(result.current.done).toBe(true);
 });
 
+// --- refresh-generation regression: the FIRST card must see the set loaded by reload() ---
+it('a fully-known phrase at position 0 renders phrase/unlock once known.refresh() lands (no stale knownUnion)', async () => {
+  // The real KnownWordsStore is a stable service instance whose all() returns a mutable internal
+  // set that is EMPTY until refresh() resolves. Before the refresh-generation fix, the first
+  // card's knownUnion was memoized from the pre-refresh (empty) set and nothing recomputed it for
+  // position 0 (setPos(0) bails, `known` never changes identity) — so a fully-known phrase at
+  // position 0 rendered phrase/locked and was silently dropped by advance().
+  const p1: ReviewItem = {
+    id: 'p1',
+    type: 'phrase',
+    stage: 'new',
+    reps: 0,
+    target: 'Labdien, es esmu ___.',
+    gloss: 'Hello, I am ___.',
+    audio: { nativeUrl: 'p1.mp3' },
+    componentLemmaIds: ['labdien', 'es', 'esmu'],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
+  };
+  const backing = new Set<string>(); // empty until refresh() "loads" the persisted rows
+  const services = fakeServices([p1], backing);
+  services.known = {
+    has: (id) => backing.has(id),
+    all: () => backing,
+    refresh: async () => {
+      backing.add('labdien');
+      backing.add('es');
+      backing.add('esmu');
+    },
+  };
+  const utils = renderHook(() => useSession(), {
+    wrapper: ({ children }) => (
+      <ThemeProvider>
+        <ServiceProvider services={services}>{children}</ServiceProvider>
+      </ThemeProvider>
+    ),
+  });
+  const { result } = utils;
+
+  // All components are known once refresh() resolves -> the phrase at position 0 must open with
+  // the unlock reveal, NOT phrase/locked computed from the stale pre-refresh set.
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/unlock'));
+});
+
 it('phrase/locked enriches the item with the live "N words to go — learn X" hint', async () => {
   const labdien = newWord('labdien'),
     es = newWord('es'),

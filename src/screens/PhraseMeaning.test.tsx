@@ -16,7 +16,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     reps: 2,
     target: 'Labrīt!',
     gloss: 'Good morning!',
-    audio: { nativeUrl: 'native.mp3' },
+    audio: { nativeUrl: 'native.mp3', envelope: [0.2, 0.6, 1] },
     choices: [
       { value: 'gm', gloss: 'Good morning!', correct: true },
       { value: 'gn', gloss: 'Good night!', correct: false },
@@ -143,8 +143,15 @@ describe('PhraseMeaning', () => {
     expect(u.getByText(/IDIOM/i)).toBeTruthy();
   });
 
-  it('renders with no audio without crashing', () => {
-    expect(() => renderCard({ audio: undefined })).not.toThrow();
+  it('renders with no audio: the silent play orb / speed chip are hidden, choices still playable', () => {
+    const u = renderCard({ audio: undefined });
+    // No audio hero — never a silent orb (hasAudio guard, same as the learn cards).
+    expect(u.queryByLabelText('Play')).toBeNull();
+    expect(u.queryByText('1×')).toBeNull();
+    // The MC gameplay is untouched.
+    fireEvent.press(u.getByText('Good morning!'));
+    fireEvent.press(u.getByText('Continue'));
+    expect(u.props.onComplete).toHaveBeenCalledWith({ itemId: 'labrit', cardKind: 'phrase/meaning', correct: true });
   });
 
   it('reveals the literal reading + usage note once solved', () => {

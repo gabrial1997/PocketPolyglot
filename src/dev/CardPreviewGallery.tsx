@@ -23,6 +23,7 @@ import {
   WordPicReview,
   WordSay,
   DrillScreen,
+  DiphthongDrillScreen,
   PhraseHear,
   PhraseMeaning,
   PhraseSayIt,
@@ -87,6 +88,13 @@ const pairItem: ReviewItem = {
   pair: { a: 'sit', b: 'sīt', correct: 'a', audioUrl: '' },
   receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
 };
+const diphthongItem: ReviewItem = {
+  id: 'lieta-leta', type: 'pair', stage: 'review', reps: 2,
+  target: 'lieta', gloss: 'thing', pron: 'LYEH-ta', audio: { nativeUrl: '' },
+  pair: { a: 'lieta', b: 'lēta', correct: 'a', audioUrl: '' },
+  glide: { combo: 'ie', from: 'i', to: 'e' },
+  receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto',
+};
 const phraseItem: ReviewItem = {
   id: 'es-dzeru-kafiju', type: 'phrase', stage: 'new', reps: 0,
   target: 'Es dzeru kafiju.', gloss: 'I drink coffee.', audio: { nativeUrl: '' },
@@ -126,6 +134,7 @@ export function CardPreviewGallery(): React.JSX.Element {
       <Phone label="Word · pic-review (choose)"><WordPicReview item={wordConcrete} {...handlers} /></Phone>
       <Phone label="Word · say (gloss cue)"><WordSay item={wordConcrete} {...handlers} /></Phone>
       <Phone label="Drill · minimal pair"><DrillScreen item={pairItem} {...handlers} /></Phone>
+      <Phone label="Drill · diphthong glide"><DiphthongDrillScreen item={diphthongItem} {...handlers} /></Phone>
       <Phone label="Phrase · hear first"><PhraseHear item={phraseItem} {...handlers} /></Phone>
       <Phone label="Phrase · meaning"><PhraseMeaning item={phraseItem} {...handlers} /></Phone>
       <Phone label="Phrase · say it"><PhraseSayIt item={phraseItem} {...handlers} /></Phone>

@@ -34,11 +34,16 @@ function applyOrder(rows: Row[], orderBys: OrderBy[]): Row[] {
   });
 }
 
+// PostgREST silently truncates un-ranged selects at (by default) 1000 rows. The fake mirrors
+// that so unbounded-query bugs are reproducible in tests (see the pagination regressions below).
+const POSTGREST_DEFAULT_ROW_CAP = 1000;
+
 // A chainable, thenable query builder. Query methods return `this`; awaiting resolves the canned
 // `{ data, error }`. `.order()` actually sorts (so the due_at + item_id tiebreak is exercised, as
-// Postgres would); `.in()` filters the canned rows to the requested ids.
-function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: null }>) {
-  let rows: Row[] = [...(tables[table] ?? [])];
+// Postgres would); `.in()` filters the canned rows on the requested column. Passing an entry in
+// `errors` makes every query against that table resolve `{ data: null, error }` — supabase-js
+// never throws, so this is how a failed query presents to the service.
+function makeBuilder(table: string, tables: Record<string, Row[]>, errors?: Record<string, object>) {
   const orderBys: OrderBy[] = [];
   let countMode = false;
   let orFilter: string | null = null;
@@ -50,6 +55,8 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
   let limitVal: number | null = null;
   let rangeStart: number | null = null;
   let rangeEnd: number | null = null;
+  let inCol: string | null = null;
+  let inIds: string[] | null = null;
 
   // Mimic Postgres LIKE: '%' is a wildcard, everything else matched literally.
   const likeToRegExp = (pattern: string) =>
@@ -102,10 +109,19 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
         return false;
       }));
     }
+    // in filter
+    if (inCol !== null && inIds !== null) {
+      const col = inCol;
+      const ids = inIds;
+      r = r.filter(row => ids.includes(row[col] as string));
+    }
     return r;
   };
 
   const resolved = () => {
+    if (errors?.[table]) {
+      return { data: null, error: errors[table] as object, count: null };
+    }
     const filtered = applyFilters(tables[table] ?? []);
     const sorted = applyOrder(filtered, orderBys);
     let paged: Row[];
@@ -114,7 +130,8 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
     } else if (limitVal !== null) {
       paged = sorted.slice(0, limitVal);
     } else {
-      paged = sorted;
+      // No explicit range/limit → PostgREST's silent default cap applies.
+      paged = sorted.slice(0, POSTGREST_DEFAULT_ROW_CAP);
     }
     if (countMode) {
       return { data: null, count: paged.length, error: null };
@@ -164,20 +181,18 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
       orderBys.push({ col, ascending: opts?.ascending !== false, nullsFirst: opts?.nullsFirst === true });
       return builder;
     },
-    in: (_col: string, ids: string[]) => {
-      rows = (tables[table] ?? []).filter((r) => ids.includes(r.id as string));
-      // reset rows reference so resolved() uses this filtered set
-      tables[`__in_filtered_${table}`] = rows;
-      // Override resolved for the .in() case: return filtered rows
-      const inResolved = () => ({ data: applyOrder(rows, orderBys), error: null, count: null });
-      const inBuilder: Record<string, unknown> = {
-        ...builder,
-        then: (resolve: (v: { data: Row[]; error: null }) => unknown) => resolve(inResolved()),
-        maybeSingle: async () => ({ data: applyOrder(rows, orderBys)[0] ?? null, error: null }),
-      };
-      return inBuilder;
+    in: (col: string, ids: string[]) => {
+      // Column-aware (a real .in() filters the named column, e.g. phrase_id) and composable:
+      // it records the filter and returns the SAME builder, so .order()/.range() chained after
+      // .in() keep working — required by the paginated .in() queries under test.
+      inCol = col;
+      inIds = ids;
+      return builder;
     },
     maybeSingle: async () => {
+      if (errors?.[table]) {
+        return { data: null, error: errors[table] as object };
+      }
       const filtered = applyFilters(tables[table] ?? []);
       const sorted = applyOrder(filtered, orderBys);
       return { data: sorted[0] ?? null, error: null };
@@ -199,31 +214,53 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, rpcFn?: (name
       }
       return { error: null };
     },
-    then: (resolve: (v: { data: Row[] | null; error: null; count: number | null }) => unknown) =>
+    then: (resolve: (v: { data: Row[] | null; error: object | null; count: number | null }) => unknown) =>
       resolve(resolved()),
   };
 
-  void rpcFn; // suppress unused warning
   return builder;
 }
 
+// An rpc entry is either canned result rows, or `{ error }` — mirroring how a failed RPC
+// presents through supabase-js (it resolves { data: null, error }, it never throws).
+type RpcEntry = unknown[] | { error: object };
+
 function fakeClient(
   tables: Record<string, Row[]>,
-  rpcResults?: Record<string, unknown[]>,
-  now?: Date,
+  rpcResults?: Record<string, RpcEntry>,
+  errors?: Record<string, object>,
 ) {
   return {
-    from: (table: string) => makeBuilder(table, tables),
+    from: (table: string) => makeBuilder(table, tables, errors),
     rpc: async (name: string, args?: Record<string, unknown>) => {
-      if (rpcResults && name in rpcResults) {
-        return { data: rpcResults[name], error: null };
+      void args;
+      const entry = rpcResults?.[name];
+      if (entry && !Array.isArray(entry) && 'error' in entry) {
+        return { data: null, error: entry.error };
+      }
+      if (entry) {
+        return { data: entry, error: null };
       }
       // get_distractors returns nothing here — choices degrade gracefully (not under test).
-      void args;
       return { data: [], error: null };
     },
-    _now: now,
   } as never;
+}
+
+// Build the service under test with the documented nowFn injection (dev time travel) — the only
+// clock hook the service supports.
+function makeSvc(
+  tables: Record<string, Row[]>,
+  rpcResults?: Record<string, RpcEntry>,
+  now?: Date,
+  errors?: Record<string, object>,
+) {
+  return new SupabaseSrsService(
+    fakeClient(tables, rpcResults, errors),
+    'u1',
+    undefined,
+    now ? () => now : undefined,
+  );
 }
 
 // review_state rows in a SCRAMBLED input order, with due_at offsets that encode the intended walk:
@@ -282,7 +319,7 @@ describe('SupabaseSrsService.getDueBatch ordering', () => {
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date(1_900_000_000_000 + 1_000_000_000)), 'u1');
+    const svc = makeSvc(tables, {}, new Date(1_900_000_000_000 + 1_000_000_000));
 
     const batch = await svc.getDueBatch();
 
@@ -307,7 +344,7 @@ describe('SupabaseSrsService.getDueBatch ordering', () => {
       known_lemmas: [],
       profiles: [{ id: 'u1', created_at: new Date().toISOString() }],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
 
     const batch = await svc.getDueBatch();
 
@@ -337,10 +374,7 @@ describe('SupabaseSrsService.getDueBatch — MC distractors', () => {
       { id: 'd2', lemma: 'kazas', gloss_en: 'wedding' },
       { id: 'd3', lemma: 'kakls', gloss_en: 'neck' },
     ];
-    const svc = new SupabaseSrsService(
-      fakeClient(tables, { get_distractors: distractors }, new Date(1_900_000_000_000 + 1_000_000_000)),
-      'u1',
-    );
+    const svc = makeSvc(tables, { get_distractors: distractors }, new Date(1_900_000_000_000 + 1_000_000_000));
 
     const batch = await svc.getDueBatch();
     const item = batch.find((i) => i.id === 'w-a');
@@ -366,10 +400,7 @@ describe('SupabaseSrsService.getDueBatch — MC distractors', () => {
       { id: 'd2', target: 'Y', gloss_en: 'thank you' },
       { id: 'd3', target: 'Z', gloss_en: 'see you' },
     ];
-    const svc = new SupabaseSrsService(
-      fakeClient(tables, { get_phrase_distractors: distractors }, new Date(1_900_000_000_000 + 1_000_000_000)),
-      'u1',
-    );
+    const svc = makeSvc(tables, { get_phrase_distractors: distractors }, new Date(1_900_000_000_000 + 1_000_000_000));
     const batch = await svc.getDueBatch();
     const item = batch.find((i) => i.id === 'p-a');
     expect(item?.choices).toBeDefined();
@@ -378,6 +409,68 @@ describe('SupabaseSrsService.getDueBatch — MC distractors', () => {
     expect(choices.filter((c) => c.correct)).toHaveLength(1);
     expect(choices.find((c) => c.correct)!.gloss).toBe('p-a'); // contentRow gloss = id
     expect(new Set(choices.map((c) => c.gloss))).toEqual(new Set(['p-a', 'hello', 'thank you', 'see you']));
+  });
+
+  // ---------------------------------------------------------------------------
+  // RPC failure handling. supabase-js rpc() never throws — it resolves { data, error } — so the
+  // failure signal is the error FIELD. A failed RPC must leave choices UNDEFINED (the documented
+  // degrade path: cards need ≥ 2 choices), never a one-option list containing only the correct
+  // answer (a self-answering MC card).
+  // ---------------------------------------------------------------------------
+
+  const lemmaTables = (): Record<string, Row[]> => ({
+    review_state: [{ ...stateRow('lemma', 'w-a', 0), stage: 'review' }] as unknown as Row[],
+    lemmas: [contentRow('w-a', { envelope: [0.5], native_url: 'w-a.mp3' })],
+    phrases: [],
+    phrase_components: [],
+    minimal_pairs: [],
+    review_log: [],
+    known_lemmas: [],
+    profiles: [],
+  });
+  const phraseTables = (): Record<string, Row[]> => ({
+    review_state: [{ ...stateRow('phrase', 'p-a', 0), stage: 'review' }] as unknown as Row[],
+    lemmas: [],
+    phrases: [contentRow('p-a', { envelope: [0.5] })],
+    phrase_components: [],
+    minimal_pairs: [], review_log: [], known_lemmas: [], profiles: [],
+  });
+  const MC_NOW = new Date(1_900_000_000_000 + 1_000_000_000);
+
+  it('leaves choices undefined when get_distractors resolves { error } — item still served', async () => {
+    const svc = makeSvc(lemmaTables(), { get_distractors: { error: { message: 'function missing' } } }, MC_NOW);
+
+    const batch = await svc.getDueBatch();
+    const item = batch.find((i) => i.id === 'w-a');
+    expect(item).toBeDefined();
+    expect(item!.choices).toBeUndefined();
+  });
+
+  it('leaves choices undefined when get_distractors returns zero decoys (no one-option card)', async () => {
+    const svc = makeSvc(lemmaTables(), { get_distractors: [] }, MC_NOW);
+
+    const batch = await svc.getDueBatch();
+    const item = batch.find((i) => i.id === 'w-a');
+    expect(item).toBeDefined();
+    expect(item!.choices).toBeUndefined();
+  });
+
+  it('leaves phrase choices undefined when get_phrase_distractors resolves { error }', async () => {
+    const svc = makeSvc(phraseTables(), { get_phrase_distractors: { error: { message: 'boom' } } }, MC_NOW);
+
+    const batch = await svc.getDueBatch();
+    const item = batch.find((i) => i.id === 'p-a');
+    expect(item).toBeDefined();
+    expect(item!.choices).toBeUndefined();
+  });
+
+  it('leaves phrase choices undefined when get_phrase_distractors returns zero decoys', async () => {
+    const svc = makeSvc(phraseTables(), { get_phrase_distractors: [] }, MC_NOW);
+
+    const batch = await svc.getDueBatch();
+    const item = batch.find((i) => i.id === 'p-a');
+    expect(item).toBeDefined();
+    expect(item!.choices).toBeUndefined();
   });
 });
 
@@ -408,7 +501,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, FAR_FUTURE), 'u1');
+    const svc = makeSvc(tables, {}, FAR_FUTURE);
     const batch = await svc.getDueBatch();
 
     // Should include new candidates (no review_state required)
@@ -456,7 +549,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     // All 15 due items must appear (reviews are uncapped)
@@ -491,7 +584,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [{ id: 'u1', user_id: 'u1', created_at: now.toISOString() }],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, now), 'u1');
+    const svc = makeSvc(tables, {}, now);
     const batch = await svc.getDueBatch();
 
     // Must not exceed DAY_ONE_NEW_CAP new items (words are the only budgeted unit)
@@ -569,7 +662,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     const ids = batch.map(i => i.id);
@@ -598,7 +691,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [{ id: 'u1', created_at: new Date().toISOString() }],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     // Batch is new items only; must be in utility_rank order
@@ -647,7 +740,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [{ id: 'u1', created_at: threeDaysAgo }],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, now), 'u1');
+    const svc = makeSvc(tables, {}, now);
     const batch = await svc.getDueBatch();
 
     // With the fix: accountAgeDays = 3 (≥1) → STEADY_STATE_NEW_CAP = 5
@@ -695,7 +788,7 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
       profiles: [{ id: 'u1', created_at: new Date().toISOString() }],
     };
 
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     // Must include lemma-6 through lemma-10 (never introduced) not lemma-1 through lemma-5 (already introduced)
@@ -865,7 +958,7 @@ describe('SupabaseSrsService drill seeding', () => {
       known_lemmas: [] as Row[],
       profiles: [] as Row[],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, now), 'u1');
+    const svc = makeSvc(tables, {}, now);
 
     const batch = await svc.getDueBatch();
 
@@ -893,7 +986,7 @@ describe('SupabaseSrsService drill seeding', () => {
       minimal_pairs: [drillRow('drill-1')],
       ...emptyContent(),
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
 
     await svc.getDueBatch();
 
@@ -921,7 +1014,7 @@ describe('SupabaseSrsService drill seeding', () => {
       minimal_pairs: [drillRow('drill-1')],
       ...emptyContent(),
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
 
     await svc.getDueBatch();
 
@@ -949,7 +1042,7 @@ describe('SupabaseSrsService drill seeding', () => {
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, now), 'u1');
+    const svc = makeSvc(tables, {}, now);
 
     const batch = await svc.getDueBatch();
 
@@ -1009,7 +1102,7 @@ describe('SupabaseSrsService.getDueBatch — recognition-only filter (Task 4)', 
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     // Without the filter: both template rows produce two DueRefs → item appears twice. FAIL.
@@ -1029,7 +1122,7 @@ describe('SupabaseSrsService.getDueBatch — recognition-only filter (Task 4)', 
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     expect(batch).toHaveLength(1);
@@ -1085,12 +1178,227 @@ describe('SupabaseSrsService.getDueBatch — recognition-only filter (Task 4)', 
       known_lemmas: [],
       profiles: [],
     };
-    const svc = new SupabaseSrsService(fakeClient(tables, {}, new Date()), 'u1');
+    const svc = makeSvc(tables, {}, new Date());
     const batch = await svc.getDueBatch();
 
     // Without fix: fallback returns both rows → enrichAndReorder sees 2 orderedStates entries
     // → lemma-1 pushed twice → batch.filter(i => i.id === 'lemma-1').length === 2. FAIL.
     // With fix: .eq('template','recognition') on fallback query → only 1 row → length === 1. PASS.
     expect(batch.filter((i) => i.id === 'lemma-1')).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Query errors are THROWN, not swallowed. supabase-js resolves { data: null, error } on
+// failure; destructuring only `data` used to make a failed query indistinguishable from an
+// empty result — silently corrupting the batch (dropping every due word, resetting the daily
+// cap, zeroing rep counts). getDueBatch must reject instead, so the session shows its
+// load-failure state rather than a silently wrong session.
+// ---------------------------------------------------------------------------
+
+describe('SupabaseSrsService.getDueBatch — failed queries reject (no silent corruption)', () => {
+  const now = new Date();
+  const baseTables = (): Record<string, Row[]> => ({
+    review_state: [
+      {
+        ...stateRow('lemma', 'w-a', 0),
+        stage: 'review',
+        due_at: new Date(now.getTime() - 5000).toISOString(),
+      },
+    ] as unknown as Row[],
+    lemmas: [contentRow('w-a', { envelope: [0.5], native_url: 'w-a.mp3', utility_rank: 1 })],
+    phrases: [],
+    phrase_components: [],
+    minimal_pairs: [],
+    review_log: [],
+    known_lemmas: [],
+    profiles: [],
+  });
+
+  it('rejects when a review_log query fails (a silent 0 would reset the daily new cap)', async () => {
+    const svc = makeSvc(baseTables(), {}, now, { review_log: { message: 'review_log boom' } });
+    await expect(svc.getDueBatch()).rejects.toEqual({ message: 'review_log boom' });
+  });
+
+  it('rejects when the known_lemmas query fails (a silent empty set would relock phrases)', async () => {
+    const svc = makeSvc(baseTables(), {}, now, { known_lemmas: { message: 'known_lemmas boom' } });
+    await expect(svc.getDueBatch()).rejects.toEqual({ message: 'known_lemmas boom' });
+  });
+
+  it('rejects when the lemmas content query fails (a silent empty map would drop every due word)', async () => {
+    const svc = makeSvc(baseTables(), {}, now, { lemmas: { message: 'lemmas boom' } });
+    await expect(svc.getDueBatch()).rejects.toEqual({ message: 'lemmas boom' });
+  });
+
+  it('rejects when the phrases content query fails', async () => {
+    const svc = makeSvc(baseTables(), {}, now, { phrases: { message: 'phrases boom' } });
+    await expect(svc.getDueBatch()).rejects.toEqual({ message: 'phrases boom' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pagination past PostgREST's silent ~1000-row default cap (the fake mirrors the cap).
+// review_log grows forever, so the two unbounded reads — recalledLemmaIds and the C2
+// rep-count query — must page with .range() instead of trusting a single un-ranged select.
+// ---------------------------------------------------------------------------
+
+describe('SupabaseSrsService.getDueBatch — pages past the PostgREST row cap', () => {
+  it('recalledLemmaIds: an anchor recalled beyond the first 1000 log rows still unlocks its phrase', async () => {
+    const now = new Date();
+    // 1000 filler recall rows sort (by id) BEFORE the anchor's recall row, so an un-paginated
+    // read never sees the anchor and the fully-known phrase silently never unlocks.
+    const fillers: Row[] = Array.from({ length: 1000 }, (_, k) => ({
+      id: `log-${String(k).padStart(4, '0')}`,
+      user_id: 'u1',
+      item_type: 'lemma',
+      item_id: `filler-${k}`,
+      card_kind: 'word/hear',
+      correct: true,
+      created_at: new Date(now.getTime() - 10_000_000 + k * 1000).toISOString(),
+    }));
+    const anchorRecall: Row = {
+      id: 'log-9999',
+      user_id: 'u1',
+      item_type: 'lemma',
+      item_id: 'k-anchor',
+      card_kind: 'word/hear',
+      correct: true,
+      created_at: new Date(now.getTime() - 5000).toISOString(),
+    };
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [],
+      phrases: [contentRow('p-late', { envelope: [0.5] })],
+      phrase_components: [{ phrase_id: 'p-late', lemma_id: 'k-anchor', position: 0 }],
+      minimal_pairs: [],
+      review_log: [...fillers, anchorRecall],
+      known_lemmas: [{ user_id: 'u1', lemma_id: 'k-anchor' }],
+      profiles: [{ id: 'u1', created_at: new Date(now.getTime() - 3 * 86_400_000).toISOString() }],
+    };
+    const svc = makeSvc(tables, {}, now);
+
+    const batch = await svc.getDueBatch();
+
+    // Fully-known phrase whose anchor recall lives on page 2 → must still be admitted.
+    expect(batch.map((i) => i.id)).toContain('p-late');
+  });
+
+  it('C2 rep counts: an item with 1200 log rows counts all of them, not the first 1000', async () => {
+    const now = new Date();
+    const logs: Row[] = Array.from({ length: 1200 }, (_, k) => ({
+      id: `log-${String(k).padStart(5, '0')}`,
+      user_id: 'u1',
+      item_type: 'lemma',
+      item_id: 'w-a',
+      card_kind: 'word/hear',
+      correct: true,
+      created_at: new Date(now.getTime() - 2_000_000 + k * 1000).toISOString(),
+    }));
+    const tables: Record<string, Row[]> = {
+      review_state: [
+        {
+          ...stateRow('lemma', 'w-a', 0),
+          stage: 'review',
+          due_at: new Date(now.getTime() - 5000).toISOString(),
+        },
+      ] as unknown as Row[],
+      lemmas: [contentRow('w-a', { envelope: [0.5], native_url: 'w-a.mp3' })],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: logs,
+      known_lemmas: [],
+      profiles: [],
+    };
+    const svc = makeSvc(tables, {}, now);
+
+    const batch = await svc.getDueBatch();
+    const item = batch.find((i) => i.id === 'w-a');
+
+    expect(item).toBeDefined();
+    expect(item!.receptiveReps).toBe(1200);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// phrase_components ordering: both reads must ORDER BY position. compIds[0] becomes
+// anchorLemmaId (the i+1 admission gate) and componentLemmaIds feeds the intro breakdown —
+// unordered rows silently anchor on the wrong word / misorder the per-word breakdown.
+// ---------------------------------------------------------------------------
+
+describe('SupabaseSrsService.getDueBatch — phrase_components position ordering', () => {
+  it('componentLemmaIds follows position order even when rows are stored out of order', async () => {
+    const now = new Date();
+    const tables: Record<string, Row[]> = {
+      review_state: [
+        {
+          ...stateRow('phrase', 'p-a', 0),
+          stage: 'review',
+          due_at: new Date(now.getTime() - 5000).toISOString(),
+        },
+      ] as unknown as Row[],
+      lemmas: [
+        contentRow('l-second', { gloss_en: 'second' }),
+        contentRow('l-first', { gloss_en: 'first' }),
+      ],
+      phrases: [contentRow('p-a', { envelope: [0.5], target: 'alfa beta' })],
+      // Insertion order is position-1-first — the query must re-order by position.
+      phrase_components: [
+        { phrase_id: 'p-a', lemma_id: 'l-second', position: 1 },
+        { phrase_id: 'p-a', lemma_id: 'l-first', position: 0 },
+      ],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+    const svc = makeSvc(tables, {}, now);
+
+    const batch = await svc.getDueBatch();
+    const item = batch.find((i) => i.id === 'p-a');
+
+    expect(item).toBeDefined();
+    expect(item!.componentLemmaIds).toEqual(['l-first', 'l-second']);
+  });
+
+  it('phraseCandidates anchors on the position-0 component, not row insertion order', async () => {
+    const now = new Date();
+    // One-away teaser phrase: anchor 'k-anchor' (position 0) is known + recalled; 'w-new'
+    // (position 1) is the single unknown, admitted as a word this batch. If the anchor were
+    // taken from insertion order, it would be 'w-new' (never recalled) and the phrase would
+    // silently never be admitted.
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [
+        contentRow('w-new', { utility_rank: 1, envelope: [0.5], native_url: 'w-new.mp3', word_class: 'concrete' }),
+      ],
+      phrases: [contentRow('p-tease', { envelope: [0.5] })],
+      phrase_components: [
+        { phrase_id: 'p-tease', lemma_id: 'w-new', position: 1 },
+        { phrase_id: 'p-tease', lemma_id: 'k-anchor', position: 0 },
+      ],
+      minimal_pairs: [],
+      review_log: [
+        {
+          id: 'log-1',
+          user_id: 'u1',
+          item_type: 'lemma',
+          item_id: 'k-anchor',
+          card_kind: 'word/hear',
+          correct: true,
+          created_at: new Date(now.getTime() - 5000).toISOString(),
+        },
+      ],
+      known_lemmas: [{ user_id: 'u1', lemma_id: 'k-anchor' }],
+      profiles: [{ id: 'u1', created_at: new Date(now.getTime() - 3 * 86_400_000).toISOString() }],
+    };
+    const svc = makeSvc(tables, {}, now);
+
+    const batch = await svc.getDueBatch();
+    const ids = batch.map((i) => i.id);
+
+    expect(ids).toContain('p-tease');
+    // Teaser unit shape: locked phrase directly before its unlocking word.
+    expect(ids.indexOf('p-tease')).toBe(ids.indexOf('w-new') - 1);
   });
 });

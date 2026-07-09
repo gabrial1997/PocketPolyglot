@@ -5,8 +5,9 @@
 // (RN can't animate filter blur cheaply; position+scale+opacity carry the feel). Cards stay pure;
 // they don't know they're being transitioned. Reduced motion → instant swap.
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, View, useWindowDimensions, AccessibilityInfo, Platform } from 'react-native';
+import { Animated, Easing, StyleSheet, View, useWindowDimensions, Platform } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import { useReducedMotion } from './useReducedMotion';
 
 const DURATION = 600;
 const FADE = Math.round(DURATION * 0.8); // 480ms — opacity leads position
@@ -34,19 +35,15 @@ export function GlideViewport({
   // Animated progress 0→1 for the move (position+scale) and a separate value for opacity.
   const move = useRef(new Animated.Value(0)).current;
   const fade = useRef(new Animated.Value(0)).current;
-  const reduceMotion = useRef(false);
-
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled?.().then((on) => { reduceMotion.current = !!on; }).catch(() => {});
-  }, []);
+  const reduceMotion = useReducedMotion();
 
   // Detect a key change → start a transition (capture the OLD frame as `leaving`).
   useEffect(() => {
-    if (itemKey === current.key) {
-      // same item re-rendered with new children: keep node fresh, no animation
-      setCurrent((c) => ({ key: c.key, node: children }));
-      return;
-    }
+    // CONTRACT: children are FROZEN per key. This effect runs only when `itemKey` changes (deps
+    // below), so a same-key re-render with new children does NOT reach it and the rendered node
+    // is NOT swapped (pinned by GlideViewport.test). The only same-key run is the mount itself —
+    // nothing to do. A new key remounts the child via the glide.
+    if (itemKey === current.key) return;
     if (reduceMotion.current) {
       setLeaving(null);
       setCurrent({ key: itemKey, node: children });
@@ -102,7 +99,7 @@ export function GlideViewport({
           styles.layer,
           { backgroundColor: T.bg },
           leaving
-            ? [enteringStyle, { borderRadius: RADIUS, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 28, shadowOffset: { width: 0, height: 26 }, elevation: 12 }]
+            ? [enteringStyle, { borderRadius: RADIUS, overflow: 'hidden', shadowColor: T.shadowCard.shadowColor, shadowOpacity: 0.3, shadowRadius: 28, shadowOffset: { width: 0, height: 26 }, elevation: 12 }]
             : { zIndex: 1 },
         ]}
       >

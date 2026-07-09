@@ -11,9 +11,16 @@ import type { AudioService, PlaybackStatus } from '../index';
 let audioModeReady = false;
 async function ensureAudioMode(): Promise<void> {
   if (audioModeReady) return;
-  audioModeReady = true;
-  // Play through the iOS silent switch — this is an audio-first app.
-  await setAudioModeAsync({ playsInSilentMode: true });
+  try {
+    // Play through the iOS silent switch — listening is one of the three core modalities
+    // (hear / choose / say), so clips must sound even with the mute switch on.
+    await setAudioModeAsync({ playsInSilentMode: true });
+    // Flag only AFTER success: setting it before the await meant one rejection permanently
+    // disabled the silent-switch config (never retried for the rest of the app session).
+    audioModeReady = true;
+  } catch {
+    // Leave the flag unset so the next play() retries; playback itself still proceeds.
+  }
 }
 
 export class ExpoAudioService implements AudioService {

@@ -61,6 +61,19 @@ describe('useLoopStage', () => {
     expect(result.current.stage).toBe('speak');
   });
 
+  it('a direct wrong→correct pick clears the stale red highlight during the green confirm beat', () => {
+    const { result } = renderHook(() => useLoopStage());
+    act(() => result.current.pick('maize', false)); // miss first — red highlight showing
+    expect(result.current.wrongValue).toBe('maize');
+    act(() => result.current.pick('māja', true)); // correct directly, skipping retry()
+    // During the confirm beat only the green state shows — never green + stale red at once.
+    expect(result.current.wrongValue).toBeNull();
+    expect(result.current.rightValue).toBe('māja');
+    expect(result.current.missed).toBe(true); // the first-try miss is still remembered
+    act(() => jest.advanceTimersByTime(CONFIRM_MS));
+    expect(result.current.stage).toBe('speak');
+  });
+
   it('reset clears rightValue and cancels a pending advance (no stage flip after reset)', () => {
     const { result } = renderHook(() => useLoopStage());
     act(() => result.current.pick('māja', true));

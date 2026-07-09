@@ -149,12 +149,11 @@ it('selectBatch: a draft candidate (qa_status conceptually draft) is admitted as
 });
 
 it('selectBatch: a draft due-ref (qa_status conceptually draft) passes the due filter', () => {
-  // DueRef also has NO qa_status field. Due items with audio/image are always included.
+  // DueRef also has NO qa_status field. Due items with audio are always included.
   const draftDueRef: DueRef = {
     id: '00000000-0000-0000-0000-000000000002',
     kind: 'word',
     hasAudioEnvelope: true,
-    hasImage: true,
   };
   const result = selectBatch({ due: [draftDueRef], candidates: [], ctx: DEFAULT_CTX });
   const dueIds = result.due.map(d => d.id);
@@ -175,7 +174,6 @@ it('selectBatch: Candidate and DueRef types have no qa_status property (compile-
     id: '',
     kind: 'word',
     hasAudioEnvelope: false,
-    hasImage: false,
   } satisfies DueRef);
 
   expect(candidateKeys).not.toContain('qa_status');

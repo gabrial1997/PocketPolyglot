@@ -306,10 +306,23 @@ export function schedule(
 // Helpers shared by the service layer
 // ---------------------------------------------------------------------------
 
-/** Human-readable "next review" label from a due date relative to `now`. */
+/** Start of the local calendar day containing `d` (midnight local time). */
+function startOfLocalDay(d: Date): Date {
+  const copy = new Date(d);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+/**
+ * Human-readable "next review" label from a due date relative to `now`.
+ * Day-boundary aware: "later today" means the due date falls on the SAME local calendar day,
+ * not "within ~12h of now" — a 10-hour interval at 8pm lands tomorrow morning and must read
+ * "in 1 day". Counted in local-midnight boundaries crossed (Math.round absorbs DST's 23/25h days).
+ */
 export function nextReviewLabel(due: Date, now: Date): string {
-  const ms = due.getTime() - now.getTime();
-  const days = Math.round(ms / (1000 * 60 * 60 * 24));
+  const days = Math.round(
+    (startOfLocalDay(due).getTime() - startOfLocalDay(now).getTime()) / 86_400_000,
+  );
   if (days <= 0) return 'Next review later today';
   if (days === 1) return 'Next review in 1 day';
   return `Next review in ${days} days`;

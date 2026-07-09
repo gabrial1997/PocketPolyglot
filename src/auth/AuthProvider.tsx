@@ -18,7 +18,9 @@ interface AuthContextValue {
   loading: boolean;
   signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<SignUpResult>;
-  signOut: () => Promise<void>;
+  /** Signs out. Returns the Supabase error message (or null) so callers can show feedback —
+   *  a failed sign-out must not be silently swallowed. */
+  signOut: () => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -76,7 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         };
       },
       signOut: async () => {
-        await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut();
+        return { error: error?.message ?? null };
       },
     }),
     [session, loading],

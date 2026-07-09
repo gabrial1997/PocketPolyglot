@@ -109,3 +109,27 @@ it('a successful Reset progress after a prior failure clears the error state', a
   await waitFor(() => expect(mockResetProgress).toHaveBeenCalledTimes(2));
   expect(await u.findByText('Reset progress')).toBeTruthy();
 });
+
+// GDPR: a failed deleteRecordings() must be surfaced (was a swallowed .catch — the learner was
+// left believing their recordings were gone when they weren't).
+it('a failed Delete my recordings surfaces "Delete failed — tap to retry" instead of failing silently', async () => {
+  const services = createStubServices();
+  jest.spyOn(services.profile, 'deleteRecordings').mockRejectedValueOnce(new Error('storage down'));
+  const u = renderHost(services);
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Delete my recordings'));
+  expect(await u.findByText('Delete failed — tap to retry')).toBeTruthy();
+});
+
+it('a successful delete after a prior failure clears the delete error state', async () => {
+  const services = createStubServices();
+  const spy = jest.spyOn(services.profile, 'deleteRecordings').mockRejectedValueOnce(new Error('storage down'));
+  const u = renderHost(services);
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Delete my recordings'));
+  await u.findByText('Delete failed — tap to retry');
+
+  fireEvent.press(u.getByText('Delete failed — tap to retry')); // retry: the stub now resolves
+  await waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
+  expect(await u.findByText('Delete my recordings')).toBeTruthy();
+});

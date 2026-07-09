@@ -1,14 +1,15 @@
-/* eslint-disable react/prop-types */
-// drill — consonant minimal-pair perception drill, L vs Ļ (ports kit screens-drill.jsx `DrillScreen`).
-// Loop: HEAR the clip -> DISCRIMINATE which glyph it was -> SAY IT BACK. The palatalization contrast
-// is one English ears miss. Pure card: data-in (item) / events-out (callbacks); only ephemeral state.
+// drill — minimal-pair perception drill (ports kit screens-drill.jsx `DrillScreen`).
+// Loop: HEAR the clip -> DISCRIMINATE which glyph it was -> SAY IT BACK. Minimal-pair contrasts
+// (palatalization, vowel length, …) are ones English ears miss. Pure card: data-in (item) /
+// events-out (callbacks); only ephemeral state. The pair data is GENERIC — all contrast copy
+// (eyebrow, feedback, result note) renders from item/pair fields, never hard-coded phonetics.
 //
 // LOCKED wrong-answer rule (CLAUDE.md): a wrong pick does NOT advance — only the chosen wrong glyph
 // reddens, the correct glyph is NEVER revealed (its word stays hidden, no green badge), the miss is
 // remembered (`missed`). A correct pick reveals that glyph's word + a green badge, then unlocks
 // "Say it back".
 //
-// 2026-06-19 VISUAL SYNC: rebuilt to the mockup. Centered "SOUND CHECK · CONSONANT" + serif prompt;
+// 2026-06-19 VISUAL SYNC: rebuilt to the mockup. Centered eyebrow + serif prompt;
 // audio hero (waveform + PlayOrb 72 + SpeedChip); two big glyph cards (radius 24); the green/carmine
 // feedback line; the say-it-back stage (hero word + outline PlayOrb 54 + MicOrb -> ResultNote); and
 // the staged bottom CTA (Play again / Try again / Say it back / Next pair).
@@ -26,12 +27,53 @@ import type { ReviewPair } from '../types/reviewItem';
 
 type Side = 'a' | 'b';
 type Say = null | 'idle' | 'rec' | 'done';
-type PairHints = ReviewPair & { aHint?: string; bHint?: string };
+
+// Hoisted out of the render body (a component defined inside render remounts on every render,
+// losing native view state and defeating reconciliation).
+function GlyphCard({ side, glyph, hint, picked, right, pair, word, gloss, onChoose }: {
+  side: Side;
+  glyph: string;
+  hint?: string;
+  picked: Side | null;
+  right: boolean;
+  pair: ReviewPair;
+  word: string;
+  gloss: string;
+  onChoose: (side: Side) => void;
+}): React.JSX.Element {
+  const T = useTheme();
+  const isPicked = picked === side;
+  const isCorrect = side === pair.correct;
+  let bg = T.surface, bd = T.hair, fg = T.ink, accent = false;
+  if (picked !== null) {
+    if (right && isCorrect) { bg = T.goodSoft; bd = hexA(T.good, 0.5); fg = T.good; accent = true; }
+    else if (isPicked) { bg = hexA(T.record, T.dark ? 0.12 : 0.07); bd = hexA(T.record, 0.45); fg = T.record; }
+  }
+  return (
+    <Pressable accessibilityRole="button" disabled={picked !== null} onPress={() => onChoose(side)} style={[styles.glyphCard, { backgroundColor: bg, borderColor: bd }, picked === null ? T.shadow : null]}>
+      {accent ? (
+        <View style={[styles.badge, { backgroundColor: T.good }]}><CardIcon name="check" size={16} color={T.onPrimary} sw={2.4} /></View>
+      ) : null}
+      {/* The "glyph" is the whole pair word (e.g. lācis/ļoti), not a single letter — long words
+          overflow the half-width card at 64px and clip. Shrink-to-fit on one line keeps them whole. */}
+      <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.glyph, { color: accent ? T.good : fg, fontFamily: fonts.headline }]}>{glyph}</Text>
+      {accent ? (
+        <>
+          <Text style={[styles.cardWord, { color: T.ink, fontFamily: fonts.headline }]}>{word}</Text>
+          <Text style={[styles.cardGloss, { color: T.sub }]}>{gloss}</Text>
+        </>
+      ) : hint ? (
+        <Text style={[styles.cardHint, { color: T.faint }]}>{hint}</Text>
+      ) : null}
+    </Pressable>
+  );
+}
 
 export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
-  const { item, onPlay, onStop, onPreload, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onPreload, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange, recConsent = true } = props;
+  // GDPR record gate: when false, hide the record affordance on the say-it-back stage.
   const T = useTheme();
-  const pair = item.pair as PairHints | undefined;
+  const pair = item.pair;
 
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
   const [speed, setSpeed] = useState<Speed>(speedProp ?? 1);
@@ -43,6 +85,9 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
     if (playing) { onStop?.(); stop(); }
     else play(() => onPlay('native', speed), speed);
   };
+  // Stage transitions must silence the REAL clip too, not just the local soundbar gate —
+  // otherwise audio keeps sounding across the stage change (same pairing the replay toggle uses).
+  const stopAll = (): void => { onStop?.(); stop(); };
   // Warm the native clip on mount so the first orb tap starts without a load stall (bug 1).
   useEffect(() => {
     onPreload?.('native');
@@ -56,6 +101,9 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
 
   if (!pair) return <Screen><View style={styles.body} /></Screen>;
   const correctGlyph = pair.correct === 'a' ? pair.a : pair.b;
+  // The eyebrow derives from the pair itself — the drill data is generic (palatalization, vowel
+  // length, …), so naming a fixed contrast class here would lie for most pairs.
+  const eyebrow = `Sound check · ${pair.a} vs ${pair.b}`.toUpperCase();
 
   const choose = (side: Side): void => {
     if (picked === null) {
@@ -64,41 +112,13 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
     }
   };
 
-  const GlyphCard = ({ side, glyph, hint }: { side: Side; glyph: string; hint?: string }): React.JSX.Element => {
-    const isPicked = picked === side;
-    const isCorrect = side === pair.correct;
-    let bg = T.surface, bd = T.hair, fg = T.ink, accent = false;
-    if (picked !== null) {
-      if (right && isCorrect) { bg = T.goodSoft; bd = hexA(T.good, 0.5); fg = T.good; accent = true; }
-      else if (isPicked) { bg = hexA(T.record, T.dark ? 0.12 : 0.07); bd = hexA(T.record, 0.45); fg = T.record; }
-    }
-    return (
-      <Pressable accessibilityRole="button" disabled={picked !== null} onPress={() => choose(side)} style={[styles.glyphCard, { backgroundColor: bg, borderColor: bd }, picked === null ? T.shadow : null]}>
-        {accent ? (
-          <View style={[styles.badge, { backgroundColor: T.good }]}><CardIcon name="check" size={16} color="#fff" sw={2.4} /></View>
-        ) : null}
-        {/* The "glyph" is the whole pair word (e.g. lācis/ļoti), not a single letter — long words
-            overflow the half-width card at 64px and clip. Shrink-to-fit on one line keeps them whole. */}
-        <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.glyph, { color: accent ? T.good : fg, fontFamily: fonts.headline }]}>{glyph}</Text>
-        {accent ? (
-          <>
-            <Text style={[styles.cardWord, { color: T.ink, fontFamily: fonts.headline }]}>{item.target}</Text>
-            <Text style={[styles.cardGloss, { color: T.sub }]}>{item.gloss}</Text>
-          </>
-        ) : hint ? (
-          <Text style={[styles.cardHint, { color: T.faint }]}>{hint}</Text>
-        ) : null}
-      </Pressable>
-    );
-  };
-
   // ── SAY IT BACK ──
   if (say !== null) {
     return (
       <Screen>
         <View style={styles.body}>
           <View style={styles.headBlock}>
-            <Text style={[styles.eyebrow, { color: T.faint }]}>SOUND CHECK · CONSONANT</Text>
+            <Text style={[styles.eyebrow, { color: T.faint }]}>{eyebrow}</Text>
             <Text style={[styles.prompt, { color: T.ink, fontFamily: fonts.headline }]}>Say it back</Text>
           </View>
           <Text style={[styles.sayHero, { color: T.ink, fontFamily: fonts.headline }]}>{item.target}</Text>
@@ -113,20 +133,23 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
             {say === 'done' ? (
               // No production grade in Phase 0 — acknowledge finishing the loop and reinforce the
               // target sound, without claiming the recording "sounded right" (that needs GOP scoring).
-              <ResultNote>Nice work — keep that <Text style={{ fontWeight: '700', color: T.ink }}>{correctGlyph}</Text> soft.</ResultNote>
-            ) : (
+              <ResultNote>Nice work — hold on to that <Text style={{ fontWeight: '700', color: T.ink }}>{correctGlyph}</Text>.</ResultNote>
+            ) : recConsent ? (
               <>
                 <MicOrb size={72} rec={say === 'rec'} onPress={() => { if (say === 'rec') { onRecordStop(); setSay('done'); } else { onRecordStart(); setSay('rec'); } }} />
                 <Text style={[styles.micHint, { color: say === 'rec' ? T.record : T.faint, fontWeight: say === 'rec' ? '600' : '400' }]}>
                   {say === 'rec' ? 'Listening… tap to stop' : 'Now say it'}
                 </Text>
               </>
+            ) : (
+              <Text style={[styles.micHint, { color: T.faint }]}>Recording is off — turn it on in Settings to hear yourself.</Text>
             )}
           </View>
         </View>
         <View style={styles.footer}>
-          {say === 'done' ? (
-            <Pressable accessibilityRole="button" onPress={() => onComplete({ itemId: item.id, cardKind: 'drill', correct: !missed, spoke: true })} style={[styles.cta, { backgroundColor: T.primary }]}>
+          {say === 'done' || !recConsent ? (
+            // spoke is honest: true only when a take was actually recorded (never without consent).
+            <Pressable accessibilityRole="button" onPress={() => onComplete({ itemId: item.id, cardKind: 'drill', correct: !missed, spoke: say === 'done' })} style={[styles.cta, { backgroundColor: T.primary }]}>
               <Text style={[styles.ctaText, { color: T.onPrimary }]}>Next pair</Text>
               <CardIcon name="chevR" size={17} color={T.onPrimary} />
             </Pressable>
@@ -143,7 +166,7 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
     <Screen>
       <View style={styles.body}>
         <View style={styles.headBlock}>
-          <Text style={[styles.eyebrow, { color: T.faint }]}>SOUND CHECK · CONSONANT</Text>
+          <Text style={[styles.eyebrow, { color: T.faint }]}>{eyebrow}</Text>
           <Text style={[styles.prompt, { color: T.ink, fontFamily: fonts.headline }]}>Which did you hear?</Text>
         </View>
 
@@ -156,16 +179,16 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
         </View>
 
         <View style={styles.cards}>
-          <GlyphCard side="a" glyph={pair.a} hint={pair.aHint} />
-          <GlyphCard side="b" glyph={pair.b} hint={pair.bHint} />
+          <GlyphCard side="a" glyph={pair.a} hint={pair.aHint} picked={picked} right={right} pair={pair} word={item.target} gloss={item.gloss} onChoose={choose} />
+          <GlyphCard side="b" glyph={pair.b} hint={pair.bHint} picked={picked} right={right} pair={pair} word={item.target} gloss={item.gloss} onChoose={choose} />
         </View>
 
         <View style={styles.feedbackWrap}>
           {picked !== null ? (
             <Text style={[styles.feedback, { color: right ? T.good : T.record }]}>
               {right
-                ? <>Right — that’s the soft <Text style={{ fontWeight: '700' }}>{correctGlyph}</Text>.</>
-                : 'Not quite — listen again and try.'}
+                ? <>Right — that was <Text style={{ fontWeight: '700' }}>{correctGlyph}</Text>.</>
+                : 'Not quite — give it another try.'}
             </Text>
           ) : null}
         </View>
@@ -173,14 +196,14 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
 
       <View style={styles.footer}>
         {right ? (
-          <Pressable accessibilityRole="button" onPress={() => { setSay('idle'); stop(); }} style={[styles.cta, { backgroundColor: T.primary }]}>
+          <Pressable accessibilityRole="button" onPress={() => { setSay('idle'); stopAll(); }} style={[styles.cta, { backgroundColor: T.primary }]}>
             <CardIcon name="mic" size={18} color={T.onPrimary} />
             <Text style={[styles.ctaText, { color: T.onPrimary }]}>Say it back</Text>
           </Pressable>
         ) : picked !== null ? (
-          <Pressable accessibilityRole="button" onPress={() => { setPicked(null); stop(); }} style={[styles.cta, { backgroundColor: T.record }]}>
-            <CardIcon name="replay" size={18} color="#fff" />
-            <Text style={[styles.ctaText, { color: '#fff' }]}>Try again</Text>
+          <Pressable accessibilityRole="button" onPress={() => { setPicked(null); stopAll(); }} style={[styles.cta, { backgroundColor: T.record }]}>
+            <CardIcon name="replay" size={18} color={T.onPrimary} />
+            <Text style={[styles.ctaText, { color: T.onPrimary }]}>Try again</Text>
           </Pressable>
         ) : (
           <Pressable accessibilityRole="button" onPress={replay} style={[styles.ctaOutline, { borderColor: T.hair }]}>

@@ -44,7 +44,7 @@ exports[`WordHear renders the initial recognition stage from item data (snapshot
         style={
           [
             {
-              "fontSize": 12,
+              "fontSize": 11.5,
               "fontWeight": "600",
               "letterSpacing": 1.3,
               "textAlign": "center",

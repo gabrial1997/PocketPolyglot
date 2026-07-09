@@ -1,13 +1,15 @@
 // phrase/sayit — mature production review (BACKEND_INTEGRATION §4). English cue -> record (from
 // memory, no pre-hear: translation recall) -> compare native vs you -> self-rate. Native audio
-// appears only in the compare stage. Out: { spoke:true, recording, selfRating }.
+// appears only in the compare stage. Out: { spoke, recording, selfRating } — `spoke` is honest:
+// true only when a recording attempt actually happened this card (false when recConsent is off or
+// the learner skipped straight to the phrase without recording).
 //
 // 2026-06-19 VISUAL SYNC: rebuilt to the mockup (screens-phrase.jsx `PhraseSayIt`). Eyebrow
 // "REVIEW · SAY IT"; cue stage = English prompt + "Say it in Latvian." + a generous record orb;
 // compare stage = the phrase + native/you CompareRows + "Play back-to-back" + SpeedChip + the
 // next-review note; footer self-rate (Not yet / Got it). The "again" copy says "shortly" — never a
 // "10 minutes" time claim (locked product rule).
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Screen, MicOrb, SpeedChip, type Speed } from '../components';
 import { Eyebrow, PhraseLine, CompareRow, PlayBackToBack } from '../components/cardChrome';
@@ -24,10 +26,21 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
   const changeSpeed = (s: Speed): void => { setSpeed(s); onSpeedChange?.(s); };
   const [stage, setStage] = useState<Stage>('cue');
   const [rated, setRated] = useState<'good' | 'again' | null>(null);
+  // Honest `spoke`: set only when a recording attempt actually starts this card. recConsent=false
+  // or skipping via "Show the phrase" without recording leaves it false.
+  const didRecord = useRef(false);
 
   const rate = (selfRating: 'good' | 'again'): void => {
+    if (rated !== null) return; // the rating is final — never a second onComplete
     setRated(selfRating);
-    onComplete({ itemId: item.id, cardKind: 'phrase/sayit', spoke: true, selfRating });
+    onComplete({ itemId: item.id, cardKind: 'phrase/sayit', spoke: didRecord.current, selfRating });
+  };
+
+  // "Show the phrase" mid-recording must stop the recorder first (capture the take, same as the
+  // normal stop) — otherwise the recorder leaks past the card.
+  const showPhrase = (): void => {
+    if (stage === 'rec') onRecordStop();
+    setStage('compare');
   };
 
   return (
@@ -46,7 +59,7 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
                   rec={stage === 'rec'}
                   onPress={() => {
                     if (stage === 'rec') { onRecordStop(); setStage('compare'); }
-                    else { onRecordStart(); setStage('rec'); }
+                    else { didRecord.current = true; onRecordStart(); setStage('rec'); }
                   }}
                 />
                 <Text style={[styles.recHint, { color: stage === 'rec' ? T.record : T.faint, fontWeight: stage === 'rec' ? '600' : '400' }]}>
@@ -97,16 +110,16 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
 
       <View style={styles.footer}>
         {stage !== 'compare' ? (
-          <Pressable accessibilityRole="button" onPress={() => setStage('compare')} style={styles.ghost}>
+          <Pressable accessibilityRole="button" onPress={showPhrase} style={styles.ghost}>
             <Text style={[styles.ghostText, { color: T.faint }]}>Show the phrase</Text>
           </Pressable>
         ) : (
           <View style={styles.rateRow}>
-            <Pressable accessibilityRole="button" onPress={() => rate('again')} style={[styles.rateBtn, { borderColor: T.hair, backgroundColor: rated === 'again' ? (T.dark ? 'rgba(255,255,255,0.08)' : 'rgba(26,39,51,0.06)') : 'transparent' }]}>
+            <Pressable accessibilityRole="button" disabled={rated !== null} onPress={() => rate('again')} style={[styles.rateBtn, { borderColor: T.hair, backgroundColor: rated === 'again' ? (T.dark ? 'rgba(255,255,255,0.08)' : 'rgba(26,39,51,0.06)') : 'transparent' }]}>
               <Text style={[styles.rateText, { color: T.sub }]}>Not yet</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" onPress={() => rate('good')} style={[styles.rateBtn, styles.rateGood, { backgroundColor: rated === 'good' ? T.good : T.primary, shadowColor: rated === 'good' ? T.good : T.primary }]}>
-              <Text style={[styles.rateText, { color: '#fff' }]}>Got it</Text>
+            <Pressable accessibilityRole="button" disabled={rated !== null} onPress={() => rate('good')} style={[styles.rateBtn, styles.rateGood, { backgroundColor: rated === 'good' ? T.good : T.primary, shadowColor: rated === 'good' ? T.good : T.primary }]}>
+              <Text style={[styles.rateText, { color: T.onPrimary }]}>Got it</Text>
             </Pressable>
           </View>
         )}

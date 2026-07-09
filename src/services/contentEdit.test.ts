@@ -29,14 +29,16 @@ it('valid lemma gloss_en edit → patch contains only gloss_en', () => {
   expect(result.patch).toEqual({ gloss_en: 'hello' });
 });
 
-it('valid lemma edit with qa_status → patch includes both field and qa_status', () => {
+it('valid lemma edit with qa_status → patch includes both field and qa_status (target mapped to lemma column)', () => {
   const result = validateContentEdit({
     table: 'lemmas',
     id: VALID_UUID,
     fields: { target: 'labdien' },
     qa_status: 'native_ok',
   });
-  expect(result.patch).toEqual({ target: 'labdien', qa_status: 'native_ok' });
+  // Wire field 'target' maps to the physical `lemma` column on lemmas
+  // (0001_init.sql — lemmas has no `target` column; `target` exists only on phrases).
+  expect(result.patch).toEqual({ lemma: 'labdien', qa_status: 'native_ok' });
 });
 
 it('qa_status-only edit on minimal_pairs → valid (qa_status is the only edit path)', () => {
@@ -47,6 +49,42 @@ it('qa_status-only edit on minimal_pairs → valid (qa_status is the only edit p
   });
   expect(result.table).toBe('minimal_pairs');
   expect(result.patch).toEqual({ qa_status: 'locked' });
+});
+
+// --- Wire-field → physical-column mapping (lemmas.target → lemma) ---
+
+it('lemmas target edit → patch key is the physical column `lemma`, never `target`', () => {
+  const result = validateContentEdit({
+    table: 'lemmas',
+    id: VALID_UUID,
+    fields: { target: 'māja' },
+  });
+  expect(result.patch).toEqual({ lemma: 'māja' });
+  expect('target' in result.patch).toBe(false);
+});
+
+it('phrases target edit → patch key stays `target` (phrases really has that column)', () => {
+  const result = validateContentEdit({
+    table: 'phrases',
+    id: VALID_UUID,
+    fields: { target: 'Es dzeru kafiju' },
+  });
+  expect(result.patch).toEqual({ target: 'Es dzeru kafiju' });
+});
+
+it('lemmas mixed edit (target + gloss_en) → only target is remapped', () => {
+  const result = validateContentEdit({
+    table: 'lemmas',
+    id: VALID_UUID,
+    fields: { target: 'māja', gloss_en: 'house' },
+  });
+  expect(result.patch).toEqual({ lemma: 'māja', gloss_en: 'house' });
+});
+
+it('empty string for target on lemmas → still throws NOT NULL (checked on the wire name)', () => {
+  expect(() =>
+    validateContentEdit({ table: 'lemmas', id: VALID_UUID, fields: { target: '' } }),
+  ).toThrow(/cannot be empty|NOT NULL/i);
 });
 
 it('empty usage_note → allowed (nullable column)', () => {

@@ -24,7 +24,8 @@ This document exists so wiring is *mechanical*. It answers, for every card: whic
 | `phrase/meaning` | `phrase` + `meaning` | `PhraseMeaning` | `screens-phrase.jsx` | `PhraseScreen state="meaning"` | `PP_PHRASES` |
 | `phrase/sayit` | `phrase` + `sayit` | `PhraseSayIt` | `screens-phrase.jsx` | `PhraseScreen state="sayit"` (also `"review"`) | `PP_PHRASES` |
 | `drill` | `drill` | `DrillScreen` | `screens-a.jsx` | direct (`Comp: DrillScreen`) | inline L/Ļ pair data |
-| `pron` | `pron` | `PronounceScreen` | `screens-b.jsx` | direct | inline native-audio sample |
+| `diphthong` | `diphthong` | `DiphthongDrillScreen` | `src/screens/DiphthongDrillScreen.tsx` | direct (`renderFor()`: a `pair` item **with audio** whose `glide` field is set — the gliding ie combination; a pair without `glide` routes to `drill`) | — (built directly in RN, data-driven from `item.pair` + `item.glide`; no prototype screen) |
+| `pron` | `pron` | `PronounceScreen` | `screens-b.jsx` | direct — **not yet reachable in the production loop (Phase 1)**: `renderFor()` never returns `pron` today; it activates with GOP scoring | inline native-audio sample |
 
 **Non-batch screens** (not SRS review items — see §3): `home` → `HomeScreen` (`screens-a.jsx`), `pod` → `PodcastScreen` (`screens-b.jsx`), `prog` → `ProgressScreen` (`screens-b.jsx`).
 
@@ -50,7 +51,7 @@ The registry these map to lives in `app.jsx` → `PP_SCREENS`. Keep `id` + `k` s
 
 The prototype renders all seven as equal artboards. For wiring they split into two kinds, and conflating them is the most likely architecture mistake:
 
-**Tier A — SRS review cards** (driven by `SessionController` + `renderFor()`, per `BACKEND_INTEGRATION.md`): `word/*`, `phrase/*`, `drill`, `pron`. These receive a `ReviewItem` and emit a `CardResult`. They are the only screens in the daily-batch loop.
+**Tier A — SRS review cards** (driven by `SessionController` + `renderFor()`, per `BACKEND_INTEGRATION.md`): `word/*`, `phrase/*`, `drill`, `diphthong`, `pron`. These receive a `ReviewItem` and emit a `CardResult`. They are the only screens in the daily-batch loop. (`pron` is registered but not yet reachable — see §1.)
 
 **Tier B — standalone screens** (their own data source, **not** in `renderFor()`, **not** `ReviewItem`/`CardResult`):
 

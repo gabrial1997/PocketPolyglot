@@ -5,10 +5,10 @@ import React from 'react';
 import { Pressable, View, StyleSheet } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeProvider';
-import { hexA } from '../theme/tokens';
+import { hexA, sizing } from '../theme/tokens';
 
 export function MicOrb({
-  size = 76,
+  size = sizing.micOrb,
   rec = false,
   onPress,
 }: {

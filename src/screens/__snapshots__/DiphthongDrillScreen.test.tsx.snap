@@ -131,7 +131,7 @@ exports[`DiphthongDrillScreen renders the meet-the-glide stage (snapshot) 1`] = 
           ]
         }
       >
-        Not “ee” and not a flat “e” — it 
+        One sound, not two — it 
         <Text
           style={
             {

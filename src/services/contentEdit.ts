@@ -3,10 +3,22 @@
 // No I/O, no RN/Node-only imports.
 import type { EditableTable, ContentEditRequest } from './index';
 
+// Whitelists are WIRE field names (the ContentEditRequest contract, matching
+// ReviewItem field names) — NOT necessarily physical column names. See
+// COLUMN_MAP_BY_TABLE below for the wire→column translation.
 export const EDITABLE_FIELDS_BY_TABLE: Record<EditableTable, readonly string[]> = {
   lemmas:        ['gloss_en', 'target', 'usage_note', 'literal_gloss'],
   phrases:       ['gloss_en', 'target', 'usage_note', 'literal_gloss'],
   minimal_pairs: [], // only qa_status is editable
+};
+
+// Per-table wire-field → physical-column mapping, applied when building the
+// returned patch (which the Edge Function passes straight to UPDATE ... SET).
+// The wire contract says 'target' (ReviewItem.target), but on `lemmas` the
+// physical column is `lemma` — `target` exists only on `phrases`
+// (supabase/migrations/0001_init.sql). Unmapped fields pass through unchanged.
+const COLUMN_MAP_BY_TABLE: Partial<Record<EditableTable, Readonly<Record<string, string>>>> = {
+  lemmas: { target: 'lemma' },
 };
 
 export const QA_ORDER = ['draft', 'native_ok', 'locked'] as const;
@@ -20,7 +32,9 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /**
  * Validates and sanitizes a ContentEditRequest.
  * Returns { table, id, patch } where patch is a plain Record<string,string>
- * containing only whitelisted columns and/or qa_status.
+ * containing only whitelisted columns and/or qa_status. Patch keys are
+ * PHYSICAL column names (wire fields are translated via COLUMN_MAP_BY_TABLE,
+ * e.g. lemmas.target → lemma) — safe to pass straight to UPDATE ... SET.
  * Throws a descriptive Error on any validation failure.
  */
 export function validateContentEdit(req: ContentEditRequest): {
@@ -49,6 +63,7 @@ export function validateContentEdit(req: ContentEditRequest): {
 
   // 4. Fields
   const whitelist = EDITABLE_FIELDS_BY_TABLE[req.table];
+  const columnMap = COLUMN_MAP_BY_TABLE[req.table];
   const patch: Record<string, string> = {};
 
   if (req.fields != null) {
@@ -67,13 +82,14 @@ export function validateContentEdit(req: ContentEditRequest): {
           `validateContentEdit: value for "${col}" must be a string, got ${typeof val}`,
         );
       }
-      // NOT NULL columns reject empty strings
+      // NOT NULL columns reject empty strings (checked on the WIRE name)
       if (NOT_NULL_FIELDS.has(col) && val === '') {
         throw new Error(
           `validateContentEdit: "${col}" cannot be empty (NOT NULL in schema)`,
         );
       }
-      patch[col] = val;
+      // Translate wire field → physical column (e.g. lemmas.target → lemma)
+      patch[columnMap?.[col] ?? col] = val;
     }
   }
 

@@ -54,7 +54,7 @@ exports[`WordSay renders the choose stage from item data (snapshot) 1`] = `
           style={
             [
               {
-                "fontSize": 12,
+                "fontSize": 11.5,
                 "fontWeight": "600",
                 "letterSpacing": 1.3,
                 "textAlign": "center",

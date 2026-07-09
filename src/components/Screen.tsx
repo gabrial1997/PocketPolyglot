@@ -1,8 +1,7 @@
 // Screen — full-bleed scaffold (ports kit.jsx `Screen`). Fills the device content area,
 // applies theme bg/ink, horizontal padding. RN: column flex by default.
 import React from 'react';
-import { View, StyleSheet, type ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native';
+import { View, SafeAreaView, StyleSheet, type ViewStyle } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
 export function Screen({

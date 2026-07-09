@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 // pron — pronunciation comparison (BACKEND_INTEGRATION §4, README 05). Hear the native model, record
 // yourself, compare the two takes by ear. Out: { spoke:true, recording }.
 //
@@ -23,6 +22,32 @@ import { hexA, fonts } from '../theme/tokens';
 import type { RecordingCardProps } from './cardProps';
 
 const COMPARE_MS = 1700; // play native+you back-to-back, then complete
+
+// Hoisted out of the render body (a component defined inside render remounts on every render).
+// The "You" take has no precomputed envelope, so its bar honestly rests rather than faking motion
+// (locked constraint: the soundbar moves with REAL amplitude only) — callers pass envelope only
+// for the Native row.
+function Row({ icon, label, you, playing, envelope }: {
+  icon: 'speaker' | 'mic';
+  label: string;
+  you?: boolean;
+  playing: boolean;
+  envelope?: number[];
+}): React.JSX.Element {
+  const T = useTheme();
+  return (
+    <View style={[styles.row, { backgroundColor: T.surface, borderColor: you ? hexA(T.primary, 0.4) : T.hair }, T.shadow]}>
+      <View style={styles.rowHead}>
+        <View style={[styles.chip, { backgroundColor: you ? T.primarySoft : T.sunken }]}>
+          <CardIcon name={icon} size={17} color={you ? T.primary : T.sub} />
+        </View>
+        <Text style={[styles.rowLabel, { color: T.ink }]}>{label}</Text>
+        <Text style={[styles.rowTime, { color: T.faint }]}>0:01</Text>
+      </View>
+      <LiveWaveform envelope={envelope} playing={playing} frameMs={FRAME_MS} height={42} count={40} />
+    </View>
+  );
+}
 
 export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
   const { item, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange, recConsent = true } = props;
@@ -56,21 +81,6 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
     timers.current.push(setTimeout(() => { setPlayingSide(null); onComplete({ itemId: item.id, cardKind: 'pron', spoke: true }); }, nativeDur + half));
   };
 
-  const Row = ({ icon, label, you, playing }: { icon: 'speaker' | 'mic'; label: string; you?: boolean; playing: boolean }): React.JSX.Element => (
-    <View style={[styles.row, { backgroundColor: T.surface, borderColor: you ? hexA(T.primary, 0.4) : T.hair }, T.shadow]}>
-      <View style={styles.rowHead}>
-        <View style={[styles.chip, { backgroundColor: you ? T.primarySoft : T.sunken }]}>
-          <CardIcon name={icon} size={17} color={you ? T.primary : T.sub} />
-        </View>
-        <Text style={[styles.rowLabel, { color: T.ink }]}>{label}</Text>
-        <Text style={[styles.rowTime, { color: T.faint }]}>0:01</Text>
-      </View>
-      {/* The "You" take has no precomputed envelope, so its bar honestly rests rather than faking
-          motion (locked constraint: the soundbar moves with REAL amplitude only). */}
-      <LiveWaveform envelope={you ? undefined : item.audio?.envelope} playing={playing} frameMs={FRAME_MS} height={42} count={40} />
-    </View>
-  );
-
   return (
     <Screen>
       <View style={styles.body}>
@@ -87,21 +97,30 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
               the learner can still hear the model. With consent the row is not interactive here;
               Compare drives A/B playback (native → you) as normal. */}
           {recConsent ? (
-            <Row icon="speaker" label="Native" playing={playingSide === 'native'} />
+            <Row icon="speaker" label="Native" playing={playingSide === 'native'} envelope={item.audio?.envelope} />
           ) : (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Play native audio"
-              onPress={() => { onPlayCompare?.('native', speed); setPlayingSide('native'); }}
+              onPress={() => {
+                onPlayCompare?.('native', speed);
+                setPlayingSide('native');
+                // Rest the soundbar once the clip ends (stretched by the speed, like doCompare's
+                // native segment) — otherwise it animates forever.
+                timers.current.push(setTimeout(() => setPlayingSide(null), (COMPARE_MS / 2) / speed));
+              }}
             >
-              <Row icon="speaker" label="Native" playing={playingSide === 'native'} />
+              <Row icon="speaker" label="Native" playing={playingSide === 'native'} envelope={item.audio?.envelope} />
             </Pressable>
           )}
           {recorded ? (
             <Row icon="mic" label="You" you playing={playingSide === 'you'} />
           ) : (
             <View style={[styles.placeholder, { backgroundColor: T.surface, borderColor: T.hair }]}>
-              <Text style={[styles.placeholderText, { color: T.faint }]}>Record yourself to compare</Text>
+              {/* Without consent, never invite a recording that cannot happen — say why instead. */}
+              <Text style={[styles.placeholderText, { color: T.faint }]}>
+                {recConsent ? 'Record yourself to compare' : 'Recording is off — turn it on in Settings to hear yourself.'}
+              </Text>
             </View>
           )}
         </View>
@@ -123,15 +142,23 @@ export function PronounceScreen(props: RecordingCardProps): React.JSX.Element {
 
       <View style={styles.controls}>
         {recConsent ? (
-          <Pressable accessibilityRole="button" onPress={toggleRecord} style={[styles.ctrl, { borderColor: rec ? hexA(T.record, 0.5) : T.hair, backgroundColor: rec ? hexA(T.record, T.dark ? 0.12 : 0.06) : 'transparent' }]}>
-            <View style={[styles.recDot, { backgroundColor: T.record }]} />
-            <Text style={[styles.ctrlText, { color: rec ? T.record : T.sub }]}>{rec ? 'Recording…' : 'Record'}</Text>
+          <>
+            <Pressable accessibilityRole="button" onPress={toggleRecord} style={[styles.ctrl, { borderColor: rec ? hexA(T.record, 0.5) : T.hair, backgroundColor: rec ? hexA(T.record, T.dark ? 0.12 : 0.06) : 'transparent' }]}>
+              <View style={[styles.recDot, { backgroundColor: T.record }]} />
+              <Text style={[styles.ctrlText, { color: rec ? T.record : T.sub }]}>{rec ? 'Recording…' : 'Record'}</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" disabled={!recorded || comparing} onPress={doCompare} style={[styles.ctrl, styles.ctrlFilled, { backgroundColor: T.primary, opacity: !recorded || comparing ? 0.5 : 1, shadowColor: T.primary }]}>
+              <CardIcon name="play" size={16} color={T.onPrimary} />
+              <Text style={[styles.ctrlText, { color: T.onPrimary }]}>Compare</Text>
+            </Pressable>
+          </>
+        ) : (
+          // Without consent, no recording can ever exist, so Compare can never enable — offer an
+          // honest completion path instead (listen, then move on). spoke:false — nothing was recorded.
+          <Pressable accessibilityRole="button" onPress={() => onComplete({ itemId: item.id, cardKind: 'pron', spoke: false })} style={[styles.ctrl, styles.ctrlFilled, { backgroundColor: T.primary, shadowColor: T.primary }]}>
+            <Text style={[styles.ctrlText, { color: T.onPrimary }]}>Continue</Text>
           </Pressable>
-        ) : null}
-        <Pressable accessibilityRole="button" disabled={!recorded || comparing} onPress={doCompare} style={[styles.ctrl, styles.ctrlFilled, { backgroundColor: T.primary, opacity: !recorded || comparing ? 0.5 : 1, shadowColor: T.primary }]}>
-          <CardIcon name="play" size={16} color={T.onPrimary} />
-          <Text style={[styles.ctrlText, { color: T.onPrimary }]}>Compare</Text>
-        </Pressable>
+        )}
       </View>
     </Screen>
   );

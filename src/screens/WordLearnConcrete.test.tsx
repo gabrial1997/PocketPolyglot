@@ -93,4 +93,18 @@ describe('WordLearnConcrete', () => {
     const u = renderCard();
     expect(u.queryByText(/Literally:/)).toBeNull();
   });
+
+  // ── honest schedule copy (no fabricated "tomorrow") ───────────────────────────
+  it('shows the REAL projected first review when the item carries one', () => {
+    const u = renderCard({ reviewPreview: { pass: 'Next review in 1 day', miss: 'Next review later today' } });
+    expect(u.getByText('Next review in 1 day.')).toBeTruthy();
+    expect(u.queryByText(/tomorrow/)).toBeNull();
+  });
+
+  it('omits the schedule line entirely when no projection is available — never fabricates "tomorrow"', () => {
+    const u = renderCard(); // no reviewPreview
+    expect(u.queryByText(/tomorrow/)).toBeNull();
+    expect(u.queryByText(/First review/)).toBeNull();
+    expect(u.getByText('Continue')).toBeTruthy();
+  });
 });

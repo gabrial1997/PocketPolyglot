@@ -5,9 +5,10 @@ import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeProvider';
+import { sizing } from '../theme/tokens';
 
 export function PlayOrb({
-  size = 76,
+  size = sizing.playOrb,
   playing = false,
   filled = true,
   onPress,

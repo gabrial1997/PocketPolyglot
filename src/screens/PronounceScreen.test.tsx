@@ -5,6 +5,7 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
+import { LiveWaveform } from '../components';
 import { PronounceScreen } from './PronounceScreen';
 import type { ReviewItem } from '../types/reviewItem';
 import type { RecordingCardProps } from './cardProps';
@@ -144,6 +145,38 @@ describe('PronounceScreen', () => {
     expect(u.props.onPlayCompare).toHaveBeenCalledWith('native', 1);
     // The 'you' leg must NOT be played when there is no recording.
     expect(u.props.onPlayCompare).not.toHaveBeenCalledWith('you');
+  });
+
+  it('recConsent=false: Continue completes with { cardKind:pron, spoke:false } — the learner is never stranded', () => {
+    // Without this path the card had NO completion route at recConsent=false: onComplete only fired
+    // inside doCompare, which requires a recording that can never exist without consent.
+    const u = renderCard({}, { recConsent: false });
+    expect(u.queryByText('Compare')).toBeNull(); // the permanently-disabled Compare is replaced
+    fireEvent.press(u.getByText('Continue'));
+    expect(u.props.onComplete).toHaveBeenCalledWith({ itemId: 'maja', cardKind: 'pron', spoke: false });
+    const result = (u.props.onComplete as jest.Mock).mock.calls[0][0];
+    expect(result).not.toHaveProperty('correct');
+  });
+
+  it('recConsent=false: explains why recording is unavailable instead of inviting one', () => {
+    const u = renderCard({}, { recConsent: false });
+    expect(u.queryByText('Record yourself to compare')).toBeNull();
+    expect(u.getByText('Recording is off — turn it on in Settings to hear yourself.')).toBeTruthy();
+  });
+
+  it('recConsent=false: the native soundbar rests after the clip ends (never animates forever)', () => {
+    jest.useFakeTimers();
+    try {
+      const u = renderCard({}, { recConsent: false });
+      fireEvent.press(u.getByLabelText('Play native audio'));
+      expect(u.UNSAFE_getAllByType(LiveWaveform)[0].props.playing).toBe(true);
+      act(() => {
+        jest.advanceTimersByTime(900); // past the native segment (COMPARE_MS/2 = 850ms at 1x)
+      });
+      expect(u.UNSAFE_getAllByType(LiveWaveform)[0].props.playing).toBe(false);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('recConsent=true (default): Record → Compare flow emits { cardKind:pron, spoke:true } and plays native then you', () => {

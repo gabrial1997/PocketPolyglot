@@ -22,7 +22,7 @@ function fixtureItem(overrides: Partial<ReviewItem> = {}): ReviewItem {
     target: 'māja',
     gloss: 'house',
     pron: 'MAH-ya',
-    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3' },
+    audio: { nativeUrl: 'native.mp3', slowUrl: 'slow.mp3', envelope: [0.2, 0.6, 1] },
     // word/say: gloss is the cue, choices are WORDS.
     choices: [
       { value: 'māja', correct: true },
@@ -234,9 +234,58 @@ describe('WordSay', () => {
     expect(u.getByText('Not quite — give it another try.')).toBeTruthy();
   });
 
+  it("on-demand mode: the speak stage keeps the gloss gated (no leak of the meaning the choose stage hid)", () => {
+    const u = renderCard({ translationVisibility: 'on-demand' });
+    // Answer correctly WITHOUT ever revealing the meaning.
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm(); // choose -> speak
+    expect(u.getByText('Now say it')).toBeTruthy();
+    // The gloss is still hidden behind the same on-demand gate.
+    expect(u.queryByText('house')).toBeNull();
+    fireEvent.press(u.getByText('Show meaning'));
+    expect(u.getByText('house')).toBeTruthy();
+  });
+
+  it("hint mode: the speak stage keeps the gloss hidden after a clean (no-miss) choose", () => {
+    const u = renderCard({ translationVisibility: 'hint' });
+    fireEvent.press(u.getByText('māja')); // clean first-try pick
+    advanceConfirm();
+    expect(u.queryByText('house')).toBeNull();
+    expect(u.getByText('Show meaning')).toBeTruthy();
+  });
+
+  // ── audio-less items (non-blocking audio backfill) ───────────────────────────
+  // hasAudio = !!item.audio?.envelope. With no audio the card must never render a silent play
+  // orb / waveform / speed chip, and the result stage must not offer a silent "Native" playback.
+
+  it('no audio: the speak stage hides the play orb + speed chip (never a silent orb)', () => {
+    const u = renderCard({ audio: undefined });
+    fireEvent.press(u.getByText('māja'));
+    advanceConfirm(); // choose -> speak
+    expect(u.getByText('Now say it')).toBeTruthy(); // the mic flow is untouched
+    expect(u.queryByLabelText('Play')).toBeNull();
+  });
+
+  it('no audio: the result stage hides the Native row and Play back-to-back, keeps You', () => {
+    const u = renderCard({ audio: undefined });
+    runLoop(u); // full loop still completes
+    expect(u.props.onComplete).toHaveBeenCalledWith(
+      expect.objectContaining({ cardKind: 'word/say', spoke: true }),
+    );
+    // Assertions on the result stage happen before Continue in toResult; re-run without Continue:
+    const v = renderCard({ audio: undefined });
+    fireEvent.press(v.getByText('māja'));
+    advanceConfirm();
+    fireEvent.press(v.getByLabelText('Record'));
+    fireEvent.press(v.getByLabelText('Stop recording'));
+    expect(v.queryByText('Native')).toBeNull();
+    expect(v.queryByText('Play back-to-back')).toBeNull();
+    expect(v.getByText('You')).toBeTruthy(); // the self-take is independent of native audio
+  });
+
   // ── recConsent gate (Task E3) ────────────────────────────────────────────────
-  // When recConsent=false the MicOrb / record affordance must be hidden; the card still emits
-  // {cardKind:'word/say', spoke:true} so the session advances and the result/compare stage works.
+  // When recConsent=false the MicOrb / record affordance must be hidden; the card still completes
+  // so the session advances — but `spoke` stays HONEST: no recording happened, so spoke:false.
 
   it('recConsent=false: record affordance not rendered (no MicOrb on the speak stage)', () => {
     const u = renderCard({}, { recConsent: false });
@@ -248,7 +297,7 @@ describe('WordSay', () => {
     expect(u.queryByLabelText('Stop recording')).toBeNull();
   });
 
-  it('recConsent=false: card can still complete and emits { cardKind:word/say, spoke:true }', () => {
+  it('recConsent=false: card can still complete and emits an HONEST { spoke:false } (no recording happened)', () => {
     const u = renderCard({}, { recConsent: false });
     // Drive to speak (no mic) -> press Continue (skips rec, goes to result) -> press Continue (completes)
     fireEvent.press(u.getByText('māja'));
@@ -258,7 +307,7 @@ describe('WordSay', () => {
     // Result stage: press Continue to complete
     fireEvent.press(u.getByText('Continue')); // result -> onComplete
     expect(u.props.onComplete).toHaveBeenCalledWith(
-      expect.objectContaining({ itemId: 'maja', cardKind: 'word/say', correct: true, spoke: true }),
+      expect.objectContaining({ itemId: 'maja', cardKind: 'word/say', correct: true, spoke: false }),
     );
   });
 

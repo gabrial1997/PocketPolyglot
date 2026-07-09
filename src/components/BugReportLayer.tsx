@@ -10,6 +10,7 @@ import Constants from 'expo-constants';
 import { captureRef } from 'react-native-view-shot';
 import { useServices } from '../services/ServiceProvider';
 import { useTheme } from '../theme/ThemeProvider';
+import { BugIcon } from './icons';
 
 // Screen-tag context: descendants call useSetReportScreen()(name) to label where a report came from.
 const SetScreenContext = createContext<(screen: string) => void>(() => {});
@@ -89,7 +90,7 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
             onPress={openSheet}
             style={[styles.fab, { backgroundColor: T.primary }]}
           >
-            <Text style={styles.fabGlyph}>🐞</Text>
+            <BugIcon size={22} color={T.onPrimary} />
           </Pressable>
         ) : null}
         {open ? (
@@ -123,7 +124,7 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
                 multiline
                 style={[styles.input, { color: T.ink, borderColor: T.hair }]}
               />
-              {error ? <Text style={styles.error}>{error}</Text> : null}
+              {error ? <Text style={[styles.error, { color: T.record }]}>{error}</Text> : null}
               <View style={styles.row}>
                 <Pressable accessibilityRole="button" onPress={close} style={styles.btn}>
                   <Text style={{ color: T.faint }}>Cancel</Text>
@@ -132,7 +133,7 @@ export function BugReportLayer({ children }: { children: React.ReactNode }): Rea
                   accessibilityRole="button"
                   onPress={send}
                   disabled={!text.trim() || busy}
-                  style={[styles.btn, styles.send, { backgroundColor: T.primary, opacity: !text.trim() || busy ? 0.5 : 1 }]}
+                  style={[styles.btn, { backgroundColor: T.primary, opacity: !text.trim() || busy ? 0.5 : 1 }]}
                 >
                   {busy ? <ActivityIndicator color={T.onPrimary} /> : <Text style={[styles.sendText, { color: T.onPrimary }]}>Send report</Text>}
                 </Pressable>
@@ -153,7 +154,6 @@ const styles = StyleSheet.create({
     position: 'absolute', right: 16, bottom: 96, width: 44, height: 44, borderRadius: 22,
     alignItems: 'center', justifyContent: 'center', opacity: 0.6,
   },
-  fabGlyph: { fontSize: 20 },
   // Full-screen overlay holding a tap-to-dismiss backdrop + the keyboard-avoiding sheet.
   overlay: { ...StyleSheet.absoluteFillObject },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.25)' },
@@ -165,9 +165,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
   meta: { fontSize: 12, marginBottom: 8 },
   input: { minHeight: 80, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, padding: 10, textAlignVertical: 'top' },
-  error: { color: '#C0392B', marginTop: 8 }, // intentional hardcoded error/danger color (no theme token)
+  error: { marginTop: 8 }, // color: T.record inline (the theme danger token)
   row: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 12 },
   btn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10 },
-  send: {},
   sendText: { fontWeight: '700' },
 });

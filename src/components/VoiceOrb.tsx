@@ -21,7 +21,7 @@ function tickScale(n: number): number[] {
 
 export function VoiceOrb({
   size = 184,
-  playing = true,
+  playing = false, // inert by default (like every sibling orb) — three Animated.loops must be opted into
   onPress,
   bars = 44,
 }: {

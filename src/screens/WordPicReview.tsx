@@ -4,10 +4,9 @@
 // Visual: matches mockup pic-review (full image + 2×2 word grid -> word hero + mic -> compare).
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip, LiveWaveform, usePlayClip, FRAME_MS, StageFade, type Speed } from '../components';
+import { Screen, PlayOrb, MicOrb, CtaButton, SpeedChip, TryAgainNote, LiveWaveform, usePlayClip, FRAME_MS, StageFade, type Speed } from '../components';
 import { useTheme } from '../theme/ThemeProvider';
 import { Eyebrow, WordHero, GlossLine, Caption, FootNote, PromptText, CardBody, CardFooter, GridChoiceButton, CompareRow, PlayBackToBack, ResultNote, loopResultNote } from '../components/cardChrome';
-import { TryAgainNote } from '../components';
 import { CardImage } from './CardImage';
 import { useLoopStage } from './useLoopStage';
 import { shouldShowGloss } from './glossVisibility';
@@ -16,7 +15,8 @@ import type { RecordingCardProps, ChoiceCardProps } from './cardProps';
 type Props = RecordingCardProps & ChoiceCardProps;
 
 export function WordPicReview(props: Props): React.JSX.Element {
-  const { item, onPlay, onStop, onPreload, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange } = props;
+  const { item, onPlay, onStop, onPreload, onAnswer, onRecordStart, onRecordStop, onPlayCompare, onComplete, speed: speedProp, onSpeedChange, recConsent = true } = props;
+  // GDPR record gate: when false, hide the record affordance and skip the rec stage.
   const T = useTheme();
   const m = useLoopStage();
   const choices = item.choices ?? [];
@@ -114,13 +114,23 @@ export function WordPicReview(props: Props): React.JSX.Element {
                 <SpeedChip value={speed} onChange={changeSpeed} />
               </>
             ) : null}
-            <View style={styles.mic}>
-              <MicOrb rec={m.stage === 'rec'} onPress={() => { if (m.stage === 'rec') { onRecordStop(); m.finishRec(); } else { startRec(); } }} />
-              <Caption>{m.stage === 'rec' ? 'Listening… tap to stop' : 'Now say it'}</Caption>
-            </View>
+            {recConsent ? (
+              <View style={styles.mic}>
+                <MicOrb rec={m.stage === 'rec'} onPress={() => { if (m.stage === 'rec') { onRecordStop(); m.finishRec(); } else { startRec(); } }} />
+                <Caption>{m.stage === 'rec' ? 'Listening… tap to stop' : 'Now say it'}</Caption>
+              </View>
+            ) : (
+              <View style={styles.mic}>
+                <Caption>Recording is off — turn it on in Settings to hear yourself.</Caption>
+              </View>
+            )}
           </CardBody>
           <CardFooter>
-            <FootNote>Speaking it closes the loop.</FootNote>
+            {recConsent ? (
+              <FootNote>Speaking it closes the loop.</FootNote>
+            ) : (
+              <CtaButton title="Continue" onPress={() => { m.finishRec(); }} />
+            )}
           </CardFooter>
         </>
       ) : null}
@@ -135,13 +145,15 @@ export function WordPicReview(props: Props): React.JSX.Element {
               {hasAudio ? (
                 <CompareRow label="Native" icon="speaker" envelope={item.audio?.envelope} onPress={() => onPlayCompare?.('native')} />
               ) : null}
-              <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} />
+              {/* No recording can exist without consent — never offer a "You" playback that is silent. */}
+              {recConsent ? <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} /> : null}
             </View>
-            {hasAudio ? <PlayBackToBack onPress={() => onPlayCompare?.('native')} /> : null}
+            {hasAudio && recConsent ? <PlayBackToBack onPress={() => onPlayCompare?.('native')} /> : null}
             <ResultNote>{loopResultNote(m.missed, item.reviewPreview)}</ResultNote>
           </CardBody>
           <CardFooter>
-            <CtaButton title="Continue" onPress={() => onComplete({ itemId: item.id, cardKind: 'word/pic-review', correct: !m.missed, spoke: true })} />
+            {/* spoke is honest: true only when a take was actually recorded (never without consent). */}
+            <CtaButton title="Continue" onPress={() => onComplete({ itemId: item.id, cardKind: 'word/pic-review', correct: !m.missed, spoke: recStarted.current })} />
           </CardFooter>
         </>
       ) : null}

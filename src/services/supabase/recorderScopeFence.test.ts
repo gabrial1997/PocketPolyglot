@@ -137,7 +137,7 @@ function stripLineComments(src: string): string {
 // Allowed set of keys that may appear in the recordings row.
 const ALLOWED_KEYS = new Set(['id', 'user_id', 'storage_path', 'duration_ms', 'consent_at']);
 
-const FAKE_BLOB = new Blob(['audio-data'], { type: 'audio/m4a' });
+const FAKE_BYTES: ArrayBuffer = new TextEncoder().encode('audio-data').buffer as ArrayBuffer;
 
 function makeFakeClient() {
   let insertedRow: Record<string, unknown> | null = null;
@@ -147,7 +147,7 @@ function makeFakeClient() {
   const client = {
     storage: {
       from: (_bucket: string) => ({
-        upload: async (_path: string, _blob: Blob, _opts: Record<string, unknown>) => {
+        upload: async (_path: string, _body: Blob | ArrayBuffer, _opts: Record<string, unknown>) => {
           storageUploadCount += 1;
           return { data: { path: _path }, error: null };
         },
@@ -172,9 +172,10 @@ function makeFakeClient() {
   return { client, getCounts };
 }
 
-function mockFetch(blob: Blob = FAKE_BLOB): void {
+// The uploader reads the fetched file as ArrayBuffer bytes (RN-safe), never as a Blob.
+function mockFetch(bytes: ArrayBuffer = FAKE_BYTES): void {
   global.fetch = jest.fn().mockResolvedValue({
-    blob: jest.fn().mockResolvedValue(blob),
+    arrayBuffer: jest.fn().mockResolvedValue(bytes),
   }) as unknown as typeof fetch;
 }
 

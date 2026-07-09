@@ -104,12 +104,9 @@ function startOfLocalDay(now: Date): Date {
 // ---------------------------------------------------------------------------
 
 export class SupabaseSrsService implements SrsService {
-  // Injectable clock. Precedence: explicit nowFn (dev time travel) → client._now
-  // (test hook set by fakeClient) → real time.
+  // Injectable clock: the nowFn constructor param (tests / dev time travel) or real time.
   private now(): Date {
-    if (this.nowFn) return this.nowFn();
-    const c = this.client as unknown as { _now?: Date };
-    return c._now instanceof Date ? c._now : new Date();
+    return this.nowFn ? this.nowFn() : new Date();
   }
 
   constructor(
@@ -126,7 +123,7 @@ export class SupabaseSrsService implements SrsService {
   /** Count introduction events today (word/learn-* card_kind). */
   private async introducedToday(now: Date): Promise<number> {
     const dayStart = startOfLocalDay(now).toISOString();
-    const { data } = await this.client
+    const { data, error } = await this.client
       .from('review_log')
       .select('item_id')
       .eq('user_id', this.userId)
@@ -135,6 +132,9 @@ export class SupabaseSrsService implements SrsService {
       .like('card_kind', 'word/learn-%')
       .gte('created_at', dayStart)
       .lte('created_at', now.toISOString());
+    // Throw, don't swallow: a failed query here would look like "0 introduced today" and
+    // reset the daily new-word cap. The session shows its load-failure state instead.
+    if (error) throw error;
     if (!data) return 0;
     return new Set((data as Array<{ item_id?: string }>).map(r => r.item_id)).size;
   }
@@ -179,12 +179,13 @@ export class SupabaseSrsService implements SrsService {
     // Simplified: fetch last RETENTION_WINDOW rows with correct IS NOT NULL from review_log.
     // (A full server-side join is a migration concern; this approximation is spec-compliant
     // and avoids an RPC requirement for a helper query.)
-    const { data } = await this.client
+    const { data, error } = await this.client
       .from('review_log')
       .select('correct')
       .eq('user_id', this.userId)
       .order('created_at', { ascending: false })
       .limit(RETENTION_WINDOW);
+    if (error) throw error;
     if (!data) return undefined;
     const rows = data as Array<{ correct?: boolean | null }>;
     const graded = rows.filter(r => r.correct !== null && r.correct !== undefined);
@@ -195,22 +196,37 @@ export class SupabaseSrsService implements SrsService {
 
   /** lemma ids with ≥1 review_log row correct=true (used for the i+1 anchor check). */
   private async recalledLemmaIds(): Promise<Set<string>> {
-    const { data } = await this.client
-      .from('review_log')
-      .select('item_id')
-      .eq('user_id', this.userId)
-      .eq('item_type', 'lemma')
-      .eq('correct', true);
-    if (!data) return new Set();
-    return new Set((data as Array<{ item_id?: string }>).map(r => r.item_id).filter(Boolean) as string[]);
+    // review_log grows forever, and an un-ranged select silently truncates at PostgREST's
+    // default 1000-row cap — after ~1000 correct reviews, later-recalled anchors would vanish
+    // and their phrases could never unlock. Page through the full set (ordered by the uuid PK
+    // for a stable page walk, same pattern as lemmaCandidates).
+    const CHUNK = 1000;
+    const ids = new Set<string>();
+    let offset = 0;
+    for (;;) {
+      const { data, error } = await this.client
+        .from('review_log')
+        .select('item_id')
+        .eq('user_id', this.userId)
+        .eq('item_type', 'lemma')
+        .eq('correct', true)
+        .order('id', { ascending: true })
+        .range(offset, offset + CHUNK - 1);
+      if (error) throw error;
+      const rows = (data ?? []) as Array<{ item_id?: string }>;
+      for (const r of rows) if (r.item_id) ids.add(r.item_id);
+      if (rows.length < CHUNK) return ids;
+      offset += CHUNK;
+    }
   }
 
   /** lemma ids the user "knows" (known_lemmas view, security_invoker=true verified). */
   private async knownLemmaIds(): Promise<Set<string>> {
-    const { data } = await this.client
+    const { data, error } = await this.client
       .from('known_lemmas')
       .select('lemma_id')
       .eq('user_id', this.userId);
+    if (error) throw error;
     if (!data) return new Set();
     return new Set((data as Array<{ lemma_id?: string }>).map(r => r.lemma_id).filter(Boolean) as string[]);
   }
@@ -223,11 +239,14 @@ export class SupabaseSrsService implements SrsService {
    */
   private async lemmaCandidates(): Promise<{ rows: LemmaRow[]; candidates: Candidate[] }> {
     // Load the set of already-introduced lemma ids.
-    const { data: stateData } = await this.client
+    const { data: stateData, error: stateErr } = await this.client
       .from('review_state')
       .select('item_id')
       .eq('user_id', this.userId)
       .eq('item_type', 'lemma');
+    // Throw, don't swallow: a failed query would look like "nothing introduced yet" and
+    // re-admit already-introduced lemmas as new.
+    if (stateErr) throw stateErr;
     const introducedIds = new Set(
       ((stateData ?? []) as Array<{ item_id?: string }>).map(r => r.item_id).filter(Boolean) as string[]
     );
@@ -240,11 +259,16 @@ export class SupabaseSrsService implements SrsService {
     let exhausted = false;
 
     while (collectedRows.length < TARGET && !exhausted) {
-      const { data: chunk } = await this.client
+      const { data: chunk, error: chunkErr } = await this.client
         .from('lemmas')
         .select('*')
         .order('utility_rank', { ascending: true, nullsFirst: false })
+        // Secondary sort on the PK: utility_rank ties (and the all-NULL tail) would otherwise
+        // be unstable across .range() pages — duplicating/skipping rows between chunks.
+        // Same tiebreaker discipline as phraseCandidates.
+        .order('id', { ascending: true })
         .range(offset, offset + CHUNK - 1);
+      if (chunkErr) throw chunkErr;
       if (!chunk || (chunk as LemmaRow[]).length === 0) { exhausted = true; break; }
       for (const row of chunk as LemmaRow[]) {
         if (!introducedIds.has(row.id)) collectedRows.push(row);
@@ -270,11 +294,12 @@ export class SupabaseSrsService implements SrsService {
    */
   private async phraseCandidates(): Promise<{ rows: PhraseRow[]; candidates: Candidate[] }> {
     // Load the set of already-introduced phrase ids.
-    const { data: stateData } = await this.client
+    const { data: stateData, error: stateErr } = await this.client
       .from('review_state')
       .select('item_id')
       .eq('user_id', this.userId)
       .eq('item_type', 'phrase');
+    if (stateErr) throw stateErr;
     const introducedIds = new Set(
       ((stateData ?? []) as Array<{ item_id?: string }>).map(r => r.item_id).filter(Boolean) as string[]
     );
@@ -287,12 +312,13 @@ export class SupabaseSrsService implements SrsService {
     let exhausted = false;
 
     while (collectedRows.length < TARGET && !exhausted) {
-      const { data: chunk } = await this.client
+      const { data: chunk, error: chunkErr } = await this.client
         .from('phrases')
         .select('*')
         .order('created_at', { ascending: true })
         .order('id', { ascending: true })
         .range(offset, offset + CHUNK - 1);
+      if (chunkErr) throw chunkErr;
       if (!chunk || (chunk as PhraseRow[]).length === 0) { exhausted = true; break; }
       for (const row of chunk as PhraseRow[]) {
         if (!introducedIds.has(row.id)) collectedRows.push(row);
@@ -305,10 +331,14 @@ export class SupabaseSrsService implements SrsService {
     const phraseIds = collectedRows.map(r => r.id);
     let componentsByPhrase: Map<string, string[]> = new Map();
     if (phraseIds.length > 0) {
-      const { data: comps } = await this.client
+      const { data: comps, error: compsErr } = await this.client
         .from('phrase_components')
         .select('phrase_id,lemma_id,position')
-        .in('phrase_id', phraseIds);
+        .in('phrase_id', phraseIds)
+        // Position order is load-bearing: compIds[0] below becomes anchorLemmaId (the phrase's
+        // FIRST component), which gates i+1 admission. Unordered rows would pick a random word.
+        .order('position', { ascending: true });
+      if (compsErr) throw compsErr;
       if (comps) {
         const compRows = comps as Array<{ phrase_id: string; lemma_id: string; position?: number }>;
         componentsByPhrase = compRows.reduce((m, c) => {
@@ -410,19 +440,22 @@ export class SupabaseSrsService implements SrsService {
     // 1. Fetch due items: review_state WHERE due_at <= now (drop stage='new' clause).
     //    Due items are UNCAPPED — selectBatch returns them all.
     // ------------------------------------------------------------------
+    // Plan A: render only the recognition schedule. Pronunciation rows are written by submit() but
+    // not surfaced until Plan B/2 makes rendering template-aware. Keeps the loop behaviour identical.
+    // The filter lives in the query (template is NOT NULL DEFAULT 'recognition' since 0014, so
+    // every row carries it) — fetching all templates and discarding in JS would waste rows out of
+    // the response and, worse, count against any row cap before the JS filter ran.
     const { data: dueStateData, error: dueErr } = await this.client
       .from('review_state')
       .select('*')
       .eq('user_id', this.userId)
+      .eq('template', 'recognition')
       .lte('due_at', nowIso)
       .order('due_at', { ascending: true, nullsFirst: false })
       .order('item_id', { ascending: true });
     if (dueErr) throw dueErr;
 
-    // Plan A: render only the recognition schedule. Pronunciation rows are written by submit() but
-    // not surfaced until Plan B/2 makes rendering template-aware. Keeps the loop behaviour identical.
-    const dueStates: ReviewStateRow[] = ((dueStateData ?? []) as ReviewStateRow[])
-      .filter((r) => r.template === 'recognition');
+    const dueStates: ReviewStateRow[] = (dueStateData ?? []) as ReviewStateRow[];
 
     const stateByKey = new Map<string, ReviewStateRow>();
     for (const s of dueStates) { stateByKey.set(`${s.item_type}:${s.item_id}`, s); }
@@ -456,34 +489,38 @@ export class SupabaseSrsService implements SrsService {
 
     // ------------------------------------------------------------------
     // 4. Build DueRef[] from allDueRows (map to the light shape selectBatch needs).
-    //    We need content metadata (hasAudioEnvelope, hasImage) for each due item.
+    //    We need content metadata (hasAudioEnvelope) for each due item; the same content
+    //    rows are re-used below as the enrichAndReorder prefetch (no double fetch).
     // ------------------------------------------------------------------
 
-    // Fetch content for due items to build DueRef (we need audio/image info).
-    const dueByType: Record<DbItemType, string[]> = {
+    // Only lemma/phrase/pair rows can reach here: the due query is scoped to the recognition
+    // template and no code path writes any other item_type ('wordform' scheduling is post-MVP).
+    const dueByType: Record<Exclude<DbItemType, 'wordform'>, string[]> = {
       lemma: [],
       phrase: [],
       pair: [],
-      wordform: [],
     };
     for (const s of allDueRows) {
-      dueByType[s.item_type]?.push(s.item_id);
+      if (s.item_type !== 'wordform') dueByType[s.item_type].push(s.item_id);
     }
 
     // Fetch lemma content for due items.
     const dueLemmaMap = new Map<string, LemmaRow>();
     if (dueByType.lemma.length > 0) {
-      const { data: dl } = await this.client.from('lemmas').select('*').in('id', dueByType.lemma);
+      const { data: dl, error: dlErr } = await this.client.from('lemmas').select('*').in('id', dueByType.lemma);
+      if (dlErr) throw dlErr;
       for (const r of (dl ?? []) as LemmaRow[]) dueLemmaMap.set(r.id, r);
     }
     const duePhraseMap = new Map<string, PhraseRow>();
     if (dueByType.phrase.length > 0) {
-      const { data: dp } = await this.client.from('phrases').select('*').in('id', dueByType.phrase);
+      const { data: dp, error: dpErr } = await this.client.from('phrases').select('*').in('id', dueByType.phrase);
+      if (dpErr) throw dpErr;
       for (const r of (dp ?? []) as PhraseRow[]) duePhraseMap.set(r.id, r);
     }
     const duePairMap = new Map<string, MinimalPairRow>();
     if (dueByType.pair.length > 0) {
-      const { data: dpa } = await this.client.from('minimal_pairs').select('*').in('id', dueByType.pair);
+      const { data: dpa, error: dpaErr } = await this.client.from('minimal_pairs').select('*').in('id', dueByType.pair);
+      if (dpaErr) throw dpaErr;
       for (const r of (dpa ?? []) as MinimalPairRow[]) duePairMap.set(r.id, r);
     }
 
@@ -491,30 +528,20 @@ export class SupabaseSrsService implements SrsService {
     const dueRefs: DueRef[] = [];
     for (const s of allDueRows) {
       let hasAudioEnvelope = false;
-      let hasImage = false;
       if (s.item_type === 'lemma') {
         const r = dueLemmaMap.get(s.item_id);
-        if (r) {
-          hasAudioEnvelope = !!(r.envelope && r.envelope.length > 0);
-          hasImage = !!(r.media?.imageUrl);
-        }
+        if (r) hasAudioEnvelope = !!(r.envelope && r.envelope.length > 0);
       } else if (s.item_type === 'phrase') {
         const r = duePhraseMap.get(s.item_id);
-        if (r) {
-          hasAudioEnvelope = !!(r.envelope && r.envelope.length > 0);
-          // phrases have no imageUrl
-        }
+        if (r) hasAudioEnvelope = !!(r.envelope && r.envelope.length > 0);
       } else if (s.item_type === 'pair') {
         const r = duePairMap.get(s.item_id);
-        if (r) {
-          hasAudioEnvelope = !!(r.envelope && r.envelope.length > 0);
-        }
+        if (r) hasAudioEnvelope = !!(r.envelope && r.envelope.length > 0);
       }
       dueRefs.push({
         id: s.item_id,
         kind: s.item_type === 'lemma' ? 'word' : s.item_type === 'phrase' ? 'phrase' : 'pair',
         hasAudioEnvelope,
-        hasImage,
       });
     }
 
@@ -528,6 +555,9 @@ export class SupabaseSrsService implements SrsService {
       rollingRetention: rolling,
       knownLemmaIds: known,
       recalledLemmaIds: recalled,
+      // Per-batch only (session-scoped): always starts empty, so semantic-field diversity is
+      // enforced within this one batch, not across sessions/days. Nothing persists admitted
+      // fields between calls. (Matches the SelectContext doc in selectBatch.ts.)
       todaysSemanticFields: new Set<string>(),
     };
 
@@ -570,8 +600,9 @@ export class SupabaseSrsService implements SrsService {
       if (existing) {
         orderedStates.push(existing);
       } else {
-        // New item — synthetic state row (no DB row yet).
-        orderedStates.push({
+        // New item — synthetic state row (no DB row yet). Every ReviewStateRow field is
+        // supplied, so this is typed directly (no cast).
+        const synthetic: ReviewStateRow = {
           user_id: this.userId,
           item_type: dbType,
           item_id: entry.id,
@@ -583,7 +614,8 @@ export class SupabaseSrsService implements SrsService {
           difficulty: null,
           due_at: null,
           last_review: null,
-        } as unknown as ReviewStateRow);
+        };
+        orderedStates.push(synthetic);
       }
     }
 
@@ -627,15 +659,18 @@ export class SupabaseSrsService implements SrsService {
     const missingPairIds = orderedStates.filter(s => s.item_type === 'pair' && !pairMap.has(s.item_id)).map(s => s.item_id);
 
     if (missingLemmaIds.length > 0) {
-      const { data } = await this.client.from('lemmas').select('*').in('id', missingLemmaIds);
+      const { data, error } = await this.client.from('lemmas').select('*').in('id', missingLemmaIds);
+      if (error) throw error;
       for (const r of (data ?? []) as LemmaRow[]) lemmaMap.set(r.id, r);
     }
     if (missingPhraseIds.length > 0) {
-      const { data } = await this.client.from('phrases').select('*').in('id', missingPhraseIds);
+      const { data, error } = await this.client.from('phrases').select('*').in('id', missingPhraseIds);
+      if (error) throw error;
       for (const r of (data ?? []) as PhraseRow[]) phraseMap.set(r.id, r);
     }
     if (missingPairIds.length > 0) {
-      const { data } = await this.client.from('minimal_pairs').select('*').in('id', missingPairIds);
+      const { data, error } = await this.client.from('minimal_pairs').select('*').in('id', missingPairIds);
+      if (error) throw error;
       for (const r of (data ?? []) as MinimalPairRow[]) pairMap.set(r.id, r);
     }
 
@@ -656,15 +691,20 @@ export class SupabaseSrsService implements SrsService {
         const row = lemmaMap.get(s.item_id);
         if (!row) continue;
         const item = lemmaRowToReviewItem(row, stateByKey.get(`lemma:${row.id}`));
-        // Distractors (graceful fallback on error).
-        try {
-          const { data: distractors } = await this.client.rpc('get_distractors', {
-            target: row.id,
-            n: 3,
-          });
+        // Distractors — graceful fallback on RPC failure. NB: supabase-js rpc() never throws;
+        // it resolves { data, error }, so the failure signal is the `error` FIELD (a try/catch
+        // here would be dead code). On error, or when the RPC yields zero decoys (a one-option
+        // MC card would answer itself), leave choices undefined — the documented degrade path
+        // (cards require ≥2 choices; see renderFor.ts / WordHear).
+        const { data: distractors, error: distractorErr } = await this.client.rpc('get_distractors', {
+          target: row.id,
+          n: 3,
+        });
+        const decoys = distractorErr ? [] : ((distractors ?? []) as LemmaRow[]);
+        if (decoys.length > 0) {
           const choices = [
             { value: item.target, gloss: item.gloss, correct: true },
-            ...((distractors ?? []) as LemmaRow[]).map((d) => ({
+            ...decoys.map((d) => ({
               value: d.lemma,
               gloss: d.gloss_en,
               correct: false,
@@ -673,18 +713,20 @@ export class SupabaseSrsService implements SrsService {
           // Shuffle so the correct answer isn't always the first option. Done once per fetch;
           // the card renders this fixed order (positions stay stable across wrong-pick re-renders).
           item.choices = shuffleInPlace(choices);
-        } catch {
-          // Leave choices undefined; cards degrade gracefully.
         }
         items.push(item);
       } else if (s.item_type === 'phrase') {
         const row = phraseMap.get(s.item_id);
         if (!row) continue;
         const item = phraseRowToReviewItem(row, stateByKey.get(`phrase:${row.id}`));
-        const { data: components } = await this.client
+        const { data: components, error: componentsErr } = await this.client
           .from('phrase_components')
           .select('lemma_id,position')
-          .eq('phrase_id', row.id);
+          .eq('phrase_id', row.id)
+          // Position order is load-bearing: componentLemmaIds must follow the phrase's word
+          // order, and the `c.position ?? i` fallback below indexes the returned row order.
+          .order('position', { ascending: true });
+        if (componentsErr) throw componentsErr;
         if (components) {
           const comps = components as { lemma_id: string; position?: number }[];
           item.componentLemmaIds = comps.map((c) => c.lemma_id);
@@ -694,23 +736,23 @@ export class SupabaseSrsService implements SrsService {
             comps: comps.map((c, i) => ({ lemma_id: c.lemma_id, position: c.position ?? i })),
           });
         }
-        // Meaning-quiz distractors (graceful fallback on error).
-        try {
-          const { data: pdist } = await this.client.rpc('get_phrase_distractors', {
-            target_id: row.id,
-            n: 3,
-          });
+        // Meaning-quiz distractors — same error-field + zero-decoy degrade rule as the lemma
+        // branch above (rpc() never throws; a one-option quiz would answer itself).
+        const { data: pdist, error: pdistErr } = await this.client.rpc('get_phrase_distractors', {
+          target_id: row.id,
+          n: 3,
+        });
+        const pdecoys = pdistErr ? [] : ((pdist ?? []) as Array<{ id: string; gloss_en: string }>);
+        if (pdecoys.length > 0) {
           const choices = [
             { value: item.id, gloss: item.gloss, correct: true },
-            ...((pdist ?? []) as Array<{ id: string; gloss_en: string }>).map((d) => ({
+            ...pdecoys.map((d) => ({
               value: d.id,
               gloss: d.gloss_en,
               correct: false,
             })),
           ];
           item.choices = shuffleInPlace(choices);
-        } catch {
-          // Leave choices undefined; the card degrades gracefully.
         }
         items.push(item);
       } else if (s.item_type === 'pair') {
@@ -729,7 +771,8 @@ export class SupabaseSrsService implements SrsService {
         for (const c of comps) if (!lemmaMap.has(c.lemma_id)) missing.add(c.lemma_id);
       }
       if (missing.size > 0) {
-        const { data } = await this.client.from('lemmas').select('*').in('id', [...missing]);
+        const { data, error } = await this.client.from('lemmas').select('*').in('id', [...missing]);
+        if (error) throw error;
         for (const r of (data ?? []) as LemmaRow[]) lemmaMap.set(r.id, r);
       }
       for (const { item, comps } of phraseComponents) {
@@ -755,35 +798,48 @@ export class SupabaseSrsService implements SrsService {
     // ------------------------------------------------------------------
     if (items.length > 0) {
       const assembledIds = items.map(i => i.id);
-      const { data: logData } = await this.client
-        .from('review_log')
-        .select('item_type,item_id,card_kind,correct')
-        .eq('user_id', this.userId)
-        .in('item_id', assembledIds);
+      // A batch item's review_log rows grow forever; an un-ranged select silently truncates at
+      // PostgREST's default 1000-row cap, zeroing/undercounting rep counts for long-lived
+      // accounts. Page through (uuid PK order for a stable walk), same as recalledLemmaIds.
+      const CHUNK = 1000;
+      const logRows: ReviewLogRow[] = [];
+      let offset = 0;
+      for (;;) {
+        const { data: logData, error: logErr } = await this.client
+          .from('review_log')
+          .select('item_type,item_id,card_kind,correct')
+          .eq('user_id', this.userId)
+          .in('item_id', assembledIds)
+          .order('id', { ascending: true })
+          .range(offset, offset + CHUNK - 1);
+        if (logErr) throw logErr;
+        const page = (logData ?? []) as ReviewLogRow[];
+        logRows.push(...page);
+        if (page.length < CHUNK) break;
+        offset += CHUNK;
+      }
 
-      if (logData) {
-        // Group counts per (item_type, item_id).
-        const repsByKey = new Map<string, { receptive: number; productive: number }>();
-        for (const row of logData as ReviewLogRow[]) {
-          const kind = repKind(row.card_kind, row.correct);
-          if (kind === null) continue;
-          const key = `${row.item_type}:${row.item_id}`;
-          const counts = repsByKey.get(key) ?? { receptive: 0, productive: 0 };
-          counts[kind] += 1;
-          repsByKey.set(key, counts);
-        }
+      // Group counts per (item_type, item_id).
+      const repsByKey = new Map<string, { receptive: number; productive: number }>();
+      for (const row of logRows) {
+        const kind = repKind(row.card_kind, row.correct);
+        if (kind === null) continue;
+        const key = `${row.item_type}:${row.item_id}`;
+        const counts = repsByKey.get(key) ?? { receptive: 0, productive: 0 };
+        counts[kind] += 1;
+        repsByKey.set(key, counts);
+      }
 
-        // Apply to each item.
-        for (const item of items) {
-          const dbType = itemTypeToDbType(item.type);
-          const key = `${dbType}:${item.id}`;
-          const counts = repsByKey.get(key) ?? { receptive: 0, productive: 0 };
-          item.receptiveReps = counts.receptive;
-          item.productiveReps = counts.productive;
-          item.translationVisibility = translationVisibilityForRung(
-            computeRung(item.receptiveReps, item.productiveReps),
-          );
-        }
+      // Apply to each item.
+      for (const item of items) {
+        const dbType = itemTypeToDbType(item.type);
+        const key = `${dbType}:${item.id}`;
+        const counts = repsByKey.get(key) ?? { receptive: 0, productive: 0 };
+        item.receptiveReps = counts.receptive;
+        item.productiveReps = counts.productive;
+        item.translationVisibility = translationVisibilityForRung(
+          computeRung(item.receptiveReps, item.productiveReps),
+        );
       }
     }
 
