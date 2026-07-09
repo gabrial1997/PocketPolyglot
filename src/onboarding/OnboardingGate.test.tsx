@@ -57,6 +57,9 @@ function makeFakeProfile(opts: FakeProfileOpts = {}): ProfileService & {
       snap.recConsent = input.rec;
       snap.trainingConsent = input.training;
     },
+    async deleteAccount() {
+      // no-op for test
+    },
   };
   return svc;
 }

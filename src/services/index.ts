@@ -126,6 +126,10 @@ export interface ProfileService {
   /** Onboarding write: set both rec_consent + training_consent in one update, stamping/clearing
    *  rec_consent_at. Keep setRecConsent for the Settings tab (single flag). */
   setConsent(input: { rec: boolean; training: boolean }): Promise<void>;
+  /** Apple-mandated account deletion: removes the auth user (all user rows cascade) via the
+   *  self-targeting delete_account RPC (migration 0018). Call deleteRecordings() FIRST so the
+   *  audio objects are removed through the storage API. Throws on failure. */
+  deleteAccount(): Promise<void>;
 }
 
 /** Everything injected through ServiceProvider. */

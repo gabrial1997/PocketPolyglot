@@ -8,13 +8,15 @@ function fakeClient() {
   // nextListRows: returned when a select chain is awaited DIRECTLY (a LIST select, no
   // maybeSingle — e.g. deleteRecordings' storage_path read).
   let nextListRows: Record<string, unknown>[] = [];
-  // nextError: consumed by the next awaitable terminal (maybeSingle / eq-on-update-delete / insert).
+  // nextError: consumed by the next awaitable terminal (maybeSingle / eq-on-update-delete / insert / rpc).
   let nextError: { code?: string; message?: string } | null = null;
   // nextWriteError: consumed ONLY by write terminals (insert resolver and update/delete .eq() terminal).
   // Does NOT affect maybeSingle() so read-modify-write tests can let the read succeed and the write fail.
   let nextWriteError: { code?: string; message?: string } | null = null;
   // nextStorageError: consumed ONLY by the next storage remove() call.
   let nextStorageError: { message?: string } | null = null;
+  // nextRpcError: consumed ONLY by rpc() terminal.
+  let nextRpcError: { message?: string } | null = null;
 
   const client = {
     storage: {
@@ -29,6 +31,13 @@ function fakeClient() {
           },
         };
       },
+    },
+    rpc(name: string) {
+      calls.push({ table: `rpc:${name}`, op: 'rpc' });
+      const err = nextRpcError ?? nextError;
+      nextRpcError = null;
+      nextError = null;
+      return Promise.resolve({ data: null, error: err });
     },
     from(table: string) {
       const ctx: { table: string; op: string; payload?: unknown; eq?: [string, unknown] } = { table, op: '' };
@@ -98,7 +107,7 @@ function fakeClient() {
     /** Queue multiple rows: first maybeSingle() call returns rows[0], second returns rows[1], etc. */
     setRows: (rows: (Record<string, unknown> | null)[]) => { nextSelectRows = [...rows]; },
     /**
-     * Inject an error to be returned by the next awaitable terminal (insert / update .eq / delete .eq / maybeSingle).
+     * Inject an error to be returned by the next awaitable terminal (insert / update .eq / delete .eq / maybeSingle / rpc).
      * Used by insert-error tests (e.g. 23505 duplicate-key). One-shot: cleared after consumption.
      */
     setNextError: (code: string, message = 'injected error') => { nextError = { code, message }; },
@@ -113,6 +122,8 @@ function fakeClient() {
     setListRows: (rows: Record<string, unknown>[]) => { nextListRows = [...rows]; },
     /** Inject an error to be returned by the next storage remove(). One-shot. */
     setStorageError: (message = 'injected storage error') => { nextStorageError = { message }; },
+    /** Inject an error to be returned ONLY by the next rpc() call. One-shot. */
+    setNextRpcError: (message = 'injected rpc error') => { nextRpcError = { message }; },
   };
 }
 
@@ -321,4 +332,21 @@ it('setConsent({rec:false,...}) clears rec_consent_at', async () => {
   expect(payload.rec_consent).toBe(false);
   expect(payload.training_consent).toBe(false);
   expect(payload.rec_consent_at).toBeNull();
+});
+
+// --- D4: deleteAccount (Apple-mandated in-app deletion) ---
+
+it('deleteAccount calls the self-targeting RPC', async () => {
+  const { client } = fakeClient();
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  client.rpc = jest.fn().mockResolvedValue({ data: null, error: null });
+  await svc.deleteAccount();
+  expect(client.rpc).toHaveBeenCalledWith('delete_account');
+});
+
+it('deleteAccount surfaces an RPC error (never a silent partial delete)', async () => {
+  const { client } = fakeClient();
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  client.rpc = jest.fn().mockResolvedValue({ data: null, error: { message: 'boom' } });
+  await expect(svc.deleteAccount()).rejects.toBeTruthy();
 });

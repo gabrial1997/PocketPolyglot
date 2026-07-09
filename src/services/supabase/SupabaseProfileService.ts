@@ -118,4 +118,11 @@ export class SupabaseProfileService implements ProfileService {
       .eq('id', this.userId);
     if (error) throw error;
   }
+
+  // --- D4: deleteAccount (Apple-mandated in-app deletion) ---
+
+  async deleteAccount(): Promise<void> {
+    const { error } = await this.client.rpc('delete_account');
+    if (error) throw error;
+  }
 }

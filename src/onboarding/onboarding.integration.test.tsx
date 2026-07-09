@@ -63,6 +63,7 @@ class FakeProfileService implements ProfileService {
     this.snap.recConsent = input.rec;
     this.snap.trainingConsent = input.training;
   }
+  async deleteAccount(): Promise<void> { /* no-op */ }
 }
 
 function makeServices(profile: ProfileService): ServiceBundle {

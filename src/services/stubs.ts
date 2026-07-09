@@ -143,6 +143,11 @@ export class StubProfileService implements ProfileService {
     this.consent = input.rec;
     this.trainingConsent = input.training;
   }
+
+  // D4: deleteAccount (Apple-mandated in-app deletion)
+  async deleteAccount(): Promise<void> {
+    // real impl: call the delete_account RPC (migration 0018)
+  }
 }
 
 export class StubEditorService implements EditorService {
