@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { createStubServices } from '../services/stubs';
@@ -167,4 +167,62 @@ it('a failed Delete account surfaces "Deletion failed — tap to retry" and does
   fireEvent.press(u.getByText('Tap again to permanently delete your account'));
   expect(await u.findByText('Deletion failed — tap to retry')).toBeTruthy();
   expect(mockSignOut).not.toHaveBeenCalled();
+});
+
+// Reviewer finding 1: once deleteAccount() resolves, the account IS gone server-side. A
+// signOut() rejection after that is local-teardown noise, not a deletion failure — it must
+// NOT relabel the row "Deletion failed — tap to retry" (which would invite a retry against a
+// dead account). Both deletes must still be called exactly once.
+it('a signOut rejection after successful deletes does NOT surface "Deletion failed — tap to retry"', async () => {
+  const services = createStubServices();
+  const deleteRecordings = jest.spyOn(services.profile, 'deleteRecordings').mockResolvedValueOnce(undefined);
+  const deleteAccount = jest.spyOn(services.profile, 'deleteAccount').mockResolvedValueOnce(undefined);
+  mockSignOut.mockRejectedValueOnce(new Error('network down'));
+  const u = renderHost(services);
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Delete account'));
+  fireEvent.press(u.getByText('Tap again to permanently delete your account'));
+  await waitFor(() => expect(mockSignOut).toHaveBeenCalledTimes(1));
+  expect(u.queryByText('Deletion failed — tap to retry')).toBeNull();
+  expect(deleteRecordings).toHaveBeenCalledTimes(1);
+  expect(deleteAccount).toHaveBeenCalledTimes(1);
+});
+
+// Reviewer finding 2: a rapid double-tap on the armed confirm row must not start two concurrent
+// delete chains on an irreversible action. Both taps land on the same render's onPress closure
+// (this is what "rapid" means — two touch events resolved before React commits the re-render
+// from the first tap's setArmed(false)), so we grab that one closure and invoke it twice
+// synchronously, exactly as two near-simultaneous native taps would. The host latches in-flight
+// and drops the second call.
+it('invoking Delete account twice rapidly only runs the delete chain once', async () => {
+  const services = createStubServices();
+  let resolveDeleteRecordings: () => void = () => {};
+  const deleteRecordings = jest
+    .spyOn(services.profile, 'deleteRecordings')
+    .mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveDeleteRecordings = resolve;
+        }),
+    );
+  const deleteAccount = jest.spyOn(services.profile, 'deleteAccount').mockResolvedValueOnce(undefined);
+  const u = renderHost(services);
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Delete account'));
+  let confirmNode: ReturnType<typeof u.getByLabelText> | null = u.getByLabelText(
+    'Tap again to permanently delete your account',
+  );
+  while (confirmNode && typeof confirmNode.props.onPress !== 'function') {
+    confirmNode = confirmNode.parent;
+  }
+  if (!confirmNode) throw new Error('no ancestor with onPress found');
+  const confirmPress = confirmNode.props.onPress as () => void; // capture ONE render's closure
+  act(() => {
+    confirmPress(); // first tap — arms→disarms, starts the chain, in flight
+    confirmPress(); // second tap on the same stale closure — must be a no-op
+  });
+  resolveDeleteRecordings();
+  await waitFor(() => expect(mockSignOut).toHaveBeenCalledTimes(1));
+  expect(deleteRecordings).toHaveBeenCalledTimes(1);
+  expect(deleteAccount).toHaveBeenCalledTimes(1);
 });

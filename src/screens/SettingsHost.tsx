@@ -1,6 +1,6 @@
 // SettingsHost — Tier-B host for the Settings tab (WIRING_MAP §3). Pulls auth (name/email/sign-out),
 // theme mode, and the ProfileService (GDPR consent), then renders the pure SettingsScreen.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Constants from 'expo-constants';
 import type { User } from '@supabase/supabase-js';
 import { useAuth } from '../auth/AuthProvider';
@@ -63,6 +63,13 @@ export function SettingsHost(): React.JSX.Element {
   // row — never a silent partial delete, and never a sign-out on failure.
   const [deleteAccountError, setDeleteAccountError] = useState(false);
 
+  // In-flight latch: an irreversible action, guarded against a rapid double-tap starting two
+  // concurrent delete chains (two taps can land on the same render's onPress closure before
+  // React commits the row's disarm). Second invocation while in flight is a no-op. Released on
+  // failure so a retry works; left set after a successful deletion (the account is gone, there's
+  // nothing left to retry).
+  const deletingAccount = useRef(false);
+
   const dev = __DEV__
     ? {
         simulatedDateLabel:
@@ -108,14 +115,26 @@ export function SettingsHost(): React.JSX.Element {
       }}
       deleteRecordingsError={deleteRecordingsError}
       onDeleteAccount={() => {
+        if (deletingAccount.current) return; // rapid double-tap — chain already running
+        deletingAccount.current = true;
         void (async () => {
           try {
             await profile.deleteRecordings(); // audio objects via the storage API first
             await profile.deleteAccount();    // auth user + cascaded rows (0018)
-            setDeleteAccountError(false);
-            await signOut();                  // local session teardown → auth screen
           } catch {
+            deletingAccount.current = false;  // release the latch — retry must be able to run
             setDeleteAccountError(true);
+            return;
+          }
+          // The account IS deleted server-side past this point. A signOut() rejection is local
+          // teardown noise, not a deletion failure — never relabel the row "Deletion failed" (that
+          // would invite a retry against a dead account). Swallow it; the pre-existing "Log out"
+          // row remains as the manual escape hatch.
+          setDeleteAccountError(false);
+          try {
+            await signOut(); // local session teardown → auth screen
+          } catch {
+            // best-effort only — see comment above.
           }
         })();
       }}
