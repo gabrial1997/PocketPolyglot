@@ -322,7 +322,7 @@ function Root(): React.JSX.Element {
             onOpenPodcast={() => setRoute('pod')}
           />
         ) : null}
-        {route === 'pod' ? <PodcastHost /> : null}
+        {route === 'pod' ? <PodcastHost onKeepLearning={() => setRoute('home')} /> : null}
         {route === 'prog' ? <ProgressHost /> : null}
         {route === 'settings' ? <SettingsHost /> : null}
       </View>

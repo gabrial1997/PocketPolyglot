@@ -3,40 +3,62 @@
 // honest-data contract: the orb starts idle (nothing is playing on mount), play/stop is a real
 // pair (pause tap + unmount stop the audio), a missing episode renders an honest empty state
 // (never the mockup sample episode), and a failed fetch is a retryable error.
+//
+// Also pins the 25% coverage gate (spec 2026-07-09 §1): coverage decides locked/ready BEFORE any
+// episode fetch runs; locked ⇒ the episode fetch must never fire; a coverage-fetch failure is
+// fail-closed (retryable HostError, never the unlocked flow).
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { createStubServices } from '../services/stubs';
 import { PodcastHost } from './PodcastHost';
+import type { ProgressCoverage } from '../services/index';
 
 type Episode = { title: string; transcript: string; audioUrl: string };
 
-function renderHost(getEpisode: () => Promise<Episode> = async () => ({
-  title: 'Latvian café chat',
-  transcript: 'Sveiki!',
-  audioUrl: 'ep://1',
-})) {
-  const audio = {
-    play: jest.fn(async () => {}),
+const ranks = (n: number): number[] => Array.from({ length: n }, (_, i) => i + 1);
+
+const defaultEpisode: Episode = { title: 'Latvian café chat', transcript: 'Sveiki!', audioUrl: 'ep://1' };
+// 30% known — comfortably above the 25% gate, so existing episode-flow tests exercise the
+// ready path without having to think about the gate.
+const unlockedCoverage: ProgressCoverage = { total: 1000, knownRanks: ranks(300) };
+
+function makeAudio() {
+  return {
+    play: jest.fn(async (_url: string, _opts?: { rate?: number }) => {}),
     stop: jest.fn(async () => {}),
     isPlaying: () => false,
     preload: () => {},
     subscribe: () => () => {},
   };
+}
+
+let audio: ReturnType<typeof makeAudio>;
+let progress: { getCoverage: jest.Mock<Promise<ProgressCoverage>, []> };
+let podcast: { getEpisode: jest.Mock<Promise<Episode>, []> };
+
+beforeEach(() => {
+  audio = makeAudio();
+  progress = { getCoverage: jest.fn(async () => unlockedCoverage) };
+  podcast = { getEpisode: jest.fn(async () => defaultEpisode) };
+});
+
+function renderHost(onKeepLearning?: () => void) {
   const services = {
     ...createStubServices(),
     audio,
-    podcast: { getEpisode },
+    progress,
+    podcast,
   };
   const utils = render(
     <ThemeProvider>
       <ServiceProvider services={services}>
-        <PodcastHost />
+        <PodcastHost onKeepLearning={onKeepLearning} />
       </ServiceProvider>
     </ThemeProvider>,
   );
-  return { ...utils, audio };
+  return { ...utils, audio, progress, podcast };
 }
 
 describe('PodcastHost', () => {
@@ -81,7 +103,8 @@ describe('PodcastHost', () => {
   });
 
   it('renders an honest empty state when no episode row exists — never the sample episode', async () => {
-    const u = renderHost(async () => ({ title: '', transcript: '', audioUrl: '' }));
+    podcast.getEpisode.mockResolvedValue({ title: '', transcript: '', audioUrl: '' });
+    const u = renderHost();
     expect(await u.findByText('No episode yet')).toBeTruthy();
     // The old mockup sample data must never surface.
     expect(u.queryByText('Rīta saruna')).toBeNull();
@@ -91,15 +114,56 @@ describe('PodcastHost', () => {
   });
 
   it('shows a retryable error on fetch failure instead of fake episode data', async () => {
-    let calls = 0;
-    const u = renderHost(async () => {
-      calls += 1;
-      if (calls === 1) throw new Error('offline');
-      return { title: 'Latvian café chat', transcript: 'Sveiki!', audioUrl: 'ep://1' };
-    });
+    podcast.getEpisode.mockRejectedValueOnce(new Error('offline'));
+    podcast.getEpisode.mockResolvedValueOnce(defaultEpisode);
+    const u = renderHost();
     expect(await u.findByText('Try again')).toBeTruthy();
     expect(u.queryByText('Rīta saruna')).toBeNull();
     fireEvent.press(u.getByText('Try again'));
     expect(await u.findByText('Latvian café chat')).toBeTruthy();
+  });
+
+  // --- 25% coverage gate (spec 2026-07-09 §1) ---
+
+  it('renders the locked screen below 25% and never fetches the episode', async () => {
+    progress.getCoverage.mockResolvedValue({ total: 1000, knownRanks: ranks(100) }); // 10%
+    const { findByText } = renderHost();
+    await findByText('Podcasts unlock at 25%');
+    await findByText(/You can follow 10% of everyday speech so far\./);
+    expect(podcast.getEpisode).not.toHaveBeenCalled();
+  });
+
+  it('unlocks at exactly 250/1000 and shows the ready flow', async () => {
+    progress.getCoverage.mockResolvedValue({ total: 1000, knownRanks: ranks(250) });
+    podcast.getEpisode.mockResolvedValue({ title: '', transcript: '', audioUrl: '' });
+    const { findByText } = renderHost();
+    await findByText(/No episode yet/); // the honest empty state — episode fetch DID run
+    expect(podcast.getEpisode).toHaveBeenCalledTimes(1);
+  });
+
+  it('fail-closed: coverage fetch error shows retryable HostError, not the unlocked flow', async () => {
+    progress.getCoverage.mockRejectedValue(new Error('down'));
+    const { findByText } = renderHost();
+    await findByText(/Couldn’t load this right now/);
+    expect(podcast.getEpisode).not.toHaveBeenCalled();
+  });
+
+  it('retry after coverage error refetches', async () => {
+    progress.getCoverage.mockRejectedValueOnce(new Error('down'));
+    progress.getCoverage.mockResolvedValueOnce({ total: 1000, knownRanks: ranks(300) });
+    podcast.getEpisode.mockResolvedValue({ title: '', transcript: '', audioUrl: '' });
+    const { findByText, getByText } = renderHost();
+    await findByText(/Couldn’t load this right now/);
+    fireEvent.press(getByText('Try again'));
+    await findByText(/No episode yet/);
+  });
+
+  it('locked screen "Keep learning" invokes the onKeepLearning callback', async () => {
+    progress.getCoverage.mockResolvedValue({ total: 1000, knownRanks: ranks(100) });
+    const onKeepLearning = jest.fn();
+    const { findByText, getByLabelText } = renderHost(onKeepLearning);
+    await findByText('Podcasts unlock at 25%');
+    fireEvent.press(getByLabelText('Keep learning'));
+    expect(onKeepLearning).toHaveBeenCalledTimes(1);
   });
 });
