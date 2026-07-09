@@ -133,3 +133,38 @@ it('a successful delete after a prior failure clears the delete error state', as
   await waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
   expect(await u.findByText('Delete my recordings')).toBeTruthy();
 });
+
+// Apple-mandated account deletion: recordings (audio objects) must go first, then the account
+// row, and only THEN sign the user out — never sign out on a partial delete.
+it('confirming Delete account calls deleteRecordings, then deleteAccount, then signOut in order', async () => {
+  const services = createStubServices();
+  const order: string[] = [];
+  jest.spyOn(services.profile, 'deleteRecordings').mockImplementation(async () => {
+    order.push('deleteRecordings');
+  });
+  jest.spyOn(services.profile, 'deleteAccount').mockImplementation(async () => {
+    order.push('deleteAccount');
+  });
+  mockSignOut.mockImplementationOnce(async () => {
+    order.push('signOut');
+  });
+  const u = renderHost(services);
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Delete account'));
+  fireEvent.press(u.getByText('Tap again to permanently delete your account'));
+  await waitFor(() => expect(mockSignOut).toHaveBeenCalledTimes(1));
+  expect(order).toEqual(['deleteRecordings', 'deleteAccount', 'signOut']);
+});
+
+// GDPR: a failed deletion must never sign the user out silently believing it worked.
+it('a failed Delete account surfaces "Deletion failed — tap to retry" and does NOT sign out', async () => {
+  const services = createStubServices();
+  jest.spyOn(services.profile, 'deleteRecordings').mockResolvedValueOnce(undefined);
+  jest.spyOn(services.profile, 'deleteAccount').mockRejectedValueOnce(new Error('rpc failed'));
+  const u = renderHost(services);
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Delete account'));
+  fireEvent.press(u.getByText('Tap again to permanently delete your account'));
+  expect(await u.findByText('Deletion failed — tap to retry')).toBeTruthy();
+  expect(mockSignOut).not.toHaveBeenCalled();
+});

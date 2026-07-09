@@ -59,6 +59,10 @@ export function SettingsHost(): React.JSX.Element {
   // next successful delete.
   const [deleteRecordingsError, setDeleteRecordingsError] = useState(false);
 
+  // Apple-mandated account deletion. A failed attempt at ANY step surfaces here as a retryable
+  // row — never a silent partial delete, and never a sign-out on failure.
+  const [deleteAccountError, setDeleteAccountError] = useState(false);
+
   const dev = __DEV__
     ? {
         simulatedDateLabel:
@@ -103,6 +107,19 @@ export function SettingsHost(): React.JSX.Element {
           .catch(() => setDeleteRecordingsError(true));
       }}
       deleteRecordingsError={deleteRecordingsError}
+      onDeleteAccount={() => {
+        void (async () => {
+          try {
+            await profile.deleteRecordings(); // audio objects via the storage API first
+            await profile.deleteAccount();    // auth user + cascaded rows (0018)
+            setDeleteAccountError(false);
+            await signOut();                  // local session teardown → auth screen
+          } catch {
+            setDeleteAccountError(true);
+          }
+        })();
+      }}
+      deleteAccountError={deleteAccountError}
       onSignOut={() => {
         void signOut();
       }}

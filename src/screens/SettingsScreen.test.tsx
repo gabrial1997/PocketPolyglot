@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { SettingsScreen, type SettingsScreenProps } from './SettingsScreen';
 
@@ -14,6 +14,7 @@ function setup(over: Partial<SettingsScreenProps> = {}) {
     onToggleConsent: jest.fn(),
     onDeleteRecordings: jest.fn(),
     onSignOut: jest.fn(),
+    onDeleteAccount: jest.fn(),
     ...over,
   };
   const u = render(
@@ -71,6 +72,34 @@ it('without deleteRecordingsError, the row reads the normal "Delete my recording
   fireEvent.press(u.getByLabelText('Open profile'));
   expect(u.getByText('Delete my recordings')).toBeTruthy();
   expect(u.queryByText('Delete failed — tap to retry')).toBeNull();
+});
+
+// GDPR/Apple-mandated: account deletion requires a second, armed tap — never a single-tap
+// destructive action.
+it('delete account requires a second, armed tap', () => {
+  const onDeleteAccount = jest.fn();
+  const { u } = setup({ onDeleteAccount });
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Delete account'));
+  expect(onDeleteAccount).not.toHaveBeenCalled();
+  fireEvent.press(u.getByText('Tap again to permanently delete your account'));
+  expect(onDeleteAccount).toHaveBeenCalledTimes(1);
+});
+
+it('delete account disarms after the timeout', () => {
+  jest.useFakeTimers();
+  const { u } = setup({ onDeleteAccount: jest.fn() });
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Delete account'));
+  act(() => jest.advanceTimersByTime(4001));
+  u.getByText('Delete account'); // back to unarmed label
+  jest.useRealTimers();
+});
+
+it('deleteAccountError surfaces a failed deletion as a retryable row', () => {
+  const { u } = setup({ deleteAccountError: true });
+  fireEvent.press(u.getByLabelText('Open profile'));
+  u.getByText('Deletion failed — tap to retry');
 });
 
 it('log out → sheet confirm calls onSignOut', () => {
