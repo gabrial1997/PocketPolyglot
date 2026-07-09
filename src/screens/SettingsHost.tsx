@@ -1,6 +1,7 @@
 // SettingsHost — Tier-B host for the Settings tab (WIRING_MAP §3). Pulls auth (name/email/sign-out),
 // theme mode, and the ProfileService (GDPR consent), then renders the pure SettingsScreen.
 import React, { useEffect, useRef, useState } from 'react';
+import { Linking } from 'react-native';
 import Constants from 'expo-constants';
 import type { User } from '@supabase/supabase-js';
 import { useAuth } from '../auth/AuthProvider';
@@ -9,6 +10,7 @@ import { useServices } from '../services/ServiceProvider';
 import { supabase } from '../services';
 import { devNow, getOffsetDays, loadClockOffset, skipDay } from '../services/devClock';
 import { resetProgress } from '../services/devTools';
+import { SUPPORT_EMAIL, SUPPORT_URL, PRIVACY_URL } from '../config/support';
 import { SettingsScreen } from './SettingsScreen';
 
 /** First-name from the user (mirrors navigation/index.tsx displayName; local copy avoids a cycle). */
@@ -69,6 +71,12 @@ export function SettingsHost(): React.JSX.Element {
   // failure so a retry works; left set after a successful deletion (the account is gone, there's
   // nothing left to retry).
   const deletingAccount = useRef(false);
+
+  // Real Supabase reset-email flow (was a dead row). Reflects the last attempt's outcome on the
+  // password row rather than a swallowed result — both an `{ error }` response and a rejected
+  // promise land on 'error' so the learner never sees "Change password" sit there as if nothing
+  // happened.
+  const [passwordResetState, setPasswordResetState] = useState<'idle' | 'sent' | 'error'>('idle');
 
   const dev = __DEV__
     ? {
@@ -142,6 +150,24 @@ export function SettingsHost(): React.JSX.Element {
       onSignOut={() => {
         void signOut();
       }}
+      onContactSupport={() => {
+        void Linking.openURL(`mailto:${SUPPORT_EMAIL}`);
+      }}
+      onOpenPrivacy={() => {
+        void Linking.openURL(PRIVACY_URL);
+      }}
+      onOpenSupportSite={() => {
+        void Linking.openURL(SUPPORT_URL);
+      }}
+      onChangePassword={() => {
+        const email = user?.email;
+        if (!email) return;
+        supabase.auth
+          .resetPasswordForEmail(email)
+          .then(({ error }: { error: unknown }) => setPasswordResetState(error ? 'error' : 'sent'))
+          .catch(() => setPasswordResetState('error'));
+      }}
+      passwordResetState={passwordResetState}
       dev={dev}
     />
   );

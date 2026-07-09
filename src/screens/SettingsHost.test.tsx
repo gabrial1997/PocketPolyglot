@@ -1,15 +1,24 @@
 import React from 'react';
+import { Linking } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { ServiceProvider } from '../services/ServiceProvider';
 import { createStubServices } from '../services/stubs';
 import { SettingsHost } from './SettingsHost';
+import { SUPPORT_EMAIL, SUPPORT_URL, PRIVACY_URL } from '../config/support';
 
-jest.mock('../services/supabaseClient', () => ({ supabase: {} }));
+const mockResetPasswordForEmail = jest.fn(async (_email: string) => ({ error: null as Error | null }));
+jest.mock('../services/supabaseClient', () => ({
+  supabase: { auth: { resetPasswordForEmail: (email: string) => mockResetPasswordForEmail(email) } },
+}));
 
 const mockSignOut = jest.fn(async () => {});
+let mockUser: { email?: string; user_metadata: Record<string, unknown> } | null = {
+  email: 'gabrial@email.com',
+  user_metadata: { name: 'Gabrial' },
+};
 jest.mock('../auth/AuthProvider', () => ({
-  useAuth: () => ({ user: { email: 'gabrial@email.com', user_metadata: { name: 'Gabrial' } }, signOut: mockSignOut }),
+  useAuth: () => ({ user: mockUser, signOut: mockSignOut }),
 }));
 
 const mockSkipDay = jest.fn(async () => 3);
@@ -41,6 +50,9 @@ beforeEach(() => {
   mockSkipDay.mockClear();
   mockLoadClockOffset.mockClear();
   mockResetProgress.mockClear();
+  mockResetPasswordForEmail.mockClear();
+  mockResetPasswordForEmail.mockImplementation(async () => ({ error: null }));
+  mockUser = { email: 'gabrial@email.com', user_metadata: { name: 'Gabrial' } };
 });
 
 it('renders the auth email', async () => {
@@ -225,4 +237,60 @@ it('invoking Delete account twice rapidly only runs the delete chain once', asyn
   await waitFor(() => expect(mockSignOut).toHaveBeenCalledTimes(1));
   expect(deleteRecordings).toHaveBeenCalledTimes(1);
   expect(deleteAccount).toHaveBeenCalledTimes(1);
+});
+
+// Task 6: dead Settings rows become real or disappear. Help & feedback, Privacy policy, and
+// Support site all open real URLs via Linking — never a silent no-op.
+it('Help & feedback opens a mailto: link containing SUPPORT_EMAIL', async () => {
+  const spy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+  const u = renderHost();
+  fireEvent.press(u.getByText('Help & feedback'));
+  expect(spy).toHaveBeenCalledWith(`mailto:${SUPPORT_EMAIL}`);
+});
+
+it('Privacy policy opens PRIVACY_URL', async () => {
+  const spy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+  const u = renderHost();
+  fireEvent.press(u.getByText('Privacy policy'));
+  expect(spy).toHaveBeenCalledWith(PRIVACY_URL);
+});
+
+it('Support site opens SUPPORT_URL', async () => {
+  const spy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+  const u = renderHost();
+  fireEvent.press(u.getByText('Support site'));
+  expect(spy).toHaveBeenCalledWith(SUPPORT_URL);
+});
+
+// Change password: a real Supabase reset-email flow, not a dead row.
+it('Change password calls resetPasswordForEmail with the signed-in user email and shows the sent state', async () => {
+  const u = renderHost();
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Change password'));
+  await waitFor(() => expect(mockResetPasswordForEmail).toHaveBeenCalledWith('gabrial@email.com'));
+  expect(await u.findByText(/Check your email/)).toBeTruthy();
+});
+
+it('a resetPasswordForEmail {error} result surfaces the error state', async () => {
+  mockResetPasswordForEmail.mockResolvedValueOnce({ error: new Error('rate limited') });
+  const u = renderHost();
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Change password'));
+  expect(await u.findByText(/Couldn’t send/)).toBeTruthy();
+});
+
+it('a rejected resetPasswordForEmail promise also surfaces the error state', async () => {
+  mockResetPasswordForEmail.mockRejectedValueOnce(new Error('network down'));
+  const u = renderHost();
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Change password'));
+  expect(await u.findByText(/Couldn’t send/)).toBeTruthy();
+});
+
+it('Change password is a no-op when the signed-in user has no email', async () => {
+  mockUser = { email: undefined, user_metadata: {} };
+  const u = renderHost();
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Change password'));
+  expect(mockResetPasswordForEmail).not.toHaveBeenCalled();
 });
