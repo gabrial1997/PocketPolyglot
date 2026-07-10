@@ -1,32 +1,39 @@
-// OnboardingGate — profile ensure + diacritic once-only screen (D3c).
+// OnboardingGate — profile ensure + diacritic once-only screen + consent explainer (D3c, Task 5).
 // Sits between AuthGate (user is signed-in) and Root (the tab shell).
-// State machine: loading → orientation (if !seenDiacritics) → children.
-// Consent is NOT a blocking onboarding step — it gates only the record affordance,
-// surfaced contextually via useRecordingAllowed (also in this module).
-import React, { useEffect, useState } from 'react';
+// State machine: loading → orientation (if !seenDiacritics) → consent (if !seenConsent) → done.
+// Consent is a one-time onboarding STEP (GDPR/App-Review): every learner sees the explainer
+// exactly once and decides accept/decline before reaching the tab shell. Once decided
+// (accept OR decline), `useRecordingAllowed` (also in this module) is what continues to gate
+// the record affordance contextually thereafter — it does not re-show this screen.
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useServices } from '../services/ServiceProvider';
 import { useTheme } from '../theme/ThemeProvider';
 import { DiacriticOrientationScreen } from '../screens/DiacriticOrientationScreen';
+import { ConsentScreen } from '../screens/ConsentScreen';
 import { useSetReportScreen } from '../components/BugReportLayer';
 
 export interface OnboardingGateProps {
   children: React.ReactNode;
 }
 
-type GateState = 'loading' | 'orientation' | 'done';
+type GateState = 'loading' | 'orientation' | 'consent' | 'done';
 
 /**
  * Wraps the signed-in app shell. On mount:
  * 1. Calls `profile.ensureProfile()` — creates the DB row if the trigger missed it.
- * 2. Calls `profile.getProfile()` — reads seenDiacritics.
- * 3. If `!seenDiacritics` → shows DiacriticOrientationScreen once.
- * 4. After "Got it" (or immediately for returning users) → renders children.
+ * 2. Calls `profile.getProfile()` — reads seenDiacritics + seenConsent.
+ * 3. If `!seenDiacritics` → shows DiacriticOrientationScreen once, then falls through to step 4.
+ * 4. If `!seenConsent` → shows ConsentScreen once (accept or decline both count as "decided").
+ * 5. Renders children once both are seen (or immediately for a fully returning user).
  */
 export function OnboardingGate({ children }: OnboardingGateProps): React.JSX.Element {
   const { profile } = useServices();
   const T = useTheme();
   const [state, setState] = useState<GateState>('loading');
+  // Set alongside the initial state decision so orientation's onDismiss knows whether to route
+  // to 'consent' or 'done' next — the snapshot itself isn't kept in state.
+  const seenConsentNeeded = useRef(false);
   const setReportScreen = useSetReportScreen();
   useEffect(() => { setReportScreen('onboarding'); }, [setReportScreen]);
 
@@ -39,13 +46,16 @@ export function OnboardingGate({ children }: OnboardingGateProps): React.JSX.Ele
         await profile.ensureProfile();
         const snap = await profile.getProfile();
         if (cancelled) return;
-        if (!snap || !snap.seenDiacritics) {
-          setState('orientation');
-        } else {
-          setState('done');
-        }
+        seenConsentNeeded.current = !snap || !snap.seenConsent;
+        const next: GateState = !snap || !snap.seenDiacritics
+          ? 'orientation'
+          : !snap.seenConsent
+            ? 'consent'
+            : 'done';
+        setState(next);
       } catch {
-        // On error, advance to done — don't block the learner indefinitely.
+        // On error, advance to done — don't block the learner indefinitely. Consent stays
+        // fail-closed off (setConsent was never called), matching the GDPR safe default.
         if (!cancelled) setState('done');
       }
     }
@@ -70,6 +80,24 @@ export function OnboardingGate({ children }: OnboardingGateProps): React.JSX.Ele
         onDismiss={() => {
           // Fire-and-forget: setSeenDiacritics merges the flag; don't block on it.
           void profile.setSeenDiacritics();
+          setState(seenConsentNeeded.current ? 'consent' : 'done');
+        }}
+      />
+    );
+  }
+
+  if (state === 'consent') {
+    return (
+      <ConsentScreen
+        onAccept={({ training }) => {
+          // Fire-and-forget like the diacritics flag — never strand the learner on a slow write.
+          void profile.setConsent({ rec: true, training });
+          void profile.setSeenConsent();
+          setState('done');
+        }}
+        onDecline={() => {
+          // rec_consent stays default-off (fail-closed); we only record that they decided.
+          void profile.setSeenConsent();
           setState('done');
         }}
       />

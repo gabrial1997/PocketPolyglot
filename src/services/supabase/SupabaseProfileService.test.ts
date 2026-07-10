@@ -8,7 +8,7 @@ function fakeClient() {
   // nextListRows: returned when a select chain is awaited DIRECTLY (a LIST select, no
   // maybeSingle — e.g. deleteRecordings' storage_path read).
   let nextListRows: Record<string, unknown>[] = [];
-  // nextError: consumed by the next awaitable terminal (maybeSingle / eq-on-update-delete / insert).
+  // nextError: consumed by the next awaitable terminal (maybeSingle / eq-on-update-delete / insert / rpc).
   let nextError: { code?: string; message?: string } | null = null;
   // nextWriteError: consumed ONLY by write terminals (insert resolver and update/delete .eq() terminal).
   // Does NOT affect maybeSingle() so read-modify-write tests can let the read succeed and the write fail.
@@ -29,6 +29,12 @@ function fakeClient() {
           },
         };
       },
+    },
+    // Minimal stub so `client.rpc` is assignable/callable; the deleteAccount tests below
+    // override it directly with their own jest.fn(), so this default is never exercised.
+    rpc(name: string) {
+      calls.push({ table: `rpc:${name}`, op: 'rpc' });
+      return Promise.resolve({ data: null, error: null });
     },
     from(table: string) {
       const ctx: { table: string; op: string; payload?: unknown; eq?: [string, unknown] } = { table, op: '' };
@@ -98,7 +104,7 @@ function fakeClient() {
     /** Queue multiple rows: first maybeSingle() call returns rows[0], second returns rows[1], etc. */
     setRows: (rows: (Record<string, unknown> | null)[]) => { nextSelectRows = [...rows]; },
     /**
-     * Inject an error to be returned by the next awaitable terminal (insert / update .eq / delete .eq / maybeSingle).
+     * Inject an error to be returned by the next awaitable terminal (insert / update .eq / delete .eq / maybeSingle / rpc).
      * Used by insert-error tests (e.g. 23505 duplicate-key). One-shot: cleared after consumption.
      */
     setNextError: (code: string, message = 'injected error') => { nextError = { code, message }; },
@@ -212,11 +218,27 @@ it('deleteRecordings throws when the storage_path read fails', async () => {
 
 it('getProfile reads rec_consent, training_consent and settings.seenDiacritics', async () => {
   const { client, calls, setRow } = fakeClient();
-  setRow({ rec_consent: true, training_consent: false, settings: { seenDiacritics: true } });
+  setRow({ rec_consent: true, training_consent: false, settings: { seenDiacritics: true, seenConsent: true } });
   const svc = new SupabaseProfileService(client as never, 'user-1');
   const snap = await svc.getProfile();
-  expect(snap).toEqual({ recConsent: true, trainingConsent: false, seenDiacritics: true });
+  expect(snap).toEqual({ recConsent: true, trainingConsent: false, seenDiacritics: true, seenConsent: true });
   expect(calls[0]).toMatchObject({ table: 'profiles', op: 'select', eq: ['id', 'user-1'] });
+});
+
+it('getProfile maps settings.seenConsent === true to seenConsent', async () => {
+  const { client, setRow } = fakeClient();
+  setRow({ rec_consent: false, training_consent: false, settings: { seenConsent: true } });
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  const snap = await svc.getProfile();
+  expect(snap?.seenConsent).toBe(true);
+});
+
+it('getProfile treats missing settings.seenConsent as false', async () => {
+  const { client, setRow } = fakeClient();
+  setRow({ rec_consent: false, training_consent: false, settings: {} });
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  const snap = await svc.getProfile();
+  expect(snap?.seenConsent).toBe(false);
 });
 
 it('getProfile returns null when no row exists', async () => {
@@ -295,6 +317,39 @@ it('setSeenDiacritics surfaces a write error from the update', async () => {
   await expect(svc.setSeenDiacritics()).rejects.toMatchObject({ code: '42501' });
 });
 
+// --- D3c/Task 5: setSeenConsent (settings-merge, mirrors setSeenDiacritics) ---
+
+it('setSeenConsent merges settings.seenConsent=true and preserves other keys', async () => {
+  const { client, calls, setRows } = fakeClient();
+  // First maybeSingle() call (the read) returns existing settings.
+  // The update path does NOT call maybeSingle() — it resolves via .eq() directly.
+  setRows([{ settings: { editor: true, seenDiacritics: true } }]);
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await svc.setSeenConsent();
+  const upd = calls.find((c) => c.op === 'update');
+  expect(upd?.table).toBe('profiles');
+  expect(upd?.eq).toEqual(['id', 'user-1']);
+  const settings = (upd?.payload as { settings: Record<string, unknown> }).settings;
+  expect(settings).toEqual({ editor: true, seenDiacritics: true, seenConsent: true });
+});
+
+it('setSeenConsent throws when no profile row exists (enforces ensureProfile invariant)', async () => {
+  const { client, setRow } = fakeClient();
+  setRow(null);
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await expect(svc.setSeenConsent()).rejects.toThrow('setSeenConsent: no profile row for user');
+});
+
+it('setSeenConsent surfaces a write error from the update', async () => {
+  const { client, setRow, setNextWriteError } = fakeClient();
+  // READ succeeds: maybeSingle() returns a real row and does NOT consume nextWriteError.
+  setRow({ settings: {} });
+  // WRITE fails: the update's .eq() terminal consumes nextWriteError — not the read path.
+  setNextWriteError('42501', 'permission denied');
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  await expect(svc.setSeenConsent()).rejects.toMatchObject({ code: '42501' });
+});
+
 // --- D3a: setConsent (rec + training + timestamp) ---
 
 it('setConsent({rec:true,training:true}) stamps rec_consent_at and sets both flags', async () => {
@@ -321,4 +376,21 @@ it('setConsent({rec:false,...}) clears rec_consent_at', async () => {
   expect(payload.rec_consent).toBe(false);
   expect(payload.training_consent).toBe(false);
   expect(payload.rec_consent_at).toBeNull();
+});
+
+// --- D4: deleteAccount (Apple-mandated in-app deletion) ---
+
+it('deleteAccount calls the self-targeting RPC', async () => {
+  const { client } = fakeClient();
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  client.rpc = jest.fn().mockResolvedValue({ data: null, error: null });
+  await svc.deleteAccount();
+  expect(client.rpc).toHaveBeenCalledWith('delete_account');
+});
+
+it('deleteAccount surfaces an RPC error (never a silent partial delete)', async () => {
+  const { client } = fakeClient();
+  const svc = new SupabaseProfileService(client as never, 'user-1');
+  client.rpc = jest.fn().mockResolvedValue({ data: null, error: { message: 'boom' } });
+  await expect(svc.deleteAccount()).rejects.toBeTruthy();
 });

@@ -37,6 +37,11 @@ class FakeProfileService implements ProfileService {
       recConsent: false,
       trainingConsent: false,
       seenDiacritics: false,
+      // Defaults to true so this file's tests (which target diacritics/consent-STAMP/record-
+      // affordance, not the consent gate step) aren't interrupted by the ConsentScreen after
+      // orientation. The consent gate's own state-machine behavior is covered exhaustively in
+      // OnboardingGate.test.tsx.
+      seenConsent: true,
       ...initial,
     };
   }
@@ -58,11 +63,15 @@ class FakeProfileService implements ProfileService {
     this.setSeenCount++;
     this.snap.seenDiacritics = true;
   }
+  async setSeenConsent(): Promise<void> {
+    this.snap.seenConsent = true;
+  }
   async setConsent(input: { rec: boolean; training: boolean }): Promise<void> {
     this.setConsentPayloads.push(input);
     this.snap.recConsent = input.rec;
     this.snap.trainingConsent = input.training;
   }
+  async deleteAccount(): Promise<void> { /* no-op */ }
 }
 
 function makeServices(profile: ProfileService): ServiceBundle {

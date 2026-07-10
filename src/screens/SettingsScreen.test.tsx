@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { SettingsScreen, type SettingsScreenProps } from './SettingsScreen';
 
@@ -14,6 +14,12 @@ function setup(over: Partial<SettingsScreenProps> = {}) {
     onToggleConsent: jest.fn(),
     onDeleteRecordings: jest.fn(),
     onSignOut: jest.fn(),
+    onDeleteAccount: jest.fn(),
+    onContactSupport: jest.fn(),
+    onOpenPrivacy: jest.fn(),
+    onOpenSupportSite: jest.fn(),
+    onChangePassword: jest.fn(),
+    passwordResetState: 'idle',
     ...over,
   };
   const u = render(
@@ -33,6 +39,43 @@ it('shows the user name and email on the menu', () => {
 it('does NOT render a Subscription row (omitted by scope)', () => {
   const { u } = setup();
   expect(u.queryByText(/Subscription|Plus/)).toBeNull();
+});
+
+it('has no Notifications toggle and no Change photo affordance', () => {
+  const { u } = setup();
+  expect(u.queryByText('Notifications')).toBeNull();
+  fireEvent.press(u.getByLabelText('Open profile'));
+  expect(u.queryByText('Change photo')).toBeNull();
+});
+
+it('Help & feedback, Privacy policy, and Support site rows fire their callbacks', () => {
+  const onContactSupport = jest.fn();
+  const onOpenPrivacy = jest.fn();
+  const onOpenSupportSite = jest.fn();
+  const { u } = setup({ onContactSupport, onOpenPrivacy, onOpenSupportSite });
+  fireEvent.press(u.getByText('Help & feedback'));
+  expect(onContactSupport).toHaveBeenCalled();
+  fireEvent.press(u.getByText('Privacy policy'));
+  expect(onOpenPrivacy).toHaveBeenCalled();
+  fireEvent.press(u.getByText('Support site'));
+  expect(onOpenSupportSite).toHaveBeenCalled();
+});
+
+it('Change password fires and reflects the sent/error states', () => {
+  const onChangePassword = jest.fn();
+  const { u, props } = setup({ onChangePassword, passwordResetState: 'idle' });
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Change password'));
+  expect(onChangePassword).toHaveBeenCalled();
+  void props;
+
+  const sent = setup({ passwordResetState: 'sent' });
+  fireEvent.press(sent.u.getByLabelText('Open profile'));
+  expect(sent.u.getByText(/Check your email/)).toBeTruthy();
+
+  const errored = setup({ passwordResetState: 'error' });
+  fireEvent.press(errored.u.getByLabelText('Open profile'));
+  expect(errored.u.getByText(/Couldn’t send/)).toBeTruthy();
 });
 
 it('navigates to Appearance and selecting Dark calls onSelectMode', () => {
@@ -71,6 +114,34 @@ it('without deleteRecordingsError, the row reads the normal "Delete my recording
   fireEvent.press(u.getByLabelText('Open profile'));
   expect(u.getByText('Delete my recordings')).toBeTruthy();
   expect(u.queryByText('Delete failed — tap to retry')).toBeNull();
+});
+
+// GDPR/Apple-mandated: account deletion requires a second, armed tap — never a single-tap
+// destructive action.
+it('delete account requires a second, armed tap', () => {
+  const onDeleteAccount = jest.fn();
+  const { u } = setup({ onDeleteAccount });
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Delete account'));
+  expect(onDeleteAccount).not.toHaveBeenCalled();
+  fireEvent.press(u.getByText('Tap again to permanently delete your account'));
+  expect(onDeleteAccount).toHaveBeenCalledTimes(1);
+});
+
+it('delete account disarms after the timeout', () => {
+  jest.useFakeTimers();
+  const { u } = setup({ onDeleteAccount: jest.fn() });
+  fireEvent.press(u.getByLabelText('Open profile'));
+  fireEvent.press(u.getByText('Delete account'));
+  act(() => jest.advanceTimersByTime(4001));
+  u.getByText('Delete account'); // back to unarmed label
+  jest.useRealTimers();
+});
+
+it('deleteAccountError surfaces a failed deletion as a retryable row', () => {
+  const { u } = setup({ deleteAccountError: true });
+  fireEvent.press(u.getByLabelText('Open profile'));
+  u.getByText('Deletion failed — tap to retry');
 });
 
 it('log out → sheet confirm calls onSignOut', () => {

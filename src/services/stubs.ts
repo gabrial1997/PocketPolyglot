@@ -110,6 +110,7 @@ export class StubProfileService implements ProfileService {
   private consent = false;
   private trainingConsent = false;
   private seenDiacritics = false;
+  private seenConsent = true;
 
   async getRecConsent(): Promise<boolean> {
     return this.consent;
@@ -127,6 +128,7 @@ export class StubProfileService implements ProfileService {
       recConsent: this.consent,
       trainingConsent: this.trainingConsent,
       seenDiacritics: this.seenDiacritics,
+      seenConsent: this.seenConsent,
     };
   }
   async ensureProfile(): Promise<void> {
@@ -138,10 +140,20 @@ export class StubProfileService implements ProfileService {
     this.seenDiacritics = true;
   }
 
+  // Task 5: setSeenConsent (settings-merge, editor-safe — in-memory only for stub)
+  async setSeenConsent(): Promise<void> {
+    this.seenConsent = true;
+  }
+
   // D3a: setConsent (rec + training)
   async setConsent(input: { rec: boolean; training: boolean }): Promise<void> {
     this.consent = input.rec;
     this.trainingConsent = input.training;
+  }
+
+  // D4: deleteAccount (Apple-mandated in-app deletion)
+  async deleteAccount(): Promise<void> {
+    // real impl: call the delete_account RPC (migration 0018)
   }
 }
 

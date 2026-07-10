@@ -32,7 +32,21 @@ export interface SettingsScreenProps {
    *  successful delete. Surfaced on the row (rather than a swallowed .catch) so the learner is
    *  never left believing their recordings were deleted when they weren't (GDPR). */
   deleteRecordingsError?: boolean;
+  /** Two-tap-confirmed, Apple-mandated account deletion. Host: deleteRecordings → deleteAccount → signOut. */
+  onDeleteAccount: () => void;
+  /** Last deleteAccount attempt failed — row becomes a retry (never a silent partial delete). */
+  deleteAccountError?: boolean;
   onSignOut: () => void;
+  /** Opens the support mailto composer (host: Linking.openURL(`mailto:${SUPPORT_EMAIL}`)). */
+  onContactSupport: () => void;
+  /** Opens the published privacy policy page. */
+  onOpenPrivacy: () => void;
+  /** Opens the published support site. */
+  onOpenSupportSite: () => void;
+  /** Kicks off a Supabase password-reset email to the signed-in user's address. */
+  onChangePassword: () => void;
+  /** Reflects the last resetPasswordForEmail attempt on the password row. */
+  passwordResetState: 'idle' | 'sent' | 'error';
   /** Dev-only controls (host passes this ONLY under __DEV__; absent in production). */
   dev?: {
     simulatedDateLabel: string;
@@ -58,7 +72,6 @@ function initialsOf(name?: string): string {
 export function SettingsScreen(props: SettingsScreenProps): React.JSX.Element {
   const [view, setView] = useState<SettingsView>('menu');
   const [logoutOpen, setLogoutOpen] = useState(false);
-  const [notif, setNotif] = useState(true); // local visual state only (no push infra yet)
 
   if (view === 'profile') {
     return (
@@ -81,8 +94,6 @@ export function SettingsScreen(props: SettingsScreenProps): React.JSX.Element {
   return (
     <SettingsMenu
       {...props}
-      notif={notif}
-      onToggleNotif={() => setNotif((v) => !v)}
       onOpenProfile={() => setView('profile')}
       onOpenAppearance={() => setView('appearance')}
       logoutOpen={logoutOpen}
@@ -96,8 +107,6 @@ export function SettingsScreen(props: SettingsScreenProps): React.JSX.Element {
 
 function SettingsMenu(
   props: SettingsScreenProps & {
-    notif: boolean;
-    onToggleNotif: () => void;
     onOpenProfile: () => void;
     onOpenAppearance: () => void;
     logoutOpen: boolean;
@@ -140,11 +149,6 @@ function SettingsMenu(
             title="Appearance"
             value={MODE_LABEL[props.themeMode]}
             onPress={props.onOpenAppearance}
-          />
-          <SettRow
-            icon="bell"
-            title="Notifications"
-            right={<SettSwitch on={props.notif} onToggle={props.onToggleNotif} accessibilityLabel="Notifications" />}
             isLast
           />
         </SettCard>
@@ -152,7 +156,9 @@ function SettingsMenu(
         {/* Support */}
         <SettGroupLabel>Support</SettGroupLabel>
         <SettCard>
-          <SettRow icon="help" title="Help & feedback" chevron={false} />
+          <SettRow icon="help" title="Help & feedback" chevron={false} onPress={props.onContactSupport} />
+          <SettRow icon="shield" title="Privacy policy" chevron={false} onPress={props.onOpenPrivacy} />
+          <SettRow icon="globe" title="Support site" chevron={false} onPress={props.onOpenSupportSite} />
           <SettRow icon="info" title="About" value={`v${props.appVersion}`} chevron={false} isLast />
         </SettCard>
 
@@ -192,7 +198,6 @@ function SettingsMenu(
 // --- Profile (display-only + GDPR Privacy group) ----------------------------
 
 function ProfileSettings(props: SettingsScreenProps & { onBack: () => void }): React.JSX.Element {
-  const T = useTheme();
   return (
     <Screen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -200,7 +205,6 @@ function ProfileSettings(props: SettingsScreenProps & { onBack: () => void }): R
 
         <View style={styles.profileHero}>
           <Avatar size={88} initials={initialsOf(props.name)} />
-          <Text style={[styles.changePhoto, { color: T.faint }]}>Change photo</Text>
         </View>
 
         <SettGroupLabel>Account</SettGroupLabel>
@@ -242,10 +246,51 @@ function ProfileSettings(props: SettingsScreenProps & { onBack: () => void }): R
 
         <SettGroupLabel>Security</SettGroupLabel>
         <SettCard>
-          <SettRow icon="shield" title="Change password" chevron={false} isLast />
+          <SettRow
+            icon="shield"
+            title={
+              props.passwordResetState === 'sent'
+                ? 'Check your email for a reset link'
+                : props.passwordResetState === 'error'
+                  ? 'Couldn’t send — tap to retry'
+                  : 'Change password'
+            }
+            chevron={false}
+            onPress={props.onChangePassword}
+          />
+          <ArmedDeleteRow
+            armedTitle="Tap again to permanently delete your account"
+            idleTitle={props.deleteAccountError ? 'Deletion failed — tap to retry' : 'Delete account'}
+            onConfirm={props.onDeleteAccount}
+            isLast
+          />
         </SettCard>
       </ScrollView>
     </Screen>
+  );
+}
+
+// Local to SettingsScreen.tsx — the DevSection arm/disarm pattern, reused for account deletion.
+function ArmedDeleteRow({ idleTitle, armedTitle, onConfirm, isLast }: {
+  idleTitle: string; armedTitle: string; onConfirm: () => void; isLast?: boolean;
+}): React.JSX.Element {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
+  return (
+    <SettRow
+      icon="trash"
+      title={armed ? armedTitle : idleTitle}
+      danger
+      chevron={false}
+      isLast={isLast}
+      onPress={() => {
+        if (armed) { setArmed(false); onConfirm(); } else { setArmed(true); }
+      }}
+    />
   );
 }
 
@@ -393,7 +438,6 @@ const styles = StyleSheet.create({
   logoutWrap: { marginTop: 26 },
   footer: { fontSize: 12, textAlign: 'center', marginTop: 26 },
   profileHero: { alignItems: 'center', rowGap: 10, paddingVertical: 8 },
-  changePhoto: { fontSize: 13.5 },
   scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,14,18,0.42)' },
   sheet: {
     position: 'absolute',
