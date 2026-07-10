@@ -86,8 +86,8 @@ time claims, no gamification language.
 > hear it, choose it, and say it, so recognition and production build together instead of one
 > lagging behind the other.
 >
-> Progress is measured honestly: as coverage of everyday Latvian speech, not points, streaks,
-> or leagues. You always know exactly how much of daily conversation you can follow, and
+> Progress is measured honestly, as coverage of everyday Latvian speech you can actually
+> follow. You always know exactly what portion of daily conversation is within your reach, and
 > nothing is dressed up to feel bigger than it is.
 >
 > When you're ready, record yourself and compare your pronunciation against a native speaker,
