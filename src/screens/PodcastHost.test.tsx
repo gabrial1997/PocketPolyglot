@@ -133,6 +133,14 @@ describe('PodcastHost', () => {
     expect(podcast.getEpisode).not.toHaveBeenCalled();
   });
 
+  it('floors (never rounds up) the locked pct — 249/1000 must read 24%, not 25%', async () => {
+    // Math.round(24.9) would say 25 — self-contradictory on a screen headlined
+    // "Podcasts unlock at 25%" and out of PodcastLockedScreenProps' documented 0-24 range.
+    progress.getCoverage.mockResolvedValue({ total: 1000, knownRanks: ranks(249) });
+    const { findByText } = renderHost();
+    await findByText(/You can follow 24% of everyday speech so far\./);
+  });
+
   it('unlocks at exactly 250/1000 and shows the ready flow', async () => {
     progress.getCoverage.mockResolvedValue({ total: 1000, knownRanks: ranks(250) });
     podcast.getEpisode.mockResolvedValue({ title: '', transcript: '', audioUrl: '' });

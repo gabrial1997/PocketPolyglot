@@ -15,8 +15,6 @@ function fakeClient() {
   let nextWriteError: { code?: string; message?: string } | null = null;
   // nextStorageError: consumed ONLY by the next storage remove() call.
   let nextStorageError: { message?: string } | null = null;
-  // nextRpcError: consumed ONLY by rpc() terminal.
-  let nextRpcError: { message?: string } | null = null;
 
   const client = {
     storage: {
@@ -32,12 +30,11 @@ function fakeClient() {
         };
       },
     },
+    // Minimal stub so `client.rpc` is assignable/callable; the deleteAccount tests below
+    // override it directly with their own jest.fn(), so this default is never exercised.
     rpc(name: string) {
       calls.push({ table: `rpc:${name}`, op: 'rpc' });
-      const err = nextRpcError ?? nextError;
-      nextRpcError = null;
-      nextError = null;
-      return Promise.resolve({ data: null, error: err });
+      return Promise.resolve({ data: null, error: null });
     },
     from(table: string) {
       const ctx: { table: string; op: string; payload?: unknown; eq?: [string, unknown] } = { table, op: '' };
@@ -122,8 +119,6 @@ function fakeClient() {
     setListRows: (rows: Record<string, unknown>[]) => { nextListRows = [...rows]; },
     /** Inject an error to be returned by the next storage remove(). One-shot. */
     setStorageError: (message = 'injected storage error') => { nextStorageError = { message }; },
-    /** Inject an error to be returned ONLY by the next rpc() call. One-shot. */
-    setNextRpcError: (message = 'injected rpc error') => { nextRpcError = { message }; },
   };
 }
 

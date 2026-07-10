@@ -30,7 +30,9 @@ export function ProgressScreen({
 }): React.JSX.Element {
   const T = useTheme();
   const known = knownRanks.length;
-  const pct = total > 0 ? Math.round((known / total) * 100) : 0;
+  // Floor (not round) so Progress can never read a % point above the podcast lock screen's
+  // (both derive from the same knownRanks/total coverage — see PodcastHost.tsx).
+  const pct = total > 0 ? Math.floor((known / total) * 100) : 0;
   const bands = useMemo(() => computeBands(knownRanks, total), [knownRanks, total]);
   // Dot i (0-based) = frequency rank i+1 — a known word lights its TRUE slot on the
   // most-common → rarer axis, not a sequential fill.

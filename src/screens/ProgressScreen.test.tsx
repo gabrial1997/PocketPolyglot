@@ -47,4 +47,12 @@ describe('ProgressScreen (honest coverage)', () => {
     expect(u.getByText('most common')).toBeTruthy();
     expect(u.getByText('rarer')).toBeTruthy();
   });
+
+  it('floors the hero percent — 249/1000 (24.9%) reads 24%, not a rounded-up 25%', () => {
+    // Keeps Progress from ever reading a % point ahead of the podcast lock screen, which
+    // gates at 25% and also floors (PodcastHost.tsx).
+    const ranks = Array.from({ length: 249 }, (_, i) => i + 1);
+    const u = renderScreen({ total: 1000, knownRanks: ranks });
+    expect(u.getByText('24')).toBeTruthy();
+  });
 });

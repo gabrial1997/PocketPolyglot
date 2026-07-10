@@ -50,7 +50,7 @@ export function PodcastHost({ onKeepLearning }: { onKeepLearning?: () => void } 
       .then((cov) => {
         if (!alive) return undefined;
         if (podcastLocked(cov)) {
-          const pct = cov.total > 0 ? Math.round((cov.knownRanks.length / cov.total) * 100) : 0;
+          const pct = cov.total > 0 ? Math.floor((cov.knownRanks.length / cov.total) * 100) : 0;
           setState({ status: 'locked', pct });
           return undefined;
         }
