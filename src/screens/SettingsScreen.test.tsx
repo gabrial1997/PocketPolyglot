@@ -20,6 +20,8 @@ function setup(over: Partial<SettingsScreenProps> = {}) {
     onOpenSupportSite: jest.fn(),
     onChangePassword: jest.fn(),
     passwordResetState: 'idle',
+    hapticsEnabled: true,
+    onToggleHaptics: jest.fn(),
     ...over,
   };
   const u = render(
@@ -199,4 +201,21 @@ it('without resetError, the reset row reads the normal "Reset progress" label', 
   const { u } = setup({ dev: { ...devProps, resetError: false } });
   expect(u.getByText('Reset progress')).toBeTruthy();
   expect(u.queryByText('Reset failed — tap to retry')).toBeNull();
+});
+
+it('renders the Haptic feedback toggle on and flips it off', () => {
+  const { u, props } = setup();
+  expect(u.getByText('Haptic feedback')).toBeTruthy();
+  const sw = u.getByLabelText('Toggle haptic feedback');
+  expect(sw.props.accessibilityState.checked).toBe(true);
+  fireEvent.press(sw);
+  expect(props.onToggleHaptics).toHaveBeenCalledWith(false);
+});
+
+it('reflects a disabled toggle and flips it on', () => {
+  const { u, props } = setup({ hapticsEnabled: false });
+  const sw = u.getByLabelText('Toggle haptic feedback');
+  expect(sw.props.accessibilityState.checked).toBe(false);
+  fireEvent.press(sw);
+  expect(props.onToggleHaptics).toHaveBeenCalledWith(true);
 });

@@ -6,6 +6,7 @@ import Constants from 'expo-constants';
 import type { User } from '@supabase/supabase-js';
 import { useAuth } from '../auth/AuthProvider';
 import { useThemeMode } from '../theme/ThemeProvider';
+import { useHaptics } from '../haptics';
 import { useServices } from '../services/ServiceProvider';
 import { supabase } from '../services';
 import { devNow, getOffsetDays, loadClockOffset, skipDay } from '../services/devClock';
@@ -27,6 +28,7 @@ function firstName(user: User | null): string | undefined {
 export function SettingsHost(): React.JSX.Element {
   const { user, signOut } = useAuth();
   const { mode, setMode } = useThemeMode();
+  const { enabled: hapticsEnabled, setEnabled: setHapticsEnabled } = useHaptics();
   const { profile } = useServices();
   const [recConsent, setRecConsent] = useState(false);
 
@@ -168,6 +170,8 @@ export function SettingsHost(): React.JSX.Element {
           .catch(() => setPasswordResetState('error'));
       }}
       passwordResetState={passwordResetState}
+      hapticsEnabled={hapticsEnabled}
+      onToggleHaptics={setHapticsEnabled}
       dev={dev}
     />
   );
