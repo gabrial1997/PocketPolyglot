@@ -335,10 +335,10 @@ describe('createCardHandlers — the core loop reaches every service', () => {
 });
 
 describe('onUnlocked haptics', () => {
-  it('fires the unlock haptic alongside the chime', () => {
+  it('fires the unlock haptic alongside the chime, independent of UNLOCK_CHIME_URL', () => {
     jest.useFakeTimers();
     try {
-      const { audio } = fakeAudio();
+      const { audio, calls } = fakeAudio();
       const unlock = jest.fn();
       const store: RecordingStore = { current: null };
       const handlers = createCardHandlers({
@@ -351,6 +351,14 @@ describe('onUnlocked haptics', () => {
         haptics: { unlock },
       });
       const cancel = handlers.onUnlocked();
+      // The haptic must fire exactly once regardless of whether a chime URL is configured —
+      // branch on the imported const (same pattern as the neighboring `onUnlocked` test above)
+      // to stay deterministic in any jest env.
+      if (UNLOCK_CHIME_URL) {
+        expect(calls).toEqual([{ url: UNLOCK_CHIME_URL, opts: undefined }]);
+      } else {
+        expect(calls).toHaveLength(0);
+      }
       expect(unlock).toHaveBeenCalledTimes(1);
       cancel();
     } finally {

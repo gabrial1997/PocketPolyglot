@@ -84,6 +84,13 @@ export function HapticsProvider({ children }: { children: React.ReactNode }): Re
     };
   }, []);
 
+  // Trigger identity must stay stable across toggle flips: `unlock` sits in
+  // useReviewCardHandlers' useMemo deps, and PhraseUnlock re-fires its onUnlocked effect
+  // whenever the reference it received changes. Build the triggers once (they read
+  // enabledRef per fire, so they're functionally correct regardless), and only rebuild the
+  // toggle state below.
+  const triggers = useMemo(() => createTriggers(() => enabledRef.current), [enabledRef]);
+
   const value = useMemo<HapticsContextValue>(() => {
     const setEnabled = (next: boolean): void => {
       setEnabledState(next);
@@ -93,8 +100,8 @@ export function HapticsProvider({ children }: { children: React.ReactNode }): Re
         /* best-effort persistence */
       }
     };
-    return { ...createTriggers(() => enabledRef.current), enabled, setEnabled };
-  }, [enabled]);
+    return { ...triggers, enabled, setEnabled };
+  }, [triggers, enabled]);
 
   return <HapticsContext.Provider value={value}>{children}</HapticsContext.Provider>;
 }

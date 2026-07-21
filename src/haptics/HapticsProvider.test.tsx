@@ -6,7 +6,7 @@ import { Text, Platform } from 'react-native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { HapticsProvider, useHaptics, createTriggers } from './HapticsProvider';
+import { HapticsProvider, useHaptics, createTriggers, type HapticTriggers } from './HapticsProvider';
 
 const impact = Haptics.impactAsync as jest.Mock;
 const notify = Haptics.notificationAsync as jest.Mock;
@@ -67,6 +67,19 @@ function Probe(): React.JSX.Element {
   );
 }
 
+// Records the `correct` trigger reference on every render — used to pin that trigger identity
+// survives an `enabled` toggle flip (downstream memo/effect deps, e.g. PhraseUnlock's
+// onUnlocked effect, rely on this).
+function CaptureProbe({ captured }: { captured: Array<HapticTriggers['correct']> }): React.JSX.Element {
+  const h = useHaptics();
+  captured.push(h.correct);
+  return (
+    <Text testID="capture-probe" onLongPress={() => h.setEnabled(!h.enabled)}>
+      {h.enabled ? 'on' : 'off'}
+    </Text>
+  );
+}
+
 describe('HapticsProvider', () => {
   it('defaults to enabled and fires', () => {
     const u = render(
@@ -103,6 +116,21 @@ describe('HapticsProvider', () => {
     );
     await act(async () => {}); // let the hydrate effect resolve
     expect(u.getByTestId('probe').props.children).toBe('off');
+  });
+
+  it('keeps trigger identity stable across an enabled toggle flip', async () => {
+    const captured: Array<HapticTriggers['correct']> = [];
+    const u = render(
+      <HapticsProvider>
+        <CaptureProbe captured={captured} />
+      </HapticsProvider>,
+    );
+    const before = captured[captured.length - 1];
+    await act(async () => {
+      fireEvent(u.getByTestId('capture-probe'), 'longPress'); // setEnabled(false)
+    });
+    const after = captured[captured.length - 1];
+    expect(Object.is(before, after)).toBe(true);
   });
 
   it('useHaptics OUTSIDE the provider falls back to always-on triggers (no throw)', () => {
