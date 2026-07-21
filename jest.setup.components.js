@@ -19,3 +19,12 @@ jest.mock('expo-audio', () => ({
   })),
   setAudioModeAsync: jest.fn(async () => undefined),
 }));
+
+// Mock expo-haptics: the native module isn't present under jest. The haptics tests assert against
+// these jest.fn()s; everywhere else the mock just lets components that call useHaptics() load.
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(async () => undefined),
+  notificationAsync: jest.fn(async () => undefined),
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
+  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
+}));
