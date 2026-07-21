@@ -5,6 +5,7 @@ import React from 'react';
 import { Pressable, View, StyleSheet } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeProvider';
+import { useHaptics } from '../haptics';
 import { hexA, sizing } from '../theme/tokens';
 
 export function MicOrb({
@@ -17,12 +18,18 @@ export function MicOrb({
   onPress?: () => void;
 }): React.JSX.Element {
   const T = useTheme();
+  const haptics = useHaptics();
   const REC = T.record; // '#C0485A'
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={rec ? 'Stop recording' : 'Record'}
-      onPress={onPress}
+      onPress={() => {
+        // Confirm the state change by feel: Medium = "mic is live", Light = release.
+        if (rec) haptics.recStop();
+        else haptics.recStart();
+        onPress?.();
+      }}
       style={[
         styles.orb,
         {
