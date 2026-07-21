@@ -96,8 +96,11 @@ export function createCardHandlers(deps: {
   submit: (result: CardResult) => void | Promise<void>;
   /** Step to the next item WITHOUT posting a review — the gate-card path (locked/unlock). */
   advance: () => void;
+  /** Optional unlock haptic (injected by useReviewCardHandlers; absent in pure-logic callers).
+   *  Fires regardless of the chime URL — the tactile beat must not depend on the audio env var. */
+  haptics?: { unlock: () => void };
 }): CardHandlers {
-  const { item, audio, recorder, store, submit, advance } = deps;
+  const { item, audio, recorder, store, submit, advance, haptics } = deps;
   return {
     onPlay: (which, rate) => {
       const p = resolvePlay(item, which);
@@ -150,6 +153,7 @@ export function createCardHandlers(deps: {
       advance();
     },
     onUnlocked: () => {
+      haptics?.unlock();
       // The card owns the chime via AudioService (never an audio context directly). Plays the
       // vendored/uploaded chime when UNLOCK_CHIME_URL resolves; a no-op only if it's null
       // (EXPO_PUBLIC_SUPABASE_URL unset — see its declaration).

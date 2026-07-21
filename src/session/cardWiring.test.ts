@@ -333,3 +333,47 @@ describe('createCardHandlers — the core loop reaches every service', () => {
     ]);
   });
 });
+
+describe('onUnlocked haptics', () => {
+  it('fires the unlock haptic alongside the chime', () => {
+    jest.useFakeTimers();
+    try {
+      const { audio } = fakeAudio();
+      const unlock = jest.fn();
+      const store: RecordingStore = { current: null };
+      const handlers = createCardHandlers({
+        item: item(),
+        audio,
+        recorder: fakeRecorder().recorder,
+        store,
+        submit: jest.fn(),
+        advance: jest.fn(),
+        haptics: { unlock },
+      });
+      const cancel = handlers.onUnlocked();
+      expect(unlock).toHaveBeenCalledTimes(1);
+      cancel();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('omitting the haptics dep is safe (logic callers, older tests)', () => {
+    jest.useFakeTimers();
+    try {
+      const { audio } = fakeAudio();
+      const store: RecordingStore = { current: null };
+      const handlers = createCardHandlers({
+        item: item(),
+        audio,
+        recorder: fakeRecorder().recorder,
+        store,
+        submit: jest.fn(),
+        advance: jest.fn(),
+      });
+      expect(() => handlers.onUnlocked()()).not.toThrow();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});
