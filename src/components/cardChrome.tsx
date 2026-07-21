@@ -9,6 +9,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, type ViewStyle, type DimensionValue } from 'react-native';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeProvider';
+import { useChoiceHaptic } from '../haptics';
 import { hexA, fonts, type } from '../theme/tokens';
 import { LiveWaveform } from './LiveWaveform';
 import { usePlayClip, FRAME_MS } from './usePlayClip';
@@ -218,6 +219,7 @@ export function GridChoiceButton({ label, state = 'idle', disabled = false, onPr
   label: string; state?: GridChoiceState; disabled?: boolean; onPress?: () => void;
 }): React.JSX.Element {
   const T = useTheme();
+  useChoiceHaptic(state);
   const isCorrect = state === 'correct', isWrong = state === 'wrong', isFaded = state === 'faded';
   const borderColor = isCorrect ? hexA(T.good, 0.5) : isWrong ? hexA(T.record, 0.45) : T.hair;
   const bg = isCorrect ? T.goodSoft : isWrong ? hexA(T.record, T.dark ? 0.12 : 0.07) : T.surface;
