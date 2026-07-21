@@ -3,6 +3,7 @@
 // services, per BACKEND_INTEGRATION §1/§4. Stage machine: meet -> contrast -> say -> done.
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import * as Haptics from 'expo-haptics';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { DiphthongDrillScreen } from './DiphthongDrillScreen';
 import type { ReviewItem } from '../types/reviewItem';
@@ -157,5 +158,27 @@ describe('DiphthongDrillScreen', () => {
       spoke: false,
     });
     expect(u.props.onRecordStart).not.toHaveBeenCalled();
+  });
+
+  describe('haptics', () => {
+    const impact = Haptics.impactAsync as jest.Mock;
+    const notify = Haptics.notificationAsync as jest.Mock;
+    beforeEach(() => jest.clearAllMocks());
+
+    it('fires a Light impact on the correct contrast pick', () => {
+      const u = renderCard();
+      toContrast(u);
+      fireEvent.press(u.getByText('lieta')); // pair.correct === 'a' ('lieta')
+      expect(impact).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it('fires an Error notification on the wrong contrast pick', () => {
+      const u = renderCard();
+      toContrast(u);
+      fireEvent.press(u.getByText('lēta')); // wrong side
+      expect(notify).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Error);
+      expect(impact).not.toHaveBeenCalled();
+    });
   });
 });

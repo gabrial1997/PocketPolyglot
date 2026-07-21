@@ -21,6 +21,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Screen, PlayOrb, MicOrb, LiveWaveform, usePlayClip, FRAME_MS, SpeedChip, type Speed } from '../components';
 import { CardIcon, ResultNote } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
+import { useHaptics } from '../haptics';
 import { hexA, fonts } from '../theme/tokens';
 import type { RecordingCardProps } from './cardProps';
 import type { ReviewPair } from '../types/reviewItem';
@@ -73,6 +74,7 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
   const { item, onPlay, onStop, onPreload, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange, recConsent = true } = props;
   // GDPR record gate: when false, hide the record affordance on the say-it-back stage.
   const T = useTheme();
+  const haptics = useHaptics();
   const pair = item.pair;
 
   // Playback speed is ephemeral card state (CLAUDE.md boundary); the chip drives it.
@@ -108,7 +110,12 @@ export function DrillScreen(props: RecordingCardProps): React.JSX.Element {
   const choose = (side: Side): void => {
     if (picked === null) {
       setPicked(side);
-      if (pair != null && side !== pair.correct) setMissed(true);
+      if (pair != null && side !== pair.correct) {
+        setMissed(true);
+        haptics.wrong();
+      } else {
+        haptics.correct();
+      }
     }
   };
 

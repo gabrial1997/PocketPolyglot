@@ -4,6 +4,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
+import * as Haptics from 'expo-haptics';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { DrillScreen } from './DrillScreen';
 import type { ReviewItem } from '../types/reviewItem';
@@ -154,5 +155,25 @@ describe('DrillScreen', () => {
       spoke: false,
     });
     expect(u.props.onRecordStart).not.toHaveBeenCalled();
+  });
+
+  describe('haptics', () => {
+    const impact = Haptics.impactAsync as jest.Mock;
+    const notify = Haptics.notificationAsync as jest.Mock;
+    beforeEach(() => jest.clearAllMocks());
+
+    it('fires a Light impact on the correct glyph pick', () => {
+      const u = renderCard();
+      fireEvent.press(u.getByText('sit')); // pair.correct === 'a' ('sit')
+      expect(impact).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it('fires an Error notification on the wrong glyph pick', () => {
+      const u = renderCard();
+      fireEvent.press(u.getByText('sīt')); // wrong side
+      expect(notify).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Error);
+      expect(impact).not.toHaveBeenCalled();
+    });
   });
 });
