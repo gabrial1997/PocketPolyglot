@@ -201,7 +201,15 @@ export function cardResultToRating(result: CardResult): Rating.Again | Rating.Go
 /** Once FSRS stability reaches this many days, we treat the card as 'mature'. */
 export const MATURE_STABILITY_DAYS = 21;
 
-const scheduler = fsrs();
+/**
+ * FSRS retention target. Stock 0.90 optimizes long-term review efficiency, but it gave a brand-new
+ * word a ~5-day first gap and a ~16-day second gap — too loose for early reinforcement (beta report
+ * 8b5ab652; founder decision 2026-07-22). 0.95 tightens the arc to roughly 2d → 7d → 22d. This is
+ * the ONE pacing knob: raise it for tighter loops (more daily reviews), lower it for fewer.
+ */
+export const REQUEST_RETENTION = 0.95;
+
+const scheduler = fsrs({ request_retention: REQUEST_RETENTION });
 
 /** Prior FSRS state pulled from a review_state row (all optional for a brand-new item). */
 export interface PriorSchedule {

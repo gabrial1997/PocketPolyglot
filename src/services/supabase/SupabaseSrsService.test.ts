@@ -1402,3 +1402,57 @@ describe('SupabaseSrsService.getDueBatch — phrase_components position ordering
     expect(ids.indexOf('p-tease')).toBe(ids.indexOf('w-new') - 1);
   });
 });
+
+describe('SupabaseSrsService.getDueBatch — phrase candidates are tier-ordered', () => {
+  // Beta report 44a3116c: a T2 phrase surfaced among the very first phrases because candidates
+  // were served purely in created_at/id (CSV import) order. Founder decision 2026-07-22: order
+  // unlockable phrase candidates by utility tier (1 = highest) first, insertion order within a
+  // tier, tierless rows last — so T1 everyday phrases surface before T2/T3.
+  it('a T1 phrase beats an earlier-created T2 phrase into the batch', async () => {
+    const now = new Date();
+    // Both phrases are one-away teasers anchored on the same known+recalled lemma, unlocked by
+    // the same new word — identical in every way except tier and created_at. The T2 row is
+    // created FIRST, so insertion order alone would admit it first; tier order must win.
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [
+        contentRow('w-new', { utility_rank: 1, envelope: [0.5], native_url: 'w-new.mp3', word_class: 'concrete' }),
+      ],
+      phrases: [
+        contentRow('p-t2', { envelope: [0.5], tier: 2, created_at: new Date(now.getTime() - 20_000).toISOString() }),
+        contentRow('p-t1', { envelope: [0.5], tier: 1, created_at: new Date(now.getTime() - 10_000).toISOString() }),
+      ],
+      phrase_components: [
+        { phrase_id: 'p-t2', lemma_id: 'k-anchor', position: 0 },
+        { phrase_id: 'p-t2', lemma_id: 'w-new', position: 1 },
+        { phrase_id: 'p-t1', lemma_id: 'k-anchor', position: 0 },
+        { phrase_id: 'p-t1', lemma_id: 'w-new', position: 1 },
+      ],
+      minimal_pairs: [],
+      review_log: [
+        {
+          id: 'log-1',
+          user_id: 'u1',
+          item_type: 'lemma',
+          item_id: 'k-anchor',
+          card_kind: 'word/hear',
+          correct: true,
+          created_at: new Date(now.getTime() - 5000).toISOString(),
+        },
+      ],
+      known_lemmas: [{ user_id: 'u1', lemma_id: 'k-anchor' }],
+      profiles: [{ id: 'u1', created_at: new Date(now.getTime() - 3 * 86_400_000).toISOString() }],
+    };
+    const svc = makeSvc(tables, {}, now);
+
+    const batch = await svc.getDueBatch();
+    const ids = batch.map((i) => i.id);
+
+    expect(ids).toContain('p-t1');
+    // Tier 1 must be served ahead of the earlier-created tier 2.
+    const t1At = ids.indexOf('p-t1');
+    const t2At = ids.indexOf('p-t2');
+    expect(t1At).toBeGreaterThanOrEqual(0);
+    if (t2At !== -1) expect(t1At).toBeLessThan(t2At);
+  });
+});

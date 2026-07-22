@@ -13,6 +13,21 @@ export function cardKindToTemplate(cardKind: string): ReviewTemplate {
   return PRODUCTION_CARD_KINDS.has(cardKind) ? 'pronunciation' : 'recognition';
 }
 
+// First-exposure teach cards: ungraded exposures that must NOT advance FSRS (spec §3 "ungraded
+// exposures count nothing"; founder decision 2026-07-22 after beta report 8b5ab652 — the teach
+// card's phantom Good inflated day-1 stability). Deliberately EXCLUDES phrase/hear: renderFor
+// serves it as the MC fallback for distractor-less due phrases, so exempting it would freeze
+// those rows' schedules (the known re-admitted-forever class of bug).
+export const TEACH_CARD_KINDS = new Set<string>([
+  'word/learn-function',
+  'word/learn-concrete',
+  'word/learn-abstract',
+]);
+
+export function isTeachCard(cardKind: string): boolean {
+  return TEACH_CARD_KINDS.has(cardKind);
+}
+
 /**
  * The single rep-counting rule (spec 2026-07-05 §3).
  * Production cards (speak steps) count on COMPLETION — they don't grade pronunciation,
