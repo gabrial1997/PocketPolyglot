@@ -29,3 +29,6 @@ yarn-error.*
 # Ephemeral live-session scratch (tunnel URL + PIDs — never commit)
 LIVE_SESSION.md
 .superpowers/
+
+# session worktrees (never commit)
+.claude/worktrees/
