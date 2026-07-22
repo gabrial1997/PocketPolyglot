@@ -29,8 +29,10 @@ exports[`PhraseLocked renders the locked state from item data (snapshot) 1`] = `
     <View
       style={
         {
-          "alignItems": "flex-start",
-          "paddingTop": 6,
+          "alignItems": "center",
+          "flex": 1,
+          "justifyContent": "center",
+          "paddingBottom": 60,
         }
       }
     >
@@ -51,34 +53,31 @@ exports[`PhraseLocked renders the locked state from item data (snapshot) 1`] = `
       >
         UPCOMING PHRASE
       </Text>
-    </View>
-    <View
-      style={
-        {
-          "alignItems": "center",
-          "flex": 1,
-          "justifyContent": "center",
-          "paddingBottom": 60,
-        }
-      }
-    >
-      <Text
+      <View
         style={
           {
-            "color": "rgba(26,39,51,0.34)",
-            "fontFamily": "Spectral_500Medium",
-            "fontSize": 32,
-            "fontWeight": "500",
-            "letterSpacing": -0.5,
-            "lineHeight": 40,
-            "textAlign": "center",
+            "marginTop": 22,
           }
         }
       >
-        <Text>
-          Labrīt!
+        <Text
+          style={
+            {
+              "color": "rgba(26,39,51,0.34)",
+              "fontFamily": "Spectral_500Medium",
+              "fontSize": 32,
+              "fontWeight": "500",
+              "letterSpacing": -0.5,
+              "lineHeight": 40,
+              "textAlign": "center",
+            }
+          }
+        >
+          <Text>
+            Labrīt!
+          </Text>
         </Text>
-      </Text>
+      </View>
       <View
         style={
           {

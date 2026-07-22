@@ -26,12 +26,15 @@ export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.El
 
   return (
     <Screen>
-      <View style={styles.head}>
-        <Eyebrow>Upcoming phrase</Eyebrow>
-      </View>
-
+      {/* Eyebrow lives INSIDE the centered body (like phrase/hear) — a top-of-screen head row sat
+          underneath the floating session chrome and collided with the close button + progress bar
+          (beta report 2026-06-26). */}
       <View style={styles.body}>
-        <PhraseLine phrase={item.target} dim size={32} />
+        <Eyebrow>Upcoming phrase</Eyebrow>
+
+        <View style={{ marginTop: 22 }}>
+          <PhraseLine phrase={item.target} dim size={32} />
+        </View>
 
         <View style={styles.hintRow}>
           <CardIcon name="lock" size={15} color={T.faint} />
@@ -61,7 +64,6 @@ export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.El
 }
 
 const styles = StyleSheet.create({
-  head: { paddingTop: 6, alignItems: 'flex-start' },
   body: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 60 },
   hintRow: { flexDirection: 'row', alignItems: 'center', columnGap: 8, marginTop: 28 },
   hint: { fontSize: 15 },
