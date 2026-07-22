@@ -46,7 +46,7 @@ export class ExpoAudioService implements AudioService {
     for (const l of this.listeners) l(status);
   }
 
-  async play(url: string, opts?: { rate?: number }): Promise<void> {
+  async play(url: string, opts?: { rate?: number; onFinish?: () => void }): Promise<void> {
     const myGen = ++this.gen;
     // Tear down the previous player SYNCHRONOUSLY, before the first await — so a second tap (which
     // bumps `gen`) sees a cleared player immediately. Not via stop(): that would bump gen again.
@@ -84,6 +84,9 @@ export class ExpoAudioService implements AudioService {
         // expo-audio reports currentTime/duration in SECONDS — convert to ms for the UI bridge.
         this.emit({ playing: false, positionMs: status.duration * 1000, durationMs: status.duration * 1000 });
         player.remove();
+        // Natural completion only — the gen guard above already filtered superseded players,
+        // and stop() tears down without ever reaching this branch.
+        opts?.onFinish?.();
         return;
       }
       this.emit({

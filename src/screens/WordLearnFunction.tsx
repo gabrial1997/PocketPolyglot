@@ -34,7 +34,7 @@ export function WordLearnFunction({ item, onPlay, onStop, onPreload, onComplete,
           <WordTag label={tag.label} tone={tag.tone} />
         </HeadRow>
         <WordHero size={52}>{item.target}</WordHero>
-        <GlossLine gloss={item.gloss} pron={item.pron} size={17} />
+        <GlossLine gloss={item.gloss} pron={item.pron} size={17} strong />
         <LiteralNote literal={item.literal} usageNote={item.usageNote} />
         <View style={styles.examples}>
           {(item.examples ?? []).map((ex, i) => (

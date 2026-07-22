@@ -36,7 +36,7 @@ function item(overrides: Partial<ReviewItem> = {}): ReviewItem {
 
 // Hand-rolled fakes (real behavior, not jest.fn mocks of a module) that record their calls.
 function fakeAudio() {
-  const calls: { url: string; opts?: { rate?: number } }[] = [];
+  const calls: { url: string; opts?: { rate?: number; onFinish?: () => void } }[] = [];
   const preloads: string[] = [];
   let stops = 0;
   const audio: AudioService = {
@@ -196,6 +196,73 @@ describe('createCardHandlers — the core loop reaches every service', () => {
     handlers.onPlayCompare('you');
     handlers.onPlayCompare('native');
     expect(calls).toEqual([{ url: 'rec://take1', opts: undefined }, { url: 'native.mp3', opts: undefined }]);
+  });
+
+  it('onPlayCompare("you") while recorder.stop() is in flight plays the take once it lands (no silent no-op)', async () => {
+    const { audio } = fakeAudio();
+    let resolveStop!: (take: string) => void;
+    const recorder: RecorderService = {
+      async start() {},
+      stop: () => new Promise<string>((res) => (resolveStop = res)),
+      isRecording: () => false,
+    };
+    const store: RecordingStore = { current: null };
+    const calls: { url: string; opts?: { rate?: number; onFinish?: () => void } }[] = [];
+    const spyAudio: AudioService = { ...audio, async play(url, opts) { calls.push({ url, opts }); } };
+    const handlers = createCardHandlers({
+      item: item(),
+      audio: spyAudio,
+      recorder,
+      store,
+      submit: () => undefined,
+      advance: () => undefined,
+    });
+
+    handlers.onRecordStop(); // stop is in flight
+    handlers.onPlayCompare('you'); // tester taps "You" immediately
+    expect(calls).toHaveLength(0); // nothing to play *yet* — but the tap must not be dropped
+
+    resolveStop('rec://take1');
+    await store.pending;
+    await Promise.resolve();
+    expect(calls).toEqual([{ url: 'rec://take1', opts: undefined }]);
+  });
+
+  it('onPlayCompare("both") plays the native clip, then the captured take when it finishes', () => {
+    const { handlers, calls, store } = setup();
+    store.current = 'rec://take1';
+    handlers.onPlayCompare('both');
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.url).toBe('native.mp3');
+    const onFinish = calls[0]?.opts?.onFinish;
+    expect(typeof onFinish).toBe('function');
+    onFinish?.(); // native clip finished
+    expect(calls).toHaveLength(2);
+    expect(calls[1]).toEqual({ url: 'rec://take1', opts: undefined });
+  });
+
+  it('onPlayCompare("both") slows the native clip only — the take always plays natural', () => {
+    const { handlers, calls, store } = setup();
+    store.current = 'rec://take1';
+    handlers.onPlayCompare('both', SLOW_RATE);
+    expect(calls[0]?.opts?.rate).toBe(SLOW_RATE);
+    calls[0]?.opts?.onFinish?.();
+    expect(calls[1]).toEqual({ url: 'rec://take1', opts: undefined });
+  });
+
+  it('onPlayCompare("both") with no native clip plays just the take', () => {
+    const { audio, calls } = fakeAudio();
+    const store: RecordingStore = { current: 'rec://take1' };
+    const handlers = createCardHandlers({
+      item: item({ audio: undefined }),
+      audio,
+      recorder: fakeRecorder().recorder,
+      store,
+      submit: () => undefined,
+      advance: () => undefined,
+    });
+    handlers.onPlayCompare('both');
+    expect(calls).toEqual([{ url: 'rec://take1', opts: undefined }]);
   });
 
   it('onComplete submits the result with the captured recording merged in', () => {

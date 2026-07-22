@@ -148,7 +148,7 @@ export function WordPicReview(props: Props): React.JSX.Element {
               {/* No recording can exist without consent — never offer a "You" playback that is silent. */}
               {recConsent ? <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} /> : null}
             </View>
-            {hasAudio && recConsent ? <PlayBackToBack onPress={() => onPlayCompare?.('native')} /> : null}
+            {hasAudio && recConsent ? <PlayBackToBack onPress={() => onPlayCompare?.('both')} /> : null}
             <ResultNote>{loopResultNote(m.missed, item.reviewPreview)}</ResultNote>
           </CardBody>
           <CardFooter>

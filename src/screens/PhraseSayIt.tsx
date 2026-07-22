@@ -89,7 +89,7 @@ export function PhraseSayIt(props: RecordingCardProps): React.JSX.Element {
 
             {recConsent ? (
               <View style={{ marginTop: 18 }}>
-                <PlayBackToBack onPress={() => onPlayCompare?.('native', speed)} />
+                <PlayBackToBack onPress={() => onPlayCompare?.('both', speed)} />
               </View>
             ) : null}
             <View style={{ marginTop: 12 }}>

@@ -153,7 +153,7 @@ export function WordSay(props: Props): React.JSX.Element {
               {/* No recording can exist without consent — never offer a "You" playback that is silent. */}
               {recConsent ? <CompareRow label="You" icon="mic" onPress={() => onPlayCompare?.('you')} /> : null}
             </View>
-            {recConsent && hasAudio ? <PlayBackToBack onPress={() => onPlayCompare?.('native')} /> : null}
+            {recConsent && hasAudio ? <PlayBackToBack onPress={() => onPlayCompare?.('both')} /> : null}
             <ResultNote>{loopResultNote(m.missed, item.reviewPreview)}</ResultNote>
           </CardBody>
           <CardFooter>

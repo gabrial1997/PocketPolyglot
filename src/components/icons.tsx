@@ -104,13 +104,17 @@ export function BarsIcon({ size = 22, color, strokeWidth = 1.8 }: IconProps): Re
   );
 }
 
-export function SettingsIcon({ size = 22, color, strokeWidth = 1.8 }: IconProps): React.JSX.Element {
+export function SettingsIcon({ size = 22, color, strokeWidth = 2.1 }: IconProps): React.JSX.Element {
+  // Classic 8-lobe cog (Feather "settings", MIT) — replaces a hand-drawn 12-point zigzag rim that
+  // read as wonky next to the geometric Calendar/Sound/Bars tab icons. The widened viewBox scales
+  // the full-bleed 24-grid path down so its optical size matches its tab-bar neighbors (and the
+  // default strokeWidth is 2.1 so the drawn stroke still matches the set's 1.8 after that scaling).
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx={12} cy={12} r={3.2} stroke={color} strokeWidth={strokeWidth} />
+    <Svg width={size} height={size} viewBox="-2 -2 28 28" fill="none">
+      <Circle cx={12} cy={12} r={3} stroke={color} strokeWidth={strokeWidth} />
       <Path
-        d="M12 3.5l1.4 2.2 2.6-.5.9 2.5 2.4 1.1-.5 2.6 1.7 2-1.7 2 .5 2.6-2.4 1.1-.9 2.5-2.6-.5L12 20.5l-1.4-2.2-2.6.5-.9-2.5-2.4-1.1.5-2.6L3 12l1.7-2-.5-2.6 2.4-1.1.9-2.5 2.6.5z"
-        stroke={color} strokeWidth={strokeWidth} strokeLinejoin="round"
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+        stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
       />
     </Svg>
   );

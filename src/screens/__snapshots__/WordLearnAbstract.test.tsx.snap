@@ -121,8 +121,11 @@ exports[`WordLearnAbstract renders the mnemonic from item data (snapshot) 1`] = 
               "textAlign": "center",
             },
             {
-              "color": "rgba(26,39,51,0.58)",
+              "color": "#1A2733",
               "fontSize": 17,
+            },
+            {
+              "fontWeight": "500",
             },
           ]
         }
@@ -132,6 +135,7 @@ exports[`WordLearnAbstract renders the mnemonic from item data (snapshot) 1`] = 
           style={
             {
               "color": "rgba(26,39,51,0.34)",
+              "fontWeight": "400",
             }
           }
         >

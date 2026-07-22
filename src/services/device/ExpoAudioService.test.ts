@@ -170,6 +170,34 @@ describe('ExpoAudioService.subscribe', () => {
   });
 });
 
+describe('ExpoAudioService play({ onFinish }) — backs the real back-to-back compare', () => {
+  it('fires onFinish exactly once when the clip plays to completion', async () => {
+    const svc = new ExpoAudioService();
+    const onFinish = jest.fn();
+    await svc.play('a.mp3', { onFinish });
+    lastStatusCb()({ playing: false, didJustFinish: true, currentTime: 2, duration: 2 });
+    expect(onFinish).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not fire onFinish for a superseded player (a newer tap won)', async () => {
+    const svc = new ExpoAudioService();
+    const onFinish = jest.fn();
+    await svc.play('a.mp3', { onFinish });
+    const stale = lastStatusCb();
+    await svc.play('b.mp3'); // supersedes a.mp3; bumps gen
+    stale({ playing: false, didJustFinish: true, currentTime: 2, duration: 2 });
+    expect(onFinish).not.toHaveBeenCalled();
+  });
+
+  it('does not fire onFinish when stop() cuts the clip short', async () => {
+    const svc = new ExpoAudioService();
+    const onFinish = jest.fn();
+    await svc.play('a.mp3', { onFinish });
+    await svc.stop();
+    expect(onFinish).not.toHaveBeenCalled();
+  });
+});
+
 describe('ensureAudioMode retry (silent-switch config)', () => {
   // The ready flag is module-scoped, so this suite re-requires a FRESH module instance (and a
   // fresh expo-audio mock) via resetModules — the earlier suites have already flipped the flag.

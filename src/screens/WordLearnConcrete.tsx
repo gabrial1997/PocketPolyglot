@@ -39,7 +39,7 @@ export function WordLearnConcrete({ item, onPlay, onStop, onPreload, onComplete,
         </HeadRow>
         <CardImage media={item.media} word={item.target} full height={180} />
         <WordHero size={52}>{item.target}</WordHero>
-        <GlossLine gloss={item.gloss} pron={item.pron} size={17} />
+        <GlossLine gloss={item.gloss} pron={item.pron} size={17} strong />
         <LiteralNote literal={item.literal} usageNote={item.usageNote} />
         {hasAudio ? (
           <View style={styles.audio}>

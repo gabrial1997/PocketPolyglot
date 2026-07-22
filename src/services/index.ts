@@ -8,9 +8,11 @@ import type { Rung } from '../session/ladder';
 
 export type { PlaybackStatus } from '../types/playback';
 
-/** Playback. Cards call this via their onPlay callbacks; the orb visual follows the promise. */
+/** Playback. Cards call this via their onPlay callbacks; the orb visual follows the promise.
+ *  `onFinish` fires only when the clip plays to completion — never on stop() or when a newer
+ *  play() supersedes it (that's what makes the back-to-back compare chain safe to build on). */
 export interface AudioService {
-  play(url: string, opts?: { rate?: number }): Promise<void>;
+  play(url: string, opts?: { rate?: number; onFinish?: () => void }): Promise<void>;
   stop(): Promise<void>;
   isPlaying(): boolean;
   /** Warm a player for `url` so the next play(url) starts without a load/decode stall. Idempotent. */

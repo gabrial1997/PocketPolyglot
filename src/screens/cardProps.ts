@@ -36,7 +36,7 @@ export interface RecordingCardProps extends BaseCardProps {
    */
   onRecordStop: (recording?: Blob | string) => void;
   /** Play a compare clip. An explicit `rate` (the SpeedChip) slows the native model only. */
-  onPlayCompare?: (which: 'native' | 'you', rate?: number) => void;
+  onPlayCompare?: (which: 'native' | 'you' | 'both', rate?: number) => void;
   /** GDPR record gate. When false, hide the record affordance. Defaults to true so existing fixtures are unaffected. */
   recConsent?: boolean;
 }

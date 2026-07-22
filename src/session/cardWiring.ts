@@ -60,7 +60,8 @@ export interface CardHandlers {
   onAnswer: (value: string, correct: boolean) => void;
   onRecordStart: () => void;
   onRecordStop: (recording?: Blob | string) => void;
-  onPlayCompare: (which: 'native' | 'you', rate?: number) => void;
+  /** 'both' = the real back-to-back: native clip, then the learner's take when it finishes. */
+  onPlayCompare: (which: 'native' | 'you' | 'both', rate?: number) => void;
   /** Stop the currently-playing clip (backs the PlayOrb play/pause toggle). */
   onStop: () => void;
   /** Warm the clip for `which` so its first tap starts without a load stall (bug 1). */
@@ -123,15 +124,35 @@ export function createCardHandlers(deps: {
       });
     },
     onPlayCompare: (which, rate) => {
-      const url = which === 'you' ? store.current : item.audio?.nativeUrl;
-      // A SpeedChip rate slows the native model only; the user's own take always plays natural.
+      // The user's own take always plays natural — a SpeedChip rate slows the native model only.
       // KNOWN PLATFORM HOLE: on web, RecorderService.stop() returns a Blob, so the string guard
-      // makes onPlayCompare('you') a silent no-op there (AudioService.play takes a URL). iOS —
-      // the shipping target — returns a file URI and works. Web Blob playback (objectURL or a
+      // makes the 'you' leg a silent no-op there (AudioService.play takes a URL). iOS — the
+      // shipping target — returns a file URI and works. Web Blob playback (objectURL or a
       // web-aware AudioService) is deliberately deferred; do not "fix" by passing the Blob through.
-      if (typeof url === 'string' && url) {
-        void audio.play(url, which === 'native' && rate != null ? { rate } : undefined);
+      const playYou = (): void => {
+        const take = store.current;
+        if (typeof take === 'string' && take) void audio.play(take);
+      };
+      // A tap can land while recorder.stop() is still in flight (store.current not yet set) —
+      // wait for the take instead of silently dropping the tap. A failed stop stays a no-op.
+      const playYouWhenReady = (): void => {
+        if (store.current == null && store.pending) void store.pending.then(playYou, () => undefined);
+        else playYou();
+      };
+      if (which === 'you') {
+        playYouWhenReady();
+        return;
       }
+      const nativeUrl = item.audio?.nativeUrl;
+      if (which === 'both') {
+        // Real back-to-back (the button's promise): native clip, then the learner's take when the
+        // native clip finishes. onFinish never fires on stop()/supersede, so a second tap or an
+        // exit can't chain a stray 'you' playback. Without a native clip, just play the take.
+        if (nativeUrl) void audio.play(nativeUrl, { ...(rate != null ? { rate } : {}), onFinish: playYouWhenReady });
+        else playYouWhenReady();
+        return;
+      }
+      if (nativeUrl) void audio.play(nativeUrl, rate != null ? { rate } : undefined);
     },
     onStop: () => {
       void audio.stop();

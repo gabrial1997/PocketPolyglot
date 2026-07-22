@@ -63,12 +63,15 @@ export function WordHero({ children, size = type.wordHero }: { children: React.R
   const T = useTheme();
   return <Text style={{ color: T.ink, fontFamily: fonts.headline, fontSize: size, letterSpacing: type.wordHeroSpacing, lineHeight: Math.round(size * 1.18), textAlign: 'center' }}>{children}</Text>;
 }
-export function GlossLine({ gloss, pron, size = 16 }: { gloss: string; pron?: string; size?: number }): React.JSX.Element {
+// `strong` renders the gloss at full ink contrast (pron stays faint) — for first-exposure teach
+// cards, where the English meaning IS the payload and the muted `sub` tone read as too dim
+// (beta report 2026-07-22: “make the translated word a bit more visible”).
+export function GlossLine({ gloss, pron, size = 16, strong = false }: { gloss: string; pron?: string; size?: number; strong?: boolean }): React.JSX.Element {
   const T = useTheme();
   return (
-    <Text style={[chrome.center, { color: T.sub, fontSize: size }]}>
+    <Text style={[chrome.center, { color: strong ? T.ink : T.sub, fontSize: size }, strong ? { fontWeight: '500' } : null]}>
       {gloss}
-      {pron ? <Text style={{ color: T.faint }}> · {pron}</Text> : null}
+      {pron ? <Text style={{ color: T.faint, fontWeight: '400' }}> · {pron}</Text> : null}
     </Text>
   );
 }

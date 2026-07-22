@@ -145,8 +145,11 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
               "textAlign": "center",
             },
             {
-              "color": "rgba(26,39,51,0.58)",
+              "color": "#1A2733",
               "fontSize": 17,
+            },
+            {
+              "fontWeight": "500",
             },
           ]
         }
@@ -156,6 +159,7 @@ exports[`WordLearnConcrete renders the first-exposure view from item data (snaps
           style={
             {
               "color": "rgba(26,39,51,0.34)",
+              "fontWeight": "400",
             }
           }
         >
