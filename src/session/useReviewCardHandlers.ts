@@ -4,6 +4,7 @@
 // call useServices themselves (BACKEND_INTEGRATION §5).
 import { useMemo, useRef } from 'react';
 import { useServices } from '../services/ServiceProvider';
+import { useHaptics } from '../haptics';
 import { createCardHandlers, type CardHandlers, type RecordingStore } from './cardWiring';
 import type { ReviewItem } from '../types/reviewItem';
 import type { CardResult } from '../types/cardResult';
@@ -14,10 +15,11 @@ export function useReviewCardHandlers(
   advance: () => void,
 ): CardHandlers {
   const { audio, recorder } = useServices();
+  const { unlock } = useHaptics();
   // One take buffer per mounted card; survives re-renders without re-creating handlers.
   const store = useRef<RecordingStore>({ current: null }).current;
   return useMemo(
-    () => createCardHandlers({ item, audio, recorder, store, submit, advance }),
-    [item, audio, recorder, store, submit, advance],
+    () => createCardHandlers({ item, audio, recorder, store, submit, advance, haptics: { unlock } }),
+    [item, audio, recorder, store, submit, advance, unlock],
   );
 }

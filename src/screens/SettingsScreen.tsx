@@ -47,6 +47,9 @@ export interface SettingsScreenProps {
   onChangePassword: () => void;
   /** Reflects the last resetPasswordForEmail attempt on the password row. */
   passwordResetState: 'idle' | 'sent' | 'error';
+  /** Haptic feedback preference (HapticsProvider; host passes useHaptics().enabled). */
+  hapticsEnabled: boolean;
+  onToggleHaptics: (next: boolean) => void;
   /** Dev-only controls (host passes this ONLY under __DEV__; absent in production). */
   dev?: {
     simulatedDateLabel: string;
@@ -149,6 +152,18 @@ function SettingsMenu(
             title="Appearance"
             value={MODE_LABEL[props.themeMode]}
             onPress={props.onOpenAppearance}
+          />
+          <SettRow
+            icon="sparkle"
+            title="Haptic feedback"
+            chevron={false}
+            right={
+              <SettSwitch
+                on={props.hapticsEnabled}
+                onToggle={() => props.onToggleHaptics(!props.hapticsEnabled)}
+                accessibilityLabel="Toggle haptic feedback"
+              />
+            }
             isLast
           />
         </SettCard>

@@ -24,6 +24,7 @@ import { Screen, PlayOrb, MicOrb, LiveWaveform, usePlayClip, FRAME_MS, SpeedChip
 import { GlideTrack } from '../components/GlideTrack';
 import { CardIcon, ResultNote, WordTag } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
+import { useHaptics } from '../haptics';
 import { hexA, fonts } from '../theme/tokens';
 import type { RecordingCardProps } from './cardProps';
 
@@ -42,6 +43,7 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
   const { item, onPlay, onStop, onPreload, onRecordStart, onRecordStop, onComplete, speed: speedProp, onSpeedChange, recConsent = true } = props;
   // GDPR record gate: when false, hide the record affordance on the say stage.
   const T = useTheme();
+  const haptics = useHaptics();
   const glide = item.glide;
   const pair = item.pair;
 
@@ -166,7 +168,12 @@ export function DiphthongDrillScreen(props: RecordingCardProps): React.JSX.Eleme
   const choose = (side: Side): void => {
     if (picked === null) {
       setPicked(side);
-      if (pair != null && side !== pair.correct) setMissed(true);
+      if (pair != null && side !== pair.correct) {
+        setMissed(true);
+        haptics.wrong();
+      } else {
+        haptics.correct();
+      }
     }
   };
   const sideData = (side: Side) => pair && (side === 'a'

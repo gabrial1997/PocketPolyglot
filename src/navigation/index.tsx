@@ -8,6 +8,7 @@ import { useFonts } from 'expo-font';
 import type { User } from '@supabase/supabase-js';
 import { CardPreviewGallery } from '../dev/CardPreviewGallery';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
+import { HapticsProvider } from '../haptics';
 import { ServiceProvider, useServices } from '../services/ServiceProvider';
 import { AuthProvider, useAuth } from '../auth/AuthProvider';
 import { SignInScreen } from '../auth/SignInScreen';
@@ -383,16 +384,20 @@ export function App(): React.JSX.Element {
   if (isPreview()) {
     return (
       <ThemeProvider>
-        <CardPreviewGallery />
+        <HapticsProvider>
+          <CardPreviewGallery />
+        </HapticsProvider>
       </ThemeProvider>
     );
   }
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <StatusBar style="auto" />
-        <AuthGate />
-      </AuthProvider>
+      <HapticsProvider>
+        <AuthProvider>
+          <StatusBar style="auto" />
+          <AuthGate />
+        </AuthProvider>
+      </HapticsProvider>
     </ThemeProvider>
   );
 }

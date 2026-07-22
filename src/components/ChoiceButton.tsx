@@ -8,6 +8,7 @@ import React from 'react';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeProvider';
+import { useChoiceHaptic } from '../haptics';
 import { hexA, radii, sizing, type } from '../theme/tokens';
 
 export type ChoiceState = 'idle' | 'correct' | 'wrong' | 'faded';
@@ -26,6 +27,7 @@ export function ChoiceButton({
   onPress?: () => void;
 }): React.JSX.Element {
   const T = useTheme();
+  useChoiceHaptic(state);
   const isCorrect = state === 'correct';
   const isWrong = state === 'wrong';
   const isFaded = state === 'faded';
