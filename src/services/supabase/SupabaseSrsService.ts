@@ -27,7 +27,7 @@ import {
   rowToPrior,
   schedule,
 } from './mappers';
-import { cardKindToTemplate, repKind, type ReviewTemplate } from './cardTemplate';
+import { cardKindToTemplate, isTeachCard, repKind, type ReviewTemplate } from './cardTemplate';
 import {
   DAY_ONE_NEW_CAP,
   RETENTION_MINIMUM_SAMPLE,
@@ -304,7 +304,10 @@ export class SupabaseSrsService implements SrsService {
       ((stateData ?? []) as Array<{ item_id?: string }>).map(r => r.item_id).filter(Boolean) as string[]
     );
 
-    // Page through phrases in created_at/id order, skipping already-introduced, until we have enough.
+    // Page through phrases in tier → created_at → id order, skipping already-introduced, until we
+    // have enough. Tier (1 = highest utility, from phrases.csv; migration 0019) leads so T1
+    // everyday phrases surface before T2/T3 — insertion order alone let a mid-utility phrase be
+    // among the first met (beta report 44a3116c). Tierless rows sort last, keeping their old order.
     const TARGET = DAY_ONE_NEW_CAP * 4;
     const CHUNK = 200;
     const collectedRows: PhraseRow[] = [];
@@ -315,6 +318,7 @@ export class SupabaseSrsService implements SrsService {
       const { data: chunk, error: chunkErr } = await this.client
         .from('phrases')
         .select('*')
+        .order('tier', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: true })
         .order('id', { ascending: true })
         .range(offset, offset + CHUNK - 1);
@@ -899,7 +903,13 @@ export class SupabaseSrsService implements SrsService {
     const template = cardKindToTemplate(result.cardKind);
     const rating = cardResultToRating(result);
 
-    const { label } = await this.scheduleTemplateRow(itemType, result.itemId, template, rating, now);
+    // Teach cards are ungraded exposures — no retrieval happened, so FSRS must not hear a Good
+    // (TEACH_CARD_KINDS doc). The exposure is still review_log'd below; the item's schedule stays
+    // whatever admission seeded, and its first real grade is the arc's MC step later this session.
+    const teach = isTeachCard(result.cardKind);
+    const { label } = teach
+      ? { label: 'Next review later today' }
+      : await this.scheduleTemplateRow(itemType, result.itemId, template, rating, now);
 
     // getDueBatch() renders (and known_lemmas gates) off the recognition template ONLY. Under the
     // MC↔speak rotation, renderFor() can serve a 'speak' turn for a card whose only grade this
@@ -909,7 +919,7 @@ export class SupabaseSrsService implements SrsService {
     // though the learner keeps passing it via speak. Advance recognition's own schedule
     // (independent stability/difficulty) alongside it so due-ness keeps tracking real review
     // activity regardless of which turn (MC or speak) actually fired this round.
-    if (template !== 'recognition') {
+    if (!teach && template !== 'recognition') {
       await this.scheduleTemplateRow(itemType, result.itemId, 'recognition', rating, now);
     }
 

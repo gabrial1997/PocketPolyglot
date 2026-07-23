@@ -32,6 +32,7 @@ interface TemplateTestFake {
   client: never; // typed as `never` so SupabaseSrsService accepts it
   reviewStateSelects: Row[];
   reviewStateUpserts: CapturedUpsert[];
+  reviewLog: Row[];
 }
 
 function makeFakeClientForTemplateTest(opts: {
@@ -63,6 +64,7 @@ function makeFakeClientForTemplateTest(opts: {
   const wrapper = {
     get reviewStateSelects() { return reviewStateSelects; },
     get reviewStateUpserts() { return reviewStateUpserts; },
+    get reviewLog() { return reviewLog; },
     client: { from: fromTable } as never,
   };
 
@@ -238,5 +240,42 @@ describe('SupabaseSrsService.submit — per-template (Task 3)', () => {
     // must un-stick a stale recognition schedule, not leave it permanently due.
     expect(new Date(recogUpsert!.payload.due_at as string).getTime()).toBeGreaterThan(Date.now());
     expect(recogUpsert!.onConflict).toBe('user_id,item_type,item_id,template');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Teach cards are ungraded exposures — they must NOT advance FSRS.
+// Beta report 8b5ab652 follow-up (founder decision 2026-07-22): the first-exposure learn card
+// posted a Good with zero retrieval, inflating day-1 stability (spec §3: "ungraded exposures
+// count nothing"). The exposure is still review_log'd; the first real grade is the MC retrieval.
+// phrase/hear stays graded on purpose — it doubles as the MC-fallback for distractor-less due
+// phrases (renderFor), and exempting it would freeze those rows' schedules.
+// ---------------------------------------------------------------------------
+
+describe('SupabaseSrsService.submit — teach cards do not grade FSRS', () => {
+  it.each(['word/learn-function', 'word/learn-concrete', 'word/learn-abstract'])(
+    '%s logs the exposure but never reads or writes review_state',
+    async (kind) => {
+      const fake = makeFakeClientForTemplateTest({ priorStateByTemplate: {} });
+      const svc = new SupabaseSrsService(fake.client, 'user-1');
+
+      const res = await svc.submit({ itemId: 'lemma-1', cardKind: kind, spoke: false } as CardResult);
+
+      expect(fake.reviewStateSelects).toHaveLength(0);
+      expect(fake.reviewStateUpserts).toHaveLength(0);
+      // The exposure still lands in review_log (analytics + arc history).
+      expect(fake.reviewLog).toContainEqual(expect.objectContaining({ item_id: 'lemma-1', card_kind: kind }));
+      // The arc serves the MC step later this same session.
+      expect(res.nextReviewLabel).toBe('Next review later today');
+    },
+  );
+
+  it('phrase/hear still grades (it doubles as the distractor-less MC fallback)', async () => {
+    const fake = makeFakeClientForTemplateTest({ priorStateByTemplate: {} });
+    const svc = new SupabaseSrsService(fake.client, 'user-1');
+
+    await svc.submit({ itemId: 'phrase-1', cardKind: 'phrase/hear', spoke: false } as CardResult);
+
+    expect(fake.reviewStateUpserts.length).toBeGreaterThan(0);
   });
 });

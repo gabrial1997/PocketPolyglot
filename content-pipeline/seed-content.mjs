@@ -110,6 +110,8 @@ export function assemble({ rankedText, candidatesText, phrasesText }) {
     target: p.latvian,
     gloss_en: p.english,
     is_idiom: String(p.is_idiom).toLowerCase() === 'true',
+    // "T1"/"T2"/"T3" → 1/2/3 (candidate ordering, migration 0019); absent/unparseable → null.
+    tier: /^T\d$/i.test(String(p.tier ?? '')) ? Number(String(p.tier).slice(1)) : null,
     qa_status: 'draft',
     _components: p.component_lemmas,
   }));

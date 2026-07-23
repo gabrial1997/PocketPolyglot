@@ -60,6 +60,8 @@ export interface PhraseRow {
   // Literal/usage note (0008): the literal reading + a freeform usage nuance. Both null unless authored.
   literal_gloss: string | null;
   usage_note: string | null;
+  // Utility tier from phrases.csv (1 = highest; migration 0019). Drives candidate order; null last.
+  tier: number | null;
   created_at: string;
 }
 

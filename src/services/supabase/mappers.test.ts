@@ -58,6 +58,7 @@ function phrase(overrides: Partial<PhraseRow> = {}): PhraseRow {
     qa_status: 'locked',
     literal_gloss: null,
     usage_note: null,
+    tier: null,
     created_at: '2026-01-01T00:00:00Z',
     ...overrides,
   };
@@ -399,6 +400,47 @@ describe('schedule', () => {
     const good = schedule(prior, Rating.Good, now);
     const again = schedule(prior, Rating.Again, now);
     expect(good.due.getTime()).toBeGreaterThan(again.due.getTime());
+  });
+});
+
+// --- FSRS pacing: tightened early loop (request_retention 0.95) --------------
+// Beta report 8b5ab652 (2026-07-05): "words do not seem to come into review quick enough."
+// The stock 0.90 retention gave a new word a ~4-5 day first gap after its day-1 arc. At 0.95
+// the same trajectory is ~2d → ~7d → ~22d (founder decision 2026-07-22). These pin the felt
+// pacing, not exact FSRS internals, so a ts-fsrs upgrade can shift decimals without breaking.
+describe('FSRS pacing — request_retention 0.95', () => {
+  const t0 = new Date('2026-07-01T09:00:00Z');
+
+  /** Persist/reconstruct round-trip exactly as SupabaseSrsService does between grades. */
+  function roundTrip(n: ReturnType<typeof schedule>) {
+    return {
+      stability: n.stability,
+      difficulty: n.difficulty,
+      due: n.due,
+      reps: n.reps,
+      lapses: n.lapses,
+      stage: n.stage,
+      last_review: n.last_review,
+    };
+  }
+
+  it('after the day-1 arc a new word returns in ~2 days (was ~4-5 at stock retention)', () => {
+    // teach no longer grades (see submit tests) — day 1 = MC Good + speak-companion Good.
+    const mc = schedule({ reps: 0, stage: 'new' }, Rating.Good, t0);
+    const companion = schedule(roundTrip(mc), Rating.Good, new Date(t0.getTime() + 60_000));
+    const gapDays = (companion.due.getTime() - (t0.getTime() + 60_000)) / 86_400_000;
+    expect(gapDays).toBeGreaterThanOrEqual(1);
+    expect(gapDays).toBeLessThan(3.5);
+  });
+
+  it('one passed real review keeps the word inside ~2 weeks (was ~16 days)', () => {
+    const mc = schedule({ reps: 0, stage: 'new' }, Rating.Good, t0);
+    const companion = schedule(roundTrip(mc), Rating.Good, new Date(t0.getTime() + 60_000));
+    // pass it the day it comes due
+    const review = schedule(roundTrip(companion), Rating.Good, companion.due);
+    const gapDays = (review.due.getTime() - companion.due.getTime()) / 86_400_000;
+    expect(gapDays).toBeLessThan(14);
+    expect(gapDays).toBeGreaterThan(3);
   });
 });
 
