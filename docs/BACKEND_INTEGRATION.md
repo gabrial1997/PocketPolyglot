@@ -157,9 +157,42 @@ hands back (or hides it).
 
 ### `phrase/*`
 - `locked`/`unlock` are **gating UI** — the controller decides lock state from whether all
-  component word ids are in the known set; `unlock` fires `onUnlocked()` then auto-advances.
+  component lemma ids are in the **earned** set (see below); `unlock` fires `onUnlocked()` then
+  auto-advances.
+- The gate applies **only** to `item.stage === 'new'` phrases. Once a phrase has advanced past
+  `new` (i.e. it has been unlocked at least once) it is never re-evaluated against the gate
+  again — it always renders its normal review kind. There is no re-locking.
+- The `phrase/locked` teaser shows **at most once per session** — it is never re-queued; a still-
+  locked phrase returns to the loop only via the normal due-batch selection on a later round, once
+  its remaining components are earned.
 - `hear` → `{ spoke:false }`; `meaning` → `{ correct }`; `sayit` →
   `{ spoke:true, recording, selfRating }`.
+
+**Earned semantics (earned-phrase gating, spec 2026-07-23).** A lemma id is *earned* — eligible to
+count toward unlocking a phrase — iff `review_log` contains a **correct** `word/hear` or
+`word/recall` row in a **different `session_id`** than that lemma's earliest `word/learn-*` intro
+row, **or** on a **later calendar UTC day** than that intro row (the day clause covers legacy
+null-`session_id` rows and dev-tools time travel). Pure computation lives in `computeEarned()`
+(`src/session/earned.ts`); the loader `loadEarnedLemmaIds()` (`src/services/supabase/earnedLoader.ts`)
+reads `review_log` and feeds the **same** earned set to both `KnownWordsStore`
+(the controller's phrase gate) and `SupabaseSrsService`'s `selectBatch` context, so the two
+gate-consuming paths can never diverge. **Same-session unlock is impossible by design** — a word
+first taught this round cannot earn a phrase until a later round (or a later day); on day 1 a
+learner sees zero teasers-turned-unlocks by design.
+
+**`word/recall` — the recall probe.** An additive `CardKind`, `'word/recall'` (existing kinds are
+unchanged/stable). It is a **logged-only** recognition check with no card of its own:
+`renderFor()` never returns it — a probe item renders as an ordinary `word/hear` card — but the
+controller rewrites the outgoing `CardResult.cardKind` to `'word/recall'` before posting.
+`SupabaseSrsService.submit()` special-cases that kind: it inserts a `review_log` row and returns —
+it **never** writes `review_state` or grades FSRS, so an extra same-day "Good" can't inflate a
+review interval. From round 2 of a day onward, one probe is prepended per lemma that was
+introduced earlier **that same day**, is not yet earned, and isn't already surfacing via the
+normal due path, so a correct recall can earn it before the day ends (still subject to the
+different-session rule above — the probe's own round counts as "different" from the intro round).
+New-word rounds (rounds that introduce at least one `word/learn-*` item) are capped at
+`NEW_ROUND_DAY_CAP = 3` per day (`src/session/pacing.ts`), counted as distinct `session_id`s; there
+is no minimum gap enforced between rounds.
 
 ### `drill` (minimal pair)
 - **In:** `item.pair`.
