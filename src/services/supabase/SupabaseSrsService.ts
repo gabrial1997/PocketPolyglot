@@ -147,6 +147,34 @@ export class SupabaseSrsService implements SrsService {
     return new Set((data as Array<{ item_id?: string }>).map(r => r.item_id)).size;
   }
 
+  /**
+   * Count distinct ROUNDS (session_id) that introduced new words today (word/learn-* card_kind).
+   * The round-cap input for NEW_ROUND_DAY_CAP (spec 2026-07-23). Reuses introducedToday's exact
+   * day-start boundary. Legacy same-day rows with a null session_id (pre-migration-0021 data)
+   * count as a single additional round — they can't be told apart, but they did happen, so
+   * collapsing them to "one more round" is the conservative (under- rather than over-counting)
+   * choice.
+   */
+  private async newRoundsToday(now: Date): Promise<number> {
+    const dayStart = startOfLocalDay(now).toISOString();
+    const { data, error } = await this.client
+      .from('review_log')
+      .select('session_id,card_kind,created_at')
+      .eq('user_id', this.userId)
+      .like('card_kind', 'word/learn-%')
+      .gte('created_at', dayStart);
+    if (error) throw error;
+    if (!data) return 0;
+    const rows = data as Array<{ session_id?: string | null }>;
+    const sessionIds = new Set<string>();
+    let hasLegacyNullSession = false;
+    for (const r of rows) {
+      if (r.session_id) sessionIds.add(r.session_id);
+      else hasLegacyNullSession = true;
+    }
+    return sessionIds.size + (hasLegacyNullSession ? 1 : 0);
+  }
+
   /** Days since the account was created. Falls back to earliest review_log.created_at. */
   private async accountAgeDays(now: Date): Promise<number> {
     // Try profiles.created_at first. profiles PK is `id` (not `user_id`).
@@ -450,14 +478,16 @@ export class SupabaseSrsService implements SrsService {
       acctAgeDays,
       rolling,
       earned,
+      roundsToday,
     ] = await Promise.all([
       this.introducedToday(now),
       this.accountAgeDays(now),
       this.rollingRetention(),
       // Single shared loader (spec 2026-07-23): a lemma earned via a correct recognition in a
-      // DIFFERENT round (session_id) or later day than its intro. Feeds BOTH the known- and
-      // recalled- ctx slots below for now — Task 4 renames SelectContext to a single earned field.
+      // DIFFERENT round (session_id) or later day than its intro. Feeds SelectContext's single
+      // earnedLemmaIds field, gating both the phrase-unlock and one-away-teaser paths.
       loadEarnedLemmaIds(this.client, this.userId),
+      this.newRoundsToday(now),
     ]);
 
     // ------------------------------------------------------------------
@@ -533,10 +563,10 @@ export class SupabaseSrsService implements SrsService {
     const ctx: SelectContext = {
       accountAgeDays: acctAgeDays,
       introducedToday: intrToday,
+      newRoundsToday: roundsToday,
       dueToday: dueRefs.length,
       rollingRetention: rolling,
-      knownLemmaIds: earned,
-      recalledLemmaIds: earned,
+      earnedLemmaIds: earned,
       // Per-batch only (session-scoped): always starts empty, so semantic-field diversity is
       // enforced within this one batch, not across sessions/days. Nothing persists admitted
       // fields between calls. (Matches the SelectContext doc in selectBatch.ts.)

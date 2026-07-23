@@ -17,6 +17,7 @@ import {
   DUE_FLOOD_MULTIPLIER,
   RETENTION_GATE_THRESHOLD,
   I_PLUS_ONE_UNKNOWN_TOLERANCE,
+  NEW_ROUND_DAY_CAP,
 } from './pacing';
 
 // ---------------------------------------------------------------------------
@@ -85,10 +86,10 @@ function baseCtx(overrides: Partial<SelectContext> = {}): SelectContext {
   return {
     accountAgeDays: 2,
     introducedToday: 0,
+    newRoundsToday: 0,
     dueToday: 0,
     rollingRetention: undefined,
-    knownLemmaIds: new Set(),
-    recalledLemmaIds: new Set(),
+    earnedLemmaIds: new Set(),
     todaysSemanticFields: new Set(),
     ...overrides,
   };
@@ -290,9 +291,9 @@ describe('selectBatch', () => {
   // -------------------------------------------------------------------------
   describe('i+1 phrase gate', () => {
     it(`rejects a phrase with more than ${I_PLUS_ONE_UNKNOWN_TOLERANCE} unknown components`, () => {
-      const knownLemmaIds = new Set(['lemma-A']);
-      const recalledLemmaIds = new Set(['anchor1']);
-      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+      // earnedLemmaIds = old knownLemmaIds ∪ recalledLemmaIds
+      const earnedLemmaIds = new Set(['lemma-A', 'anchor1']);
+      const ctx = baseCtx({ earnedLemmaIds });
 
       const twoUnknown = makePhrase('p1', 1, {
         componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // B and C unknown
@@ -304,10 +305,9 @@ describe('selectBatch', () => {
       expect(result.admittedNew).toHaveLength(0);
     });
 
-    it('admits a phrase with 1 unknown component whose anchor has been recalled', () => {
-      const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
-      const recalledLemmaIds = new Set(['anchor1']);
-      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+    it('admits a phrase with 1 unknown component whose anchor has been earned', () => {
+      const earnedLemmaIds = new Set(['lemma-A', 'lemma-B', 'anchor1']);
+      const ctx = baseCtx({ earnedLemmaIds });
 
       const oneUnknown = makePhrase('p1', 1, {
         componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // only C unknown
@@ -322,20 +322,22 @@ describe('selectBatch', () => {
       expect(result.admittedNew.some(c => c.id === 'p1')).toBe(true);
     });
 
-    it('rejects a phrase whose anchor lemma has no successful recall', () => {
-      const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
-      // recalledLemmaIds does NOT contain anchorLemmaId
-      const recalledLemmaIds = new Set<string>();
-      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+    it('rejects a phrase whose anchor lemma has not been earned', () => {
+      // earnedLemmaIds does NOT contain anchorLemmaId (components earned, anchor is not —
+      // this is exactly the "merely recalled once, same session" scenario the earned gate
+      // must reject: the caller only includes a lemma in earnedLemmaIds once it is truly
+      // earned, so an unearned anchor must never admit a phrase).
+      const earnedLemmaIds = new Set(['lemma-A', 'lemma-B']);
+      const ctx = baseCtx({ earnedLemmaIds });
 
-      const phraseWithUnrecalledAnchor = makePhrase('p1', 1, {
+      const phraseWithUnearnedAnchor = makePhrase('p1', 1, {
         componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // C unknown
         anchorLemmaId: 'anchor1',
       });
 
       const result = selectBatch({
         due: [],
-        candidates: [phraseWithUnrecalledAnchor],
+        candidates: [phraseWithUnearnedAnchor],
         ctx,
       });
 
@@ -392,14 +394,13 @@ describe('selectBatch', () => {
   // 10. Audio gate
   // -------------------------------------------------------------------------
   describe('audio gate', () => {
-    it('DOES admit an audio-less phrase whose anchor is recalled and components are known', () => {
+    it('DOES admit an audio-less phrase whose anchor is earned and components are earned', () => {
       // Phrase audio gate removed: audio-less phrases are now admitted so they can flow
       // through the loop via phrase/hear (exposure card — audio-optional).
       const ctx = baseCtx({
         accountAgeDays: 1,
         introducedToday: 0,
-        recalledLemmaIds: new Set(['anchor1']),
-        knownLemmaIds: new Set(['lemma-A']),
+        earnedLemmaIds: new Set(['anchor1', 'lemma-A']),
       });
 
       const audiolessPhrase = makePhrase('p1', 1, {
@@ -414,11 +415,10 @@ describe('selectBatch', () => {
       expect(result.admittedNew[0]?.id).toBe('p1');
     });
 
-    it('admits an audio-less phrase whose anchor is recalled and components are known', () => {
+    it('admits an audio-less phrase whose anchor is earned and components are earned', () => {
       // Mirror of the "admits a phrase" i+1 test but with hasAudioEnvelope:false.
-      const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
-      const recalledLemmaIds = new Set(['anchor1']);
-      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+      const earnedLemmaIds = new Set(['lemma-A', 'lemma-B', 'anchor1']);
+      const ctx = baseCtx({ earnedLemmaIds });
 
       const audiolessPhrase = makePhrase('p1', 1, {
         hasAudioEnvelope: false,
@@ -617,8 +617,8 @@ describe('selectBatch', () => {
       componentLemmaIds: comps, anchorLemmaId: anchor,
     });
     const ctx = (over: Partial<SelectContext> = {}): SelectContext => ({
-      accountAgeDays: 5, introducedToday: 0, dueToday: 0, rollingRetention: undefined,
-      knownLemmaIds: new Set(), recalledLemmaIds: new Set(), todaysSemanticFields: new Set(),
+      accountAgeDays: 5, introducedToday: 0, newRoundsToday: 0, dueToday: 0, rollingRetention: undefined,
+      earnedLemmaIds: new Set(), todaysSemanticFields: new Set(),
       ...over,
     });
 
@@ -627,7 +627,7 @@ describe('selectBatch', () => {
       const words = [1, 2, 3, 4, 5, 9].map((r) => wordCand(`w${r}`, r));
       const p = phraseCand('p', ['k1', 'w9'], 'k1');
       const res = selectBatch({ due: [], candidates: [...words, p], ctx: ctx({
-        knownLemmaIds: new Set(['k1']), recalledLemmaIds: new Set(['k1']),
+        earnedLemmaIds: new Set(['k1']),
       }) });
       expect(res.admittedNew.map((c) => c.id)).not.toContain('p');
     });
@@ -636,26 +636,30 @@ describe('selectBatch', () => {
       const words = [1, 2, 3].map((r) => wordCand(`w${r}`, r));
       const p = phraseCand('p', ['k1', 'w2'], 'k1');
       const res = selectBatch({ due: [], candidates: [...words, p], ctx: ctx({
-        knownLemmaIds: new Set(['k1']), recalledLemmaIds: new Set(['k1']),
+        earnedLemmaIds: new Set(['k1']),
       }) });
       const ids = res.order.map((o) => o.id);
       expect(ids.indexOf('p')).toBe(ids.indexOf('w2') - 1); // teaser directly before its word
     });
 
     it('rejects phrases with 2+ unknown components', () => {
+      // Components (x1, x2) are distinct from the anchor (w1) so this isolates the
+      // 2+-unknown-components rejection from the anchor-earned check — under the merged
+      // earnedLemmaIds model, an earned anchor that is ALSO a component no longer counts
+      // as "unknown" for that component (see the "one-away" test just above).
       const words = [1, 2].map((r) => wordCand(`w${r}`, r));
-      const p = phraseCand('p', ['w1', 'w2'], 'w1');
+      const p = phraseCand('p', ['x1', 'x2'], 'w1');
       const res = selectBatch({ due: [], candidates: [...words, p], ctx: ctx({
-        recalledLemmaIds: new Set(['w1']),
+        earnedLemmaIds: new Set(['w1']),
       }) });
       expect(res.admittedNew.map((c) => c.id)).not.toContain('p');
     });
 
-    it('admits a fully-known phrase without a teaser, AFTER the word units', () => {
+    it('admits a fully-earned phrase without a teaser, AFTER the word units', () => {
       const p = phraseCand('p', ['k1', 'k2'], 'k1');
       const w = wordCand('w1', 1);
       const res = selectBatch({ due: [], candidates: [p, w], ctx: ctx({
-        knownLemmaIds: new Set(['k1', 'k2']), recalledLemmaIds: new Set(['k1']),
+        earnedLemmaIds: new Set(['k1', 'k2']),
       }) });
       const ids = res.order.map((o) => o.id);
       expect(ids.indexOf('p')).toBeGreaterThan(ids.indexOf('w1'));
@@ -665,19 +669,19 @@ describe('selectBatch', () => {
     it('caps phrases at PHRASE_INTRO_CAP without consuming word allowance', () => {
       const words = [1, 2, 3, 4, 5].map((r) => wordCand(`w${r}`, r));
       const phrases = ['pa', 'pb', 'pc'].map((id, i) =>
-        phraseCand(id, ['k1'], 'k1', i + 1)); // all fully... k1 known → zero unknowns
+        phraseCand(id, ['k1'], 'k1', i + 1)); // all fully... k1 earned → zero unknowns
       const res = selectBatch({ due: [], candidates: [...words, ...phrases], ctx: ctx({
-        knownLemmaIds: new Set(['k1']), recalledLemmaIds: new Set(['k1']),
+        earnedLemmaIds: new Set(['k1']),
       }) });
       const admitted = res.admittedNew.map((c) => c.id);
       expect(words.every((w) => admitted.includes(w.id))).toBe(true); // 5 words all admitted
       expect(admitted.filter((id) => id.startsWith('p'))).toHaveLength(2); // pa, pb only
     });
 
-    it('still requires the anchor to have been recalled', () => {
+    it('still requires the anchor to have been earned', () => {
       const p = phraseCand('p', ['k1'], 'k1');
       const res = selectBatch({ due: [], candidates: [p], ctx: ctx({
-        knownLemmaIds: new Set(['k1']), recalledLemmaIds: new Set(), // known but never recalled
+        earnedLemmaIds: new Set(), // k1 not earned
       }) });
       expect(res.admittedNew.map((c) => c.id)).not.toContain('p');
     });
@@ -698,12 +702,11 @@ describe('selectBatch', () => {
       componentLemmaIds: comps, anchorLemmaId: anchor,
     });
 
-    it('admits zero phrases when the due-flood gate fired, even with fully-known candidates', () => {
+    it('admits zero phrases when the due-flood gate fired, even with fully-earned candidates', () => {
       const p = phraseCand('p', ['k1', 'k2'], 'k1');
       const ctx = baseCtx({
         dueToday: DUE_FLOOD_MULTIPLIER * REVIEW_BUDGET + 1, // flood gate fires
-        knownLemmaIds: new Set(['k1', 'k2']),
-        recalledLemmaIds: new Set(['k1']),
+        earnedLemmaIds: new Set(['k1', 'k2']),
       });
 
       const result = selectBatch({ due: [], candidates: [p], ctx });
@@ -712,15 +715,14 @@ describe('selectBatch', () => {
       expect(result.admittedNew).toHaveLength(0);
     });
 
-    it('still admits a fully-known phrase when the daily allowance is merely spent (no flood)', () => {
+    it('still admits a fully-earned phrase when the daily allowance is merely spent (no flood)', () => {
       const p = phraseCand('p', ['k1', 'k2'], 'k1');
       const words = [1, 2, 3, 4, 5].map((r) => wordCand(`w${r}`, r));
       const ctx = baseCtx({
         dueToday: 0, // flood gate NOT fired
         accountAgeDays: 1, // steady-state cap = 5
         introducedToday: 5, // allowance spent — newAllowance === 0
-        knownLemmaIds: new Set(['k1', 'k2']),
-        recalledLemmaIds: new Set(['k1']),
+        earnedLemmaIds: new Set(['k1', 'k2']),
       });
 
       const result = selectBatch({ due: [], candidates: [...words, p], ctx });
@@ -776,9 +778,8 @@ describe('selectBatch', () => {
       // 'lemma-C' is unknown but no due item and no candidate has id 'lemma-C'.
       // Without this gate, the phrase would be admitted, render phrase/locked, get
       // re-queued to the end forever (the component never appears -> infinite loop).
-      const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
-      const recalledLemmaIds = new Set(['anchor1']);
-      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+      const earnedLemmaIds = new Set(['lemma-A', 'lemma-B', 'anchor1']);
+      const ctx = baseCtx({ earnedLemmaIds });
 
       const phrase = makePhrase('p1', 1, {
         componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // C is the unknown, not in session
@@ -794,9 +795,8 @@ describe('selectBatch', () => {
     it('admits a phrase whose unknown component IS a candidate this session', () => {
       // 'lemma-C' is unknown but a word candidate with id 'lemma-C' will appear this session.
       // The phrase CAN unlock this session -> it should be admitted.
-      const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
-      const recalledLemmaIds = new Set(['anchor1']);
-      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+      const earnedLemmaIds = new Set(['lemma-A', 'lemma-B', 'anchor1']);
+      const ctx = baseCtx({ earnedLemmaIds });
 
       const phrase = makePhrase('p1', 1, {
         componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // C is unknown
@@ -815,9 +815,8 @@ describe('selectBatch', () => {
       // actually admitted THIS batch (pass 1), not merely present/due. A due review item
       // is already-known content coming back for review, not a new-word admission that
       // "completes" the phrase's block this session — so it must NOT satisfy one-away.
-      const knownLemmaIds = new Set(['lemma-A', 'lemma-B']);
-      const recalledLemmaIds = new Set(['anchor1']);
-      const ctx = baseCtx({ knownLemmaIds, recalledLemmaIds });
+      const earnedLemmaIds = new Set(['lemma-A', 'lemma-B', 'anchor1']);
+      const ctx = baseCtx({ earnedLemmaIds });
 
       const phrase = makePhrase('p1', 1, {
         componentLemmaIds: ['lemma-A', 'lemma-B', 'lemma-C'], // C is unknown
@@ -829,6 +828,77 @@ describe('selectBatch', () => {
 
       const admittedIds = result.admittedNew.map(c => c.id);
       expect(admittedIds).not.toContain('p1');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 18. Day-1 (empty earned set): NO phrase admissions of either kind (Task 4).
+  // -------------------------------------------------------------------------
+  describe('Day-1 with an empty earned set', () => {
+    it('admits zero phrases of any kind (unlock or teaser) when earnedLemmaIds is empty', () => {
+      const ctx = baseCtx({ accountAgeDays: 0, introducedToday: 0 }); // earnedLemmaIds defaults empty
+
+      const words = [1, 2].map((r) => makeWord(`w${r}`, r));
+      const fullyEarnedShapePhrase = makePhrase('p-unlock', 1, {
+        componentLemmaIds: [], // would be "fully known" (zero unknown) IF the anchor were earned
+        anchorLemmaId: 'anchor1',
+      });
+      const teaserShapePhrase = makePhrase('p-teaser', 2, {
+        componentLemmaIds: ['w1'], // one-away IF the anchor were earned
+        anchorLemmaId: 'anchor1',
+      });
+
+      const result = selectBatch({
+        due: [],
+        candidates: [...words, fullyEarnedShapePhrase, teaserShapePhrase],
+        ctx,
+      });
+
+      const admittedIds = result.admittedNew.map((c) => c.id);
+      expect(admittedIds).not.toContain('p-unlock');
+      expect(admittedIds).not.toContain('p-teaser');
+      // Words themselves are unaffected — only phrase admission is gated on earnedLemmaIds.
+      expect(admittedIds).toEqual(expect.arrayContaining(['w1', 'w2']));
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 19. 3-round/day new-word cap (Task 4, spec 2026-07-23).
+  // -------------------------------------------------------------------------
+  describe('3-round/day new-word cap', () => {
+    it(`newRoundsToday: ${NEW_ROUND_DAY_CAP} → newAllowance is 0, but due reviews still flow and a fully-earned phrase still admits`, () => {
+      const p = makePhrase('p-unlock', 1, {
+        componentLemmaIds: ['k1', 'k2'],
+        anchorLemmaId: 'anchor1',
+      });
+      const words = [1, 2, 3].map((r) => makeWord(`w${r}`, r));
+      const due: DueRef[] = [makeDueRef('due1'), makeDueRef('due2')];
+      const ctx = baseCtx({
+        newRoundsToday: NEW_ROUND_DAY_CAP,
+        earnedLemmaIds: new Set(['k1', 'k2', 'anchor1']),
+      });
+
+      const result = selectBatch({ due, candidates: [...words, p], ctx });
+
+      expect(result.newAllowance).toBe(0);
+      // Due reviews are never throttled.
+      expect(result.due).toHaveLength(2);
+      // No new words admitted.
+      expect(result.admittedNew.filter((c) => c.kind === 'word')).toHaveLength(0);
+      // A fully-earned phrase still admits (Pass 2 does not consume newAllowance).
+      expect(result.admittedNew.map((c) => c.id)).toContain('p-unlock');
+    });
+
+    it(`newRoundsToday: ${NEW_ROUND_DAY_CAP - 1} → normal newCap applies (round cap not yet reached)`, () => {
+      const words = Array.from({ length: 10 }, (_, i) => makeWord(`w${i}`, i + 1));
+      const ctx = baseCtx({
+        accountAgeDays: 1, // steady-state cap
+        newRoundsToday: NEW_ROUND_DAY_CAP - 1,
+      });
+
+      const result = selectBatch({ due: [], candidates: words, ctx });
+
+      expect(result.newAllowance).toBe(STEADY_STATE_NEW_CAP);
     });
   });
 });
