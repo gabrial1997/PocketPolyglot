@@ -32,3 +32,7 @@ export const RETENTION_MINIMUM_SAMPLE = 10 as const;
 
 /** Learning steps: introduce this many new words, then immediately quiz those same words. */
 export const LEARNING_STEP_GROUP_SIZE = 3 as const;
+
+/** Max rounds/day that may introduce new words (spec 2026-07-23). ROUND_MIN_GAP deliberately
+ *  not implemented (founder chose no gap); add here if that changes. */
+export const NEW_ROUND_DAY_CAP = 3 as const;

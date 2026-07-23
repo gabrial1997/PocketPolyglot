@@ -23,6 +23,13 @@ function speakTurn(item: ReviewItem): boolean {
 }
 
 export function renderFor(item: ReviewItem): ReviewCardKind {
+  // Recall probes (spec 2026-07-23 §4): a no-FSRS-graded MC check inserted ahead of the
+  // interleaved order for a same-day-introduced, not-yet-earned word. Checked FIRST — ahead of
+  // the new-word learn branch and word/pic-review — so a probe never renders a second teach card
+  // (its review_state row can still read stage:'new' if the learner only saw the teach card and
+  // quit before the earlier round's own MC step graded it) and never the full picture-card loop.
+  if (item.type === 'word' && item.probe) return 'word/hear';
+
   // New words: first exposure → the learn template chosen by word class.
   if (item.stage === 'new' && item.type === 'word' && !item.retest) {
     if (item.wordClass === 'concrete') return 'word/learn-concrete';

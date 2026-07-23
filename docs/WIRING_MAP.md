@@ -17,6 +17,7 @@ This document exists so wiring is *mechanical*. It answers, for every card: whic
 | `word/learn-function` | `word` + `learn-function` | `WordLearnScreen` (`kind="function"`) | `screens-learn.jsx` | `WordFlowScreen state="learn-function"` | `PP_LEARN_EXAMPLES` (`screens-learn.jsx:23`) — `uz` example sentences |
 | `word/pic-review` | `word` + `pic-review` | `WordPicReviewScreen` | `screens-learn.jsx` | `WordFlowScreen state="pic-review"` | `correct='māja'` + 2×2 choices (`screens-learn.jsx:157–162`); image `assets/house.svg` |
 | `word/hear` | `word` + `hear` | `WordCardScreen` | `screens-a.jsx` | `WordFlowScreen` **default fall-through** (no/other `state`) | `correct='labrīt'` + choices (`screens-a.jsx:389–392`) |
+| `word/recall` | *(none — not a registry screen)* | `WordCardScreen`, same as `word/hear` | `screens-a.jsx` | `renderFor()` **never returns this kind** — a recall-probe item renders through the normal `word/hear` path; the controller rewrites `CardResult.cardKind` to `'word/recall'` in `submit()` before posting, so `SupabaseSrsService` logs it (no `review_state`/FSRS write) instead of grading it | — (no separate content; same `item` as the `word/hear` card it renders as) |
 | `word/say` | `word` + `say` | `WordSayScreen` | `screens-a.jsx` | `WordFlowScreen state="say"` | `labrīt` + choices (`screens-a.jsx` around `:389`) |
 | `phrase/locked` | `phrase` + `locked` | `PhraseLocked` | `screens-phrase.jsx` | `PhraseScreen state="locked"` | `PP_PHRASES` (`screens-phrase.jsx:7`) |
 | `phrase/unlock` | `phrase` + `unlock` | `PhraseUnlock` | `screens-phrase.jsx` | `PhraseScreen state="unlock"` | `PP_PHRASES` |
@@ -38,6 +39,11 @@ The registry these map to lives in `app.jsx` → `PP_SCREENS`. Keep `id` + `k` s
 **`state` → `kind` rename on learn cards.** `WordFlowScreen` receives `state="learn-concrete"` but renders `<WordLearnScreen kind="concrete" />` — it strips the `learn-` prefix (`state.slice(6)`). So in production, your `renderFor()` returns `word/learn-concrete`, but the component you mount takes `kind="concrete"`. Don't pass the full `learn-*` string to `WordLearnScreen`.
 
 **`WordFlowScreen` routes by fall-through, not a switch.** Order matters: `pic-review` → `learn-*` (prefix match) → `say` → **else `WordCardScreen` (hear)**. There is no explicit `state="hear"` branch; `hear` is the default. If you split each variant into its own RN route/screen (recommended in RN navigation), you can drop `WordFlowScreen` entirely and mount the leaf components directly — just preserve the `id`+`k` identifiers.
+
+**`word/recall` is logged-only, not a screen.** Don't add a registry entry or route for it. It
+exists solely as a `review_log.card_kind` / `CardResult.cardKind` value (earned-phrase gating,
+`BACKEND_INTEGRATION.md` §4): the card the learner sees is an ordinary `word/hear` — `renderFor()`
+returns `'word/hear'` for a probe item too — and only the outgoing result gets relabeled.
 
 **`phrase/sayit` has an alias.** `PhraseScreen` treats both `state="sayit"` and `state="review"` as the say-it stage. Use `sayit` as canonical; treat `review` as a legacy alias.
 

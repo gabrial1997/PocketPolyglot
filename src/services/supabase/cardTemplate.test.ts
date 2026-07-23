@@ -13,6 +13,12 @@ describe('cardKindToTemplate', () => {
     expect(cardKindToTemplate('phrase/meaning')).toBe('recognition');
     expect(cardKindToTemplate('drill')).toBe('recognition');
   });
+
+  // word/recall (spec 2026-07-23 §4): submit() short-circuits before this is ever consulted at
+  // runtime, but it must still resolve to 'recognition' — never 'pronunciation' — for consistency.
+  it('maps the no-FSRS recall probe (word/recall) to recognition', () => {
+    expect(cardKindToTemplate('word/recall')).toBe('recognition');
+  });
 });
 
 describe('repKind — the single rep-counting rule', () => {
@@ -28,5 +34,13 @@ describe('repKind — the single rep-counting rule', () => {
     expect(repKind('word/hear', false)).toBeNull();
     expect(repKind('phrase/meaning', true)).toBe('receptive');
     expect(repKind('word/learn-concrete', null)).toBeNull(); // exposure ≠ rep
+  });
+
+  // word/recall (spec 2026-07-23 §4): a correct no-FSRS recall probe must classify receptive —
+  // the SAME bucket as word/hear — so a word earned via a probe still climbs the ladder rung.
+  it('counts a correct no-FSRS recall probe (word/recall) as receptive, same bucket as word/hear', () => {
+    expect(repKind('word/recall', true)).toBe('receptive');
+    expect(repKind('word/recall', false)).toBeNull();
+    expect(repKind('word/recall', null)).toBeNull();
   });
 });

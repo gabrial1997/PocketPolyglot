@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useServices } from '../services/ServiceProvider';
 import { decideKind } from './decideKind';
-import { requeuePhraseAfterComponents, requeueArcNext, lockHint } from './requeue';
+import { requeueArcNext, lockHint } from './requeue';
 import { expandLearningSteps } from './learningSteps';
 import { LEARNING_STEP_GROUP_SIZE } from './pacing';
 import type { ReviewItem } from '../types/reviewItem';
@@ -36,8 +36,9 @@ export interface SessionState {
  */
 export function useSession(): SessionState {
   const { srs, known } = useServices();
-  // The working queue: seeded from getDueBatch, then mutated as gated phrases re-surface
-  // (locked -> after their words; unlock -> immediately next). `pos` walks it.
+  // The working queue: seeded from getDueBatch, then mutated only for the unlock reveal, which
+  // inserts its own hear->MC->speak arc immediately next. `pos` walks it. A locked phrase is
+  // never re-inserted (see `advance()`).
   const [queue, setQueue] = useState<ReviewItem[]>([]);
   const [pos, setPos] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -45,29 +46,26 @@ export function useSession(): SessionState {
   // Every NEW phrase opens with the reveal (building blocks — arriving IS an unlock); a ref
   // (not state) — recording it must not trigger a re-render.
   const revealed = useRef<Set<string>>(new Set());
-  // Optimistic in-session known overlay (lemma ids learned THIS session). Lets "learn a word"
-  // change a later phrase's lock state without a network round-trip.
-  const learned = useRef<Set<string>>(new Set());
   // Idempotency latch: true once an advance has fired for the CURRENT position, so a double-tapped
   // Continue (submit/advance firing twice on the same card before it re-renders) can't skip an item
   // or double-post. Reset whenever `pos` changes (i.e. a fresh card is shown).
   const advancing = useRef(false);
   // Refresh generation: bumped when reload()'s known.refresh() lands. `known` is a stable service
-  // instance whose all() returns a mutable internal set, so neither `pos` (still 0) nor `known`
-  // changes after the first load — without this tick the FIRST card's knownUnion would be computed
-  // from the pre-refresh set and never recomputed (a fully-known phrase at position 0 rendered
-  // phrase/locked and was silently dropped by advance()).
+  // instance whose all() returns a mutable internal set (now serving the EARNED set — correct
+  // recognition/recall in a DIFFERENT round or day than a word's intro, never this same sitting),
+  // so neither `pos` (still 0) nor `known` changes after the first load — without this tick the
+  // FIRST card's known set would be read from the pre-refresh set and never recomputed (a
+  // fully-known phrase at position 0 rendered phrase/locked and was silently dropped by advance()).
   const [knownGen, setKnownGen] = useState(0);
 
   const reload = useCallback(async () => {
     setLoading(true);
     await known.refresh();
-    setKnownGen((g) => g + 1); // the persisted known set just (re)loaded — recompute knownUnion
+    setKnownGen((g) => g + 1); // the persisted earned set just (re)loaded — recompute the gate
     const items = await srs.getDueBatch();
     setQueue(expandLearningSteps(items, LEARNING_STEP_GROUP_SIZE));
     setPos(0);
     revealed.current = new Set();
-    learned.current = new Set();
     setLoading(false);
   }, [srs, known]);
 
@@ -82,22 +80,26 @@ export function useSession(): SessionState {
     advancing.current = false;
   }, [pos]);
 
-  // The known-word set the gate sees = the persisted store UNION the in-session overlay. Recomputed
-  // on every position change — `learned`/`revealed` are refs that mutate between renders, and a
-  // re-queued phrase is the SAME object at two positions, so `pos` (not `item`) is the reliable
-  // signal that we have moved to a fresh encounter. `knownGen` covers the remaining gap: position 0
-  // never changes across reload(), so the refresh tick forces the post-refresh recompute there.
-  const knownUnion = useMemo(
-    () => new Set<string>([...known.all(), ...learned.current]),
+  // The known-word set the gate sees = KnownWordsStore.all(), which now serves the EARNED set
+  // directly (SupabaseKnownWordsStore.refresh() — Task 3) — no in-session overlay is unioned in,
+  // so a word answered correctly THIS session can never unlock a phrase THIS session (no
+  // same-session unlock, by design). `known.all()` returns a mutable internal set, so this is
+  // re-read (not just re-identified) on every position change and on `knownGen` bumps: `revealed`
+  // is a ref that mutates between renders, and a re-queued phrase is the SAME object at two
+  // positions, so `pos` (not `item`) is the reliable signal that we've moved to a fresh encounter;
+  // `knownGen` covers the remaining gap — position 0 never changes across reload(), so the refresh
+  // tick forces the post-refresh recompute there.
+  const earned = useMemo(
+    () => new Set<string>(known.all()),
     [pos, known, knownGen], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const kind: CardKind | null = useMemo(() => {
     if (!item) return null;
-    // Phrase gating: decideKind consults knownUnion + revealed to pick locked/unlock/hear;
+    // Phrase gating: decideKind consults the earned set + revealed to pick locked/unlock/hear;
     // everything else falls through to renderFor. Pure — no ref mutation here.
-    return decideKind(item, knownUnion, revealed.current).kind;
-  }, [item, knownUnion, pos]); // eslint-disable-line react-hooks/exhaustive-deps
+    return decideKind(item, earned, revealed.current).kind;
+  }, [item, earned, pos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Record gate renders AFTER render (the useMemo must stay pure). Once a phrase's unlock
   // reveal is shown, `revealed` retires it — the next encounter renders the review kind.
@@ -110,57 +112,63 @@ export function useSession(): SessionState {
       // Idempotency: a double-tapped Continue must not advance twice or post twice (see `advancing`).
       if (advancing.current) return;
       advancing.current = true;
-      // Only a word answered CORRECTLY counts toward unlocking phrases — the intro/learn cards emit
-      // no `correct` (exposure ≠ learned); recall cards emit correct:!missed. Exposure alone must
-      // not unlock.
-      if (item && item.type === 'word' && result.correct === true) learned.current.add(item.id);
+      // Recall probes (spec 2026-07-23 §4): the card underneath renders as the ordinary
+      // word/hear MC (renderFor serves probe:true as word/hear), so the card itself always
+      // reports cardKind:'word/hear'. Rewrite it to 'word/recall' here so srs.submit() takes the
+      // no-FSRS log-only branch instead of grading it — a same-day extra Good would inflate
+      // intervals (2026-07-22 pacing artifact). No separate unlock bookkeeping to skip: the
+      // earned set only recomputes on the NEXT reload() (next round), matching "never a
+      // same-session unlock" — a probe answered right this round can't unlock anything until then.
+      const posted: CardResult = item?.probe ? { ...result, cardKind: 'word/recall' } : result;
       // Advance the deck IMMEDIATELY, before awaiting the network. A slow or failing srs.submit must
       // never strand the learner on a card whose Continue has already fired and now does nothing
       // (bug 4 — the dead-CTA hang). Post in the background and reconcile the review label when it
       // lands; a failed post is logged, not surfaced — the item just stays due and re-surfaces.
       setPos((p) => p + 1);
       try {
-        await srs.submit(result);
+        await srs.submit(posted);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.warn('[session] srs.submit failed; deck already advanced', err);
       }
     },
+    // `item` is a genuine dependency now (read for the probe rewrite above) — NOT the stale-ref
+    // pattern the `pos`-only effects elsewhere use; this callback must see the CURRENT card.
     [srs, item],
   );
 
   // Gate advance (locked/unlock): NO srs.submit — these produce no CardResult (BACKEND_INTEGRATION
-  // §4). Re-queue the phrase so it re-surfaces at the right spot.
+  // §4). The 'phrase/locked' teaser is NOT re-queued (earned-phrase gating, 2026-07-23): a locked
+  // phrase shows exactly once per session — it only returns via selectBatch in a later round, once
+  // its words are earned. The 'phrase/unlock' reveal still inserts its own hear->MC->speak arc.
   const advance = useCallback(() => {
     // Same idempotency latch as submit() — a double-tapped gate Continue must only step once.
     if (advancing.current) return;
     advancing.current = true;
-    if (item && item.type === 'phrase' && kind === 'phrase/locked') {
-      // Re-surface after the last component word still ahead in the queue — but ONLY if a component
-      // word is actually ahead. If no component is ahead this session, re-queueing would append the
-      // phrase to the end forever (the component never appears -> infinite loop / freeze).
-      const compIds = new Set(item.componentLemmaIds ?? []);
-      const componentAhead = queue.slice(pos + 1).some((q) => compIds.has(q.id));
-      if (componentAhead) {
-        setQueue((q) => requeuePhraseAfterComponents(q, pos, item));
-      }
-      // else: no component ahead this session — do NOT re-queue (it would loop forever); just advance.
-    } else if (item && item.type === 'phrase' && kind === 'phrase/unlock') {
+    if (item && item.type === 'phrase' && kind === 'phrase/unlock') {
       // Re-surface as the full teach->MC->speak arc, same as a batch-admitted phrase gets from
       // expandLearningSteps (the unlock-gated item in the queue may already carry a retest
       // marker from a prior encounter — requeueArcNext normalizes the inserted intro copy).
       setQueue((q) => requeueArcNext(q, pos, item));
     }
     setPos((p) => p + 1);
-  }, [item, kind, pos, queue]);
+  }, [item, kind, pos]);
 
   const done = !loading && pos >= queue.length;
 
-  // On the locked card, enrich the item with the live "N words to go — learn X" hint.
+  // On the locked card, enrich the item with the live "N words to go — learn X" hint AND decorate
+  // each componentBreakdown chip with a `known` flag (true iff that lemma is in the earned set) —
+  // this is the ONLY place `known` is set (cards stay pure; Task 8's PhraseLocked chips read it).
+  const withChips = (it: ReviewItem): ReviewItem => ({
+    ...it,
+    ...lockHint(queue, it, earned),
+    componentBreakdown: it.componentBreakdown?.map((c) => ({
+      ...c,
+      known: c.lemmaId ? earned.has(c.lemmaId) : false,
+    })),
+  });
   const current =
-    item && kind
-      ? { item: kind === 'phrase/locked' ? { ...item, ...lockHint(queue, item, knownUnion) } : item, kind }
-      : null;
+    item && kind ? { item: kind === 'phrase/locked' ? withChips(item) : item, kind } : null;
 
   return {
     loading,

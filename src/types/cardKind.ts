@@ -15,6 +15,11 @@ export type ReviewCardKind =
   | 'word/pic-review'
   | 'word/hear'
   | 'word/say'
+  // Recall probe (earned-phrase gating, spec 2026-07-23 §4): a logged-only recognition check for
+  // a same-day-introduced, not-yet-earned word. renderFor() never returns this — probes render as
+  // 'word/hear' — this key exists purely as review_log.card_kind / CardResult.cardKind so
+  // submit() routes it to the no-FSRS log-only branch.
+  | 'word/recall'
   | 'phrase/hear'
   | 'phrase/meaning'
   | 'phrase/sayit'

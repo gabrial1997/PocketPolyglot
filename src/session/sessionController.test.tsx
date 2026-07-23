@@ -194,7 +194,13 @@ const newWord = (id: string): ReviewItem => ({
   translationVisibility: 'auto',
 });
 
-it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', async () => {
+// Earned-phrase gating (2026-07-23): same-session unlock is impossible BY DESIGN — a locked
+// phrase's teaser shows exactly once and is never re-queued, even after ALL its component words
+// are answered correctly (through their full teach->MC->speak arc) later in the SAME session.
+// KnownWordsStore.all() now serves the EARNED set (correct recognition in a DIFFERENT round/day
+// than the intro), which a same-session `known: () => known` fake can never reflect — the phrase
+// only returns via selectBatch in a later round once its words are earned.
+it('a phrase encountered locked never re-surfaces in the same session, even after all its component words are answered correctly', async () => {
   const labdien = newWord('labdien'),
     es = newWord('es'),
     esmu = newWord('esmu');
@@ -205,38 +211,30 @@ it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', as
     reps: 0,
     target: 'Labdien, es esmu ___.',
     gloss: 'Hello, I am ___.',
-    // envelope required: phrase/sayit (production rung) requires audio; stage=new always routes to
-    // phrase/hear regardless of audio, so the envelope here only matters if production is reached.
     audio: { nativeUrl: 'p1.mp3', envelope: [0.2, 0.6, 1] },
     componentLemmaIds: ['labdien', 'es', 'esmu'],
     receptiveReps: 0,
     productiveReps: 0,
     translationVisibility: 'auto',
   };
-  // Batch = [P1, labdien, es, esmu]; nothing known yet -> P1 starts locked.
+  // Batch = [P1, labdien, es, esmu]; nothing earned yet -> P1 starts locked.
   const { result } = renderSessionHook([p1, labdien, es, esmu], new Set());
 
   await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
-  // Gate advance re-queues P1 after its last component word (esmu).
+  const initialTotal = result.current.total;
+  // Gate advance: no re-queue — the teaser is gone for good this session.
   await act(async () => {
     result.current.advance();
   });
+  expect(result.current.total).toBe(initialTotal);
 
-  // Learn the three words; each submit adds the lemma to the in-session overlay.
+  // Learn the three words (full intro -> MC -> speak arc), all answered correctly.
   for (const w of ['labdien', 'es', 'esmu']) {
     await settleHook(() => expect(result.current.current?.item.id).toBe(w));
     await act(async () => {
       await result.current.submit({ itemId: w, cardKind: 'word/learn-function', spoke: false });
     });
   }
-
-  // expandLearningSteps produces a 3-step arc: intros, MC retests, then speak retests.
-  // These retest copies (MC + speak) have the same item.id as the originals — submit through them
-  // so P1 can surface. The retest items share ids with the originals; requeuePhraseAfterComponents
-  // places P1 after the last retest copy (since it also matches by id), so P1 appears after all retests.
-  // NOTE: must submit with correct:true — the correctness gate means only a correctly-answered
-  // recall card adds the word to the in-session learned overlay (word/hear emits correct:!missed).
-  // First, submit the 3 MC steps
   for (const w of ['labdien', 'es', 'esmu']) {
     await settleHook(() => {
       expect(result.current.current?.item.id).toBe(w);
@@ -246,9 +244,6 @@ it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', as
       await result.current.submit({ itemId: w, cardKind: 'word/hear', correct: true, spoke: false });
     });
   }
-  // Then submit the 3 speak steps. renderFor DOES route retest:'speak' specially (word/say when the
-  // item has choices), but newWord() fixtures here have no `choices`, so hasChoices() is false and
-  // renderFor falls back to word/hear — same card kind as the MC step above.
   for (const w of ['labdien', 'es', 'esmu']) {
     await settleHook(() => {
       expect(result.current.current?.item.id).toBe(w);
@@ -259,13 +254,9 @@ it('runs the live unlock loop: locked -> learn words -> unlock once -> hear', as
     });
   }
 
-  // All words now known -> P1 re-surfaces as the one-time reveal.
-  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/unlock'));
-  // Gate advance re-queues P1 immediately next as its first SRS exposure.
-  await act(async () => {
-    result.current.advance();
-  });
-  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/hear'));
+  // The session ends WITHOUT P1 ever re-surfacing — no phrase/unlock, no phrase/hear.
+  await settleHook(() => expect(result.current.done).toBe(true));
+  expect(result.current.total).toBe(initialTotal); // queue never grew; P1 was not re-inserted
 });
 
 it('interleaves new-word intros with in-session retest quizzes', async () => {
@@ -288,11 +279,14 @@ it('interleaves new-word intros with in-session retest quizzes', async () => {
   await settleHook(() => expect(result.current.total).toBe(12));
 });
 
-// --- correctness gate on the in-session known overlay ---
-// A WRONG answer on a component word must NOT add it to `learned` (phrase stays locked).
-// A CORRECT answer must add it (phrase may unlock).
+// --- no session overlay: in-session correctness is irrelevant to the gate ---
+// No in-session "learned" overlay exists (removed in earned-phrase gating, 2026-07-23) — the gate
+// reads ONLY the earned store (`known.all()`), which does not change mid-session. So a WRONG
+// answer here stays locked for the same reason a CORRECT answer does too (see the flipped test
+// right below): neither can touch the gate. Kept as its own test because "wrong answer -> still
+// locked" is a true, independently-worth-pinning invariant, not because correctness is checked.
 // Use stage:'review' words so expandLearningSteps leaves them unexpanded.
-it('a WRONG answer on a component word does NOT unlock its phrase (correctness-gated)', async () => {
+it('a WRONG answer on a component word does NOT unlock its phrase (no session overlay to add to)', async () => {
   const wordA: ReviewItem = {
     id: 'a', type: 'word', stage: 'review', reps: 1, target: 'a', gloss: 'a',
     wordClass: 'concrete', receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto',
@@ -308,11 +302,15 @@ it('a WRONG answer on a component word does NOT unlock its phrase (correctness-g
   await act(async () => {
     await result.current.submit({ itemId: 'a', cardKind: 'word/hear', correct: false, spoke: false });
   });
-  // 'a' was answered wrong → still not in learned overlay → phrase stays locked.
+  // 'a' was answered wrong — irrelevant either way, since no session overlay exists to add to;
+  // the gate still reads only the (unchanged) earned store, so the phrase stays locked.
   await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
 });
 
-it('a CORRECT answer on a component word lets its phrase unlock', async () => {
+// Flipped 2026-07-23 (earned-phrase gating): a same-session correct answer no longer unlocks the
+// phrase — the controller stops unioning session-learned words into the gate, so `known.all()`
+// (the EARNED set) is the only source of truth, and it does not change until a real refresh.
+it('a CORRECT answer on a component word does NOT unlock its phrase in the same session (no session-learned overlay)', async () => {
   const wordA: ReviewItem = {
     id: 'a', type: 'word', stage: 'review', reps: 1, target: 'a', gloss: 'a',
     wordClass: 'concrete', receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto',
@@ -324,32 +322,32 @@ it('a CORRECT answer on a component word lets its phrase unlock', async () => {
   const { result } = renderSessionHook([wordA, phraseP], new Set());
   await settleHook(() => expect(result.current.loading).toBe(false));
   await settleHook(() => expect(result.current.current?.item.id).toBe('a'));
-  // Submit wordA CORRECT → 'a' enters learned overlay → phrase is no longer locked.
+  // Submit wordA CORRECT — under the OLD behavior this added 'a' to the session-learned overlay
+  // and unlocked the phrase; under the NEW behavior it has no effect on the gate.
   await act(async () => {
     await result.current.submit({ itemId: 'a', cardKind: 'word/hear', correct: true, spoke: false });
   });
-  await settleHook(() => expect(result.current.current?.kind).not.toBe('phrase/locked'));
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
 });
 
-// --- Fix B regression: phrase/locked with no component ahead must NOT re-queue (infinite loop) ---
+// --- advance() past phrase/locked never re-queues (Task 5: no teaser re-queue at all — previously
+// this only held when no component was ahead; now it holds unconditionally, see the next test) ---
 it('phrase/locked with no component ahead: advance() does not re-queue the phrase (no infinite loop)', async () => {
   // Reproduces the "Lūdzu!" freeze: a phrase whose only unknown component is not in the queue.
-  // Without Fix B, advance() would call requeuePhraseAfterComponents which appends to the end
-  // (since lastCompIdx === -1) -> queue grows as fast as pos -> session never finishes.
-  // With Fix B, advance() detects no component ahead and just steps pos -> session finishes.
+  // stage: 'new' — the no-re-lock rule means only stage:'new' phrases consult the gate at all.
   const phraseLoner: ReviewItem = {
     id: 'ph-loner',
     type: 'phrase',
-    stage: 'review',  // stage:review avoids expandLearningSteps expansion noise
-    reps: 3,
+    stage: 'new',
+    reps: 0,
     target: 'Lūdzu!',
     gloss: 'Please!',
-    componentLemmaIds: ['ludzu'],  // 'ludzu' is unknown (not in known set, no word item in batch)
-    receptiveReps: 3,
-    productiveReps: 1,
+    componentLemmaIds: ['ludzu'],  // 'ludzu' is unearned (not in known set, no word item in batch)
+    receptiveReps: 0,
+    productiveReps: 0,
     translationVisibility: 'auto',
   };
-  // Empty known set -> 'ludzu' is unknown -> phrase renders phrase/locked.
+  // Empty known set -> 'ludzu' is unearned -> phrase renders phrase/locked.
   // No word with id 'ludzu' in the batch -> no component ahead in queue.
   const { result } = renderSessionHook([phraseLoner], new Set());
 
@@ -371,13 +369,57 @@ it('phrase/locked with no component ahead: advance() does not re-queue the phras
   expect(result.current.done).toBe(true);
 });
 
+// --- Task 5: the teaser never re-queues, even when a component word IS still ahead in the queue
+// (previously advance() would insert the phrase right after its last component — that re-queue
+// path is deleted entirely; the phrase is not admitted again until a later round via selectBatch) ---
+it('phrase/locked with a component word ahead: advance() still does NOT re-queue the phrase (teaser shows exactly once)', async () => {
+  const phrase: ReviewItem = {
+    id: 'ph-locked-2',
+    type: 'phrase',
+    stage: 'new',
+    reps: 0,
+    target: 'Vienu kafiju, lūdzu.',
+    gloss: 'One coffee, please.',
+    componentLemmaIds: ['kafija'],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
+  };
+  const kafija: ReviewItem = {
+    id: 'kafija', type: 'word', stage: 'review', reps: 1, target: 'kafija', gloss: 'coffee',
+    wordClass: 'concrete', receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto',
+  };
+  // 'kafija' (the phrase's only component) IS ahead in the queue — the old code would have
+  // re-queued the phrase right after it.
+  const { result } = renderSessionHook([phrase, kafija], new Set());
+
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
+  const initialTotal = result.current.total; // 2
+  await act(async () => {
+    result.current.advance();
+  });
+
+  // Queue must NOT have grown.
+  expect(result.current.total).toBe(initialTotal);
+  // The next (and only remaining) item is 'kafija' — never the phrase again.
+  await settleHook(() => expect(result.current.current?.item.id).toBe('kafija'));
+  await act(async () => {
+    await result.current.submit({ itemId: 'kafija', cardKind: 'word/hear', correct: true, spoke: false });
+  });
+  // Session is done — the phrase was never re-inserted (no second encounter).
+  await settleHook(() => expect(result.current.done).toBe(true));
+  expect(result.current.total).toBe(initialTotal);
+});
+
 // --- refresh-generation regression: the FIRST card must see the set loaded by reload() ---
 it('a fully-known phrase at position 0 renders phrase/unlock once known.refresh() lands (no stale knownUnion)', async () => {
   // The real KnownWordsStore is a stable service instance whose all() returns a mutable internal
   // set that is EMPTY until refresh() resolves. Before the refresh-generation fix, the first
-  // card's knownUnion was memoized from the pre-refresh (empty) set and nothing recomputed it for
-  // position 0 (setPos(0) bails, `known` never changes identity) — so a fully-known phrase at
-  // position 0 rendered phrase/locked and was silently dropped by advance().
+  // card's known set (pre-Task-5: the `knownUnion` memo — since renamed to `earned` and no longer
+  // unioned with anything session-local, but the same staleness hazard applies) was memoized from
+  // the pre-refresh (empty) set and nothing recomputed it for position 0 (setPos(0) bails, `known`
+  // never changes identity) — so a fully-known phrase at position 0 rendered phrase/locked and was
+  // silently dropped by advance().
   const p1: ReviewItem = {
     id: 'p1',
     type: 'phrase',
@@ -443,11 +485,10 @@ it('phrase/locked enriches the item with the live "N words to go — learn X" hi
 });
 
 // --- Task 5: unlock inserts the FULL hear->mc->speak arc (requeueArcNext), not a single re-queue ---
+// The unlock reveal now only happens for an ALREADY-earned component (no same-session unlock —
+// see the flipped test above), so this fixture seeds 'a' as known from the start rather than
+// learning it in-session.
 it('unlock inserts the full arc: advancing walks phrase/hear -> phrase/meaning -> phrase/sayit', async () => {
-  const wordA: ReviewItem = {
-    id: 'a', type: 'word', stage: 'review', reps: 1, target: 'a', gloss: 'a',
-    wordClass: 'concrete', receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto',
-  };
   const phraseP: ReviewItem = {
     id: 'p',
     type: 'phrase',
@@ -466,21 +507,10 @@ it('unlock inserts the full arc: advancing walks phrase/hear -> phrase/meaning -
     productiveReps: 0,
     translationVisibility: 'auto',
   };
-  const { result } = renderSessionHook([phraseP, wordA], new Set());
+  // 'a' is already earned (a prior round/day) -> the phrase opens directly with the unlock reveal.
+  const { result } = renderSessionHook([phraseP], new Set(['a']));
 
-  // Phrase starts locked ('a' unknown).
-  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
-  await act(async () => {
-    result.current.advance();
-  });
-
-  // Answer the component word CORRECTLY -> enters the in-session known overlay.
-  await settleHook(() => expect(result.current.current?.item.id).toBe('a'));
-  await act(async () => {
-    await result.current.submit({ itemId: 'a', cardKind: 'word/hear', correct: true, spoke: false });
-  });
-
-  // Phrase re-surfaces as the one-time unlock reveal.
+  // Phrase's first (and only) encounter is the one-time unlock reveal — no locked stage at all.
   await settleHook(() => expect(result.current.current?.kind).toBe('phrase/unlock'));
   await act(async () => {
     result.current.advance();
@@ -505,4 +535,35 @@ it('unlock inserts the full arc: advancing walks phrase/hear -> phrase/meaning -
   kinds.push(result.current.current!.kind);
 
   expect(kinds).toEqual(['phrase/hear', 'phrase/meaning', 'phrase/sayit']);
+});
+
+// --- Task 7: componentBreakdown chip decoration — controller sets `known` ONLY on the
+// phrase/locked item, keyed to the earned set (same decoration site as lockHint). ---
+it('phrase/locked decorates componentBreakdown with known:true only for earned lemma ids', async () => {
+  const p1: ReviewItem = {
+    id: 'p1',
+    type: 'phrase',
+    stage: 'new',
+    reps: 0,
+    target: 'Man ir labi.',
+    gloss: 'I am well.',
+    componentLemmaIds: ['es', 'but', 'labi'], // 2 unknown ('but', 'labi') -> locked
+    componentBreakdown: [
+      { surface: 'Man', lemma: 'es', gloss: 'I', lemmaId: 'es' },
+      { surface: 'ir', lemma: 'būt', gloss: 'to be', lemmaId: 'but' },
+      { surface: 'labi', lemma: 'labi', gloss: 'well', lemmaId: 'labi' },
+    ],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
+  };
+  // Only 'es' is earned.
+  const { result } = renderSessionHook([p1], new Set(['es']));
+
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
+  expect(result.current.current?.item.componentBreakdown).toEqual([
+    { surface: 'Man', lemma: 'es', gloss: 'I', lemmaId: 'es', known: true },
+    { surface: 'ir', lemma: 'būt', gloss: 'to be', lemmaId: 'but', known: false },
+    { surface: 'labi', lemma: 'labi', gloss: 'well', lemmaId: 'labi', known: false },
+  ]);
 });

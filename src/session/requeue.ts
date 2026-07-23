@@ -1,22 +1,5 @@
 import type { ReviewItem } from '../types/reviewItem';
 
-/** Insert `phrase` right after the LAST of its component words that appears after `fromPos`.
- *  If none appear ahead, append to the end. Returns a new array (pure). */
-export function requeuePhraseAfterComponents(
-  queue: ReviewItem[],
-  fromPos: number,
-  phrase: ReviewItem,
-): ReviewItem[] {
-  const ids = new Set(phrase.componentLemmaIds ?? []);
-  let lastCompIdx = -1;
-  for (let i = fromPos + 1; i < queue.length; i++) {
-    const q = queue[i];
-    if (q && ids.has(q.id)) lastCompIdx = i;
-  }
-  const insertAt = lastCompIdx === -1 ? queue.length : lastCompIdx + 1;
-  return [...queue.slice(0, insertAt), phrase, ...queue.slice(insertAt)];
-}
-
 /** Insert the phrase's full learning arc (hear → MC → speak) immediately after `fromPos`.
  *  Used by the unlock path: the freshly-unlocked phrase gets the same teach→MC→speak arc
  *  a batch-admitted phrase gets from expandLearningSteps. Returns a new array (pure). */

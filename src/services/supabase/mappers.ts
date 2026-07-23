@@ -114,8 +114,8 @@ export function phraseRowToReviewItem(
  */
 export function buildComponentBreakdown(
   target: string,
-  components: Array<{ position: number; lemma: string; gloss: string }>,
-): Array<{ surface: string; lemma: string; gloss: string }> {
+  components: Array<{ position: number; lemma: string; gloss: string; lemmaId?: string }>,
+): Array<{ surface: string; lemma: string; gloss: string; lemmaId?: string }> {
   const tokens = target
     .split(/\s+/)
     .map((t) => t.replace(/[!?.,:;"'()«»„“”]/g, '').toLowerCase())
@@ -124,7 +124,7 @@ export function buildComponentBreakdown(
     .sort((a, b) => a.position - b.position)
     .flatMap((c) => {
       const surface = tokens[c.position];
-      return surface ? [{ surface, lemma: c.lemma, gloss: c.gloss }] : [];
+      return surface ? [{ surface, lemma: c.lemma, gloss: c.gloss, lemmaId: c.lemmaId }] : [];
     });
 }
 

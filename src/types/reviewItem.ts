@@ -84,7 +84,17 @@ export interface ReviewItem {
   // phrase items only — per-word breakdown for the intro card: the surface token as it appears
   // in the phrase, the dictionary lemma it comes from, and the lemma's gloss. Lets the learner
   // recognize "nav" as a form of "būt" the moment a phrase built from known lemmas arrives.
-  componentBreakdown?: Array<{ surface: string; lemma: string; gloss: string }>;
+  // `lemmaId` is a pass-through of the DB component's lemma id (for the `known` decoration
+  // below). `known` is set ONLY by the controller, ONLY on the phrase/locked item (earned-phrase
+  // gating, 2026-07-23) — true iff that lemma is in the earned set; it drives the per-word chip
+  // decoration on the PhraseLocked card.
+  componentBreakdown?: Array<{
+    surface: string;
+    lemma: string;
+    gloss: string;
+    lemmaId?: string;
+    known?: boolean;
+  }>;
 
   // --- visual-sync installment 2 (optional, presentational) ---
   newForm?: string;
@@ -116,4 +126,11 @@ export interface ReviewItem {
   // 'mc' = the recognition/meaning MC step; 'speak' = the production (say-it) step.
   // renderFor routes by this marker. Derived/in-memory only — never persisted.
   retest?: 'mc' | 'speak';
+
+  // Recall probe (earned-phrase gating, spec 2026-07-23 §4): a same-day-introduced, not-yet-
+  // earned lemma re-presented as a no-FSRS MC recognition check in a later round, so it has a
+  // chance to earn without taking a real FSRS grade. renderFor serves it as word/hear; submit()
+  // logs its outcome as card_kind 'word/recall' instead of the normal graded kind. In-memory
+  // only — never persisted (same precedent as `retest` above).
+  probe?: true;
 }

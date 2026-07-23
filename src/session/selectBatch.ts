@@ -14,6 +14,7 @@ import {
   RETENTION_GATE_THRESHOLD,
   I_PLUS_ONE_UNKNOWN_TOLERANCE,
   PHRASE_INTRO_CAP,
+  NEW_ROUND_DAY_CAP,
 } from './pacing';
 
 // ---------------------------------------------------------------------------
@@ -45,13 +46,13 @@ export interface DueRef {
 export interface SelectContext {
   accountAgeDays: number;
   introducedToday: number;
+  /** distinct session_ids that introduced new words today (round cap input). */
+  newRoundsToday: number;
   dueToday: number;
   /** correct-rate over last RETENTION_WINDOW graded mature reviews; undefined => no throttle. */
   rollingRetention: number | undefined;
-  /** lemma ids the user "knows" (known_lemmas view). */
-  knownLemmaIds: Set<string>;
-  /** lemma ids with ≥1 successful recall (review_log correct=true), for the i+1 anchor check. */
-  recalledLemmaIds: Set<string>;
+  /** lemma ids EARNED for phrase gating (spec 2026-07-23) — replaces knownLemmaIds + recalledLemmaIds. */
+  earnedLemmaIds: Set<string>;
   /**
    * semantic_fields already admitted, seeding the diversity gate. NB: despite the name, this is
    * per-BATCH only in production — SupabaseSrsService always passes a fresh empty set, so the
@@ -162,6 +163,15 @@ export function selectBatch(input: {
   }
 
   // -------------------------------------------------------------------------
+  // Step 4b: Round cap. At most NEW_ROUND_DAY_CAP rounds/day may introduce new words
+  // (spec 2026-07-23). Due reviews still flow (Step 1 is untouched) and fully-earned
+  // phrases still admit (Pass 2 does not consume newAllowance).
+  // -------------------------------------------------------------------------
+  if (ctx.newRoundsToday >= NEW_ROUND_DAY_CAP) {
+    newCap = 0;
+  }
+
+  // -------------------------------------------------------------------------
   // Step 5: newAllowance — how many NEW items we can still introduce this session.
   // -------------------------------------------------------------------------
   const newAllowance = Math.max(0, newCap - ctx.introducedToday);
@@ -186,7 +196,7 @@ export function selectBatch(input: {
 
   // -------------------------------------------------------------------------
   // Pass 2 — PHRASES: building blocks. Admissible iff the anchor has been
-  // recalled AND either (a) zero unknown components (fully known), or (b)
+  // earned AND either (a) zero unknown (unearned) components, or (b)
   // exactly one unknown component whose word is admitted THIS batch (pass 1).
   // Capped at PHRASE_INTRO_CAP; phrases do NOT consume newAllowance.
   //
@@ -205,11 +215,11 @@ export function selectBatch(input: {
     for (const candidate of sorted) {
       if (candidate.kind !== 'phrase') continue;
       if (phrasesAdmitted >= PHRASE_INTRO_CAP) break;
-      if (!candidate.anchorLemmaId || !ctx.recalledLemmaIds.has(candidate.anchorLemmaId)) {
+      if (!candidate.anchorLemmaId || !ctx.earnedLemmaIds.has(candidate.anchorLemmaId)) {
         continue;
       }
       const unknown = (candidate.componentLemmaIds ?? []).filter(
-        (id) => !ctx.knownLemmaIds.has(id),
+        (id) => !ctx.earnedLemmaIds.has(id),
       );
       if (unknown.length === 0) {
         fullyKnownPhrases.push(candidate);

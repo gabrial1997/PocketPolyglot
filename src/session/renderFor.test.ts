@@ -302,6 +302,23 @@ describe('renderFor — retest step routing', () => {
   });
 });
 
+describe('renderFor — recall probe (no-FSRS word/recall; spec 2026-07-23 §4)', () => {
+  it('a probe word routes to word/hear even though it would otherwise render a learn card', () => {
+    const w = { ...newWord, probe: true as const, stage: 'new' as const, wordClass: 'concrete' as const };
+    expect(renderFor(w)).toBe('word/hear');
+  });
+
+  it('a probe word routes to word/hear even when picturable (overrides word/pic-review)', () => {
+    const w = { ...dueWord, probe: true as const, media: { imageUrl: 'x.png' } };
+    expect(renderFor(w)).toBe('word/hear');
+  });
+
+  it('a probe word with choices still routes to word/hear (never word/say)', () => {
+    const w = { ...dueWord, probe: true as const, choices: twoChoices, receptiveReps: 3, productiveReps: 3 };
+    expect(renderFor(w)).toBe('word/hear');
+  });
+});
+
 describe('renderFor — review rotation (MC ↔ speak by rep parity)', () => {
   it('even totalReps → word/hear', () => {
     const w = { ...dueWord, receptiveReps: 1, productiveReps: 1, choices: twoChoices };

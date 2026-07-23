@@ -42,6 +42,8 @@ import type {
   DueRef,
   SelectContext,
 } from '../../session/selectBatch';
+import { loadEarnedLemmaIds } from './earnedLoader';
+import { randomUuid } from '../uuid';
 
 /**
  * Derive the review_state.item_type from a CardKind string (e.g. 'word/say' -> 'lemma').
@@ -109,6 +111,12 @@ export class SupabaseSrsService implements SrsService {
     return this.nowFn ? this.nowFn() : new Date();
   }
 
+  // Per-round identifier stamped onto every review_log row this session writes (earned-phrase
+  // gate, spec 2026-07-23): computeEarned treats a correct recognition in a DIFFERENT session_id
+  // (or a later calendar day) than the item's intro as "earned in a different round". Rotated at
+  // the top of every getDueBatch() call, NOT per submit() — one round = one getDueBatch() call.
+  private sessionId = randomUuid();
+
   constructor(
     private readonly client: SupabaseClient,
     private readonly userId: string,
@@ -137,6 +145,38 @@ export class SupabaseSrsService implements SrsService {
     if (error) throw error;
     if (!data) return 0;
     return new Set((data as Array<{ item_id?: string }>).map(r => r.item_id)).size;
+  }
+
+  /**
+   * Count distinct ROUNDS (session_id) that introduced new words today (word/learn-* card_kind).
+   * The round-cap input for NEW_ROUND_DAY_CAP (spec 2026-07-23). Reuses introducedToday's exact
+   * day-start AND upper-bound boundary verbatim (gte dayStart, lte now) — under dev time-travel
+   * `now` is decoupled from the wall clock, so without the upper bound this query and
+   * introducedToday's could disagree about what "today" is, and a wall-clock-stamped row after a
+   * synthetic `now` would zero newCap for a round that hasn't happened yet by the app's own
+   * clock. Legacy same-day rows with a null session_id (pre-migration-0021 data) count as a
+   * single additional round — they can't be told apart, but they did happen, so collapsing them
+   * to "one more round" is the conservative (under- rather than over-counting) choice.
+   */
+  private async newRoundsToday(now: Date): Promise<number> {
+    const dayStart = startOfLocalDay(now).toISOString();
+    const { data, error } = await this.client
+      .from('review_log')
+      .select('session_id,card_kind,created_at')
+      .eq('user_id', this.userId)
+      .like('card_kind', 'word/learn-%')
+      .gte('created_at', dayStart)
+      .lte('created_at', now.toISOString());
+    if (error) throw error;
+    if (!data) return 0;
+    const rows = data as Array<{ session_id?: string | null }>;
+    const sessionIds = new Set<string>();
+    let hasLegacyNullSession = false;
+    for (const r of rows) {
+      if (r.session_id) sessionIds.add(r.session_id);
+      else hasLegacyNullSession = true;
+    }
+    return sessionIds.size + (hasLegacyNullSession ? 1 : 0);
   }
 
   /** Days since the account was created. Falls back to earliest review_log.created_at. */
@@ -192,43 +232,6 @@ export class SupabaseSrsService implements SrsService {
     if (graded.length < RETENTION_MINIMUM_SAMPLE) return undefined;
     const correct = graded.filter(r => r.correct === true).length;
     return correct / graded.length;
-  }
-
-  /** lemma ids with ≥1 review_log row correct=true (used for the i+1 anchor check). */
-  private async recalledLemmaIds(): Promise<Set<string>> {
-    // review_log grows forever, and an un-ranged select silently truncates at PostgREST's
-    // default 1000-row cap — after ~1000 correct reviews, later-recalled anchors would vanish
-    // and their phrases could never unlock. Page through the full set (ordered by the uuid PK
-    // for a stable page walk, same pattern as lemmaCandidates).
-    const CHUNK = 1000;
-    const ids = new Set<string>();
-    let offset = 0;
-    for (;;) {
-      const { data, error } = await this.client
-        .from('review_log')
-        .select('item_id')
-        .eq('user_id', this.userId)
-        .eq('item_type', 'lemma')
-        .eq('correct', true)
-        .order('id', { ascending: true })
-        .range(offset, offset + CHUNK - 1);
-      if (error) throw error;
-      const rows = (data ?? []) as Array<{ item_id?: string }>;
-      for (const r of rows) if (r.item_id) ids.add(r.item_id);
-      if (rows.length < CHUNK) return ids;
-      offset += CHUNK;
-    }
-  }
-
-  /** lemma ids the user "knows" (known_lemmas view, security_invoker=true verified). */
-  private async knownLemmaIds(): Promise<Set<string>> {
-    const { data, error } = await this.client
-      .from('known_lemmas')
-      .select('lemma_id')
-      .eq('user_id', this.userId);
-    if (error) throw error;
-    if (!data) return new Set();
-    return new Set((data as Array<{ lemma_id?: string }>).map(r => r.lemma_id).filter(Boolean) as string[]);
   }
 
   /**
@@ -430,8 +433,15 @@ export class SupabaseSrsService implements SrsService {
   // -------------------------------------------------------------------------
 
   async getDueBatch(): Promise<ReviewItem[]> {
+    // Rotate the round id FIRST: every review_log row written from here on (this session's
+    // submit() calls) is stamped with this round. Home's getDueSummary() also calls getDueBatch()
+    // for its preview — harmless, since no rows are posted between a preview and the session the
+    // learner actually plays (see the sessionId field doc).
+    this.sessionId = randomUuid();
+
     const now = this.now();
     const nowIso = now.toISOString();
+    const dayStart = startOfLocalDay(now).toISOString();
 
     // ------------------------------------------------------------------
     // 0. Make sure perception drills can enter the loop. Unlike lemmas/phrases, minimal-pair
@@ -472,15 +482,25 @@ export class SupabaseSrsService implements SrsService {
       intrToday,
       acctAgeDays,
       rolling,
-      recalled,
-      known,
+      earned,
+      roundsToday,
     ] = await Promise.all([
       this.introducedToday(now),
       this.accountAgeDays(now),
       this.rollingRetention(),
-      this.recalledLemmaIds(),
-      this.knownLemmaIds(),
+      // Single shared loader (spec 2026-07-23): a lemma earned via a correct recognition in a
+      // DIFFERENT round (session_id) or later day than its intro. Feeds SelectContext's single
+      // earnedLemmaIds field, gating both the phrase-unlock and one-away-teaser paths.
+      loadEarnedLemmaIds(this.client, this.userId),
+      this.newRoundsToday(now),
     ]);
+
+    // ------------------------------------------------------------------
+    // 2.5 Recall probes (spec 2026-07-23 §4): lemmas introduced earlier TODAY, in a DIFFERENT
+    //     round than this one, still unearned, and not already surfacing via the normal due
+    //     path — prepended below as no-FSRS MC checks (see buildProbeItems doc).
+    // ------------------------------------------------------------------
+    const probeItems = await this.buildProbeItems(now, dayStart, nowIso, allDueRows, earned);
 
     // ------------------------------------------------------------------
     // 3. Load candidates: content rows without a review_state row.
@@ -555,10 +575,10 @@ export class SupabaseSrsService implements SrsService {
     const ctx: SelectContext = {
       accountAgeDays: acctAgeDays,
       introducedToday: intrToday,
+      newRoundsToday: roundsToday,
       dueToday: dueRefs.length,
       rollingRetention: rolling,
-      knownLemmaIds: known,
-      recalledLemmaIds: recalled,
+      earnedLemmaIds: earned,
       // Per-batch only (session-scoped): always starts empty, so semantic-field diversity is
       // enforced within this one batch, not across sessions/days. Nothing persists admitted
       // fields between calls. (Matches the SelectContext doc in selectBatch.ts.)
@@ -584,10 +604,10 @@ export class SupabaseSrsService implements SrsService {
         .limit(PRACTICE_BATCH);
       if (practiceErr) throw practiceErr;
       const practiceRows: ReviewStateRow[] = (practice ?? []) as ReviewStateRow[];
-      if (practiceRows.length === 0) return [];
+      if (practiceRows.length === 0) return probeItems;
       // Build a minimal batch from practice rows (review-only, no new candidates).
       // We reuse the existing enrichment path below by re-routing through `rows`.
-      return this.enrichAndReorder(practiceRows, now);
+      return [...probeItems, ...(await this.enrichAndReorder(practiceRows, now))];
     }
 
     // ------------------------------------------------------------------
@@ -623,13 +643,100 @@ export class SupabaseSrsService implements SrsService {
       }
     }
 
-    return this.enrichAndReorder(orderedStates, now, {
-      dueLemmaMap,
-      duePhraseMap,
-      duePairMap,
-      candidateLemmaRows: lemmaRows,
-      candidatePhraseRows: phraseRows,
+    return [
+      ...probeItems,
+      ...(await this.enrichAndReorder(orderedStates, now, {
+        dueLemmaMap,
+        duePhraseMap,
+        duePairMap,
+        candidateLemmaRows: lemmaRows,
+        candidatePhraseRows: phraseRows,
+      })),
+    ];
+  }
+
+  /**
+   * Recall probes (earned-phrase gating, spec 2026-07-23 §4). computeEarned requires a correct
+   * word/hear|word/recall row in a DIFFERENT round (or a later day) than a lemma's intro — so a
+   * word taught in round 1 of a multi-round day would otherwise never get a second chance to
+   * earn that same day. This builds that second chance: an MC recognition probe for every lemma
+   * introduced earlier TODAY (session_id ≠ this round's, or a legacy null session_id) that is
+   * still unearned AND not already surfacing via the normal due path.
+   *
+   * Reuses enrichAndReorder — the SAME enrichment path due items go through (distractor RPC,
+   * reviewPreview, C2 rep counts) — so a probe item is indistinguishable from a due item except
+   * for the `probe:true` marker renderFor() and submit() key off of. Returns [] when nothing
+   * qualifies (the common case: day 1, or a single-round day).
+   */
+  private async buildProbeItems(
+    now: Date,
+    dayStart: string,
+    nowIso: string,
+    allDueRows: ReviewStateRow[],
+    earned: Set<string>,
+  ): Promise<ReviewItem[]> {
+    const { data: introRows, error: introErr } = await this.client
+      .from('review_log')
+      .select('item_id,session_id')
+      .eq('user_id', this.userId)
+      .eq('item_type', 'lemma')
+      .like('card_kind', 'word/learn-%')
+      .gte('created_at', dayStart)
+      .lte('created_at', nowIso);
+    if (introErr) throw introErr;
+
+    const todaysIntroIds = new Set<string>();
+    for (const r of (introRows ?? []) as Array<{ item_id?: string; session_id?: string | null }>) {
+      if (!r.item_id) continue;
+      // A legacy null session_id (pre-0021 data) can't be proven "this round" — treat it as a
+      // different round too (same conservative-toward-probing call as computeEarned's own null
+      // handling; see earned.ts).
+      if (r.session_id == null || r.session_id !== this.sessionId) todaysIntroIds.add(r.item_id);
+    }
+    if (todaysIntroIds.size === 0) return [];
+
+    const dueLemmaIds = new Set(
+      allDueRows.filter((s) => s.item_type === 'lemma').map((s) => s.item_id),
+    );
+    const probeIds = [...todaysIntroIds].filter((id) => !earned.has(id) && !dueLemmaIds.has(id));
+    if (probeIds.length === 0) return [];
+
+    const { data: stateRows, error: stateErr } = await this.client
+      .from('review_state')
+      .select('*')
+      .eq('user_id', this.userId)
+      .eq('item_type', 'lemma')
+      .eq('template', 'recognition')
+      .in('item_id', probeIds);
+    if (stateErr) throw stateErr;
+    const stateMap = new Map<string, ReviewStateRow>();
+    for (const s of (stateRows ?? []) as ReviewStateRow[]) stateMap.set(s.item_id, s);
+
+    const probeStates: ReviewStateRow[] = probeIds.map((id) => {
+      const existing = stateMap.get(id);
+      if (existing) return existing;
+      // No review_state row yet (the learner saw only the teach card and quit before the
+      // earlier round's own MC step graded it) — a stage:'new' synthetic row, same shape as
+      // getDueBatch's own new-item synthesis above. renderFor()'s probe check runs ahead of the
+      // new-word learn branch specifically so this doesn't render a second teach card.
+      return {
+        user_id: this.userId,
+        item_type: 'lemma',
+        item_id: id,
+        template: 'recognition',
+        stage: 'new',
+        reps: 0,
+        lapses: 0,
+        stability: null,
+        difficulty: null,
+        due_at: null,
+        last_review: null,
+      };
     });
+
+    const items = await this.enrichAndReorder(probeStates, now);
+    for (const item of items) item.probe = true;
+    return items;
   }
 
   /**
@@ -784,7 +891,9 @@ export class SupabaseSrsService implements SrsService {
           item.target,
           comps.flatMap((c) => {
             const l = lemmaMap.get(c.lemma_id);
-            return l ? [{ position: c.position, lemma: l.lemma, gloss: l.gloss_en }] : [];
+            return l
+              ? [{ position: c.position, lemma: l.lemma, gloss: l.gloss_en, lemmaId: c.lemma_id }]
+              : [];
           }),
         );
       }
@@ -804,7 +913,8 @@ export class SupabaseSrsService implements SrsService {
       const assembledIds = items.map(i => i.id);
       // A batch item's review_log rows grow forever; an un-ranged select silently truncates at
       // PostgREST's default 1000-row cap, zeroing/undercounting rep counts for long-lived
-      // accounts. Page through (uuid PK order for a stable walk), same as recalledLemmaIds.
+      // accounts. Page through (uuid PK order for a stable walk) — same defense as the review_log
+      // paging in earnedLoader.ts's loadEarnedLemmaIds.
       const CHUNK = 1000;
       const logRows: ReviewLogRow[] = [];
       let offset = 0;
@@ -898,6 +1008,27 @@ export class SupabaseSrsService implements SrsService {
   }
 
   async submit(result: CardResult): Promise<{ nextReviewLabel: string; rung: import('../../session/ladder').Rung }> {
+    // Capture the round id SYNCHRONOUSLY, before any await in this call — this.sessionId is a
+    // field on a shared singleton instance that getDueBatch() can rotate mid-flight (e.g. Home's
+    // auto-exit mount calling getDueSummary() while the last card's own submit() is still awaiting
+    // its recording upload). Every insert below must use this captured value, not the live field,
+    // so a straggler write always lands in the round it actually happened in (task-9-sanity-report
+    // "Bug 1" — a phantom-stamped row otherwise falsely reads as "a different round" to the
+    // earned-phrase gate, and inflates the newRoundsToday/day-cap count).
+    const roundSessionId = this.sessionId;
+
+    if (result.cardKind === 'word/recall') {
+      // Recall probe (spec 2026-07-23 §4): evidence for the earned gate, NEVER an FSRS grade —
+      // a same-day extra Good inflates intervals (2026-07-22 pacing artifact).
+      const { error } = await this.client.from('review_log').insert({
+        user_id: this.userId, item_type: 'lemma', item_id: result.itemId,
+        card_kind: 'word/recall', correct: result.correct ?? null,
+        session_id: roundSessionId,
+      });
+      if (error) throw error;
+      return { nextReviewLabel: '', rung: computeRung(0, 0) }; // label unused by probe cards
+    }
+
     const now = this.now();
     const itemType = cardKindToDbType(result.cardKind);
     const template = cardKindToTemplate(result.cardKind);
@@ -941,6 +1072,7 @@ export class SupabaseSrsService implements SrsService {
       latency_ms: result.latencyMs ?? null,
       interval_label: label,
       recording_id: recordingId,
+      session_id: roundSessionId,
     });
     if (logErr) throw logErr;
 

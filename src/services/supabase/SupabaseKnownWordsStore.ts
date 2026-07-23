@@ -1,8 +1,10 @@
-// Supabase-backed KnownWordsStore. Loads the user's known lemma ids from the known_lemmas
-// view into an in-memory Set; has()/all() are synchronous reads of that snapshot.
+// Supabase-backed KnownWordsStore. Despite the name, this now holds the EARNED lemma set (the
+// phrase gate, spec 2026-07-23) — a lemma the user correctly recognized in a DIFFERENT round
+// (session) or later day than its intro — loaded via the shared loadEarnedLemmaIds(), NOT the
+// known_lemmas view. has()/all() are synchronous reads of the last refresh() snapshot.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { KnownWordsStore } from '../index';
-import type { KnownLemmaRow } from './types';
+import { loadEarnedLemmaIds } from './earnedLoader';
 
 export class SupabaseKnownWordsStore implements KnownWordsStore {
   private ids = new Set<string>();
@@ -26,17 +28,8 @@ export class SupabaseKnownWordsStore implements KnownWordsStore {
 
   async refresh(): Promise<void> {
     const myGen = ++this.gen;
-    const { data, error } = await this.client
-      .from('known_lemmas')
-      .select('lemma_id')
-      .eq('user_id', this.userId);
-    if (error) throw error;
+    const next = await loadEarnedLemmaIds(this.client, this.userId);
     if (myGen !== this.gen) return; // a newer refresh superseded this response — drop it
-
-    const next = new Set<string>();
-    for (const row of (data ?? []) as Pick<KnownLemmaRow, 'lemma_id'>[]) {
-      next.add(row.lemma_id);
-    }
     this.ids = next;
   }
 }

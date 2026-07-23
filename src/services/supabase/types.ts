@@ -112,12 +112,6 @@ export interface PodcastEpisodeRow {
   created_at: string;
 }
 
-/** public.known_lemmas view — the phrase-unlock gate. */
-export interface KnownLemmaRow {
-  user_id: string;
-  lemma_id: string;
-}
-
 /** public.review_log — one row per graded retrieval. Module C reads card_kind + correct to split reps. */
 export interface ReviewLogRow {
   user_id: string;

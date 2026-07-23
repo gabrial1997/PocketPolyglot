@@ -127,10 +127,10 @@ it('pairRowToReviewItem: a draft-status pair row maps to a ReviewItem with no qa
 const DEFAULT_CTX: SelectContext = {
   accountAgeDays: 1,
   introducedToday: 0,
+  newRoundsToday: 0,
   dueToday: 0,
   rollingRetention: undefined,
-  knownLemmaIds: new Set(),
-  recalledLemmaIds: new Set(),
+  earnedLemmaIds: new Set(),
   todaysSemanticFields: new Set(),
 };
 

@@ -214,6 +214,13 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, errors?: Reco
       }
       return { error: null };
     },
+    insert: async (newRows: Row | Row[]) => {
+      if (errors?.[table]) return { error: errors[table] as object };
+      const arr = Array.isArray(newRows) ? newRows : [newRows];
+      const existing = (tables[table] ??= []);
+      existing.push(...arr);
+      return { error: null };
+    },
     then: (resolve: (v: { data: Row[] | null; error: object | null; count: number | null }) => unknown) =>
       resolve(resolved()),
   };
@@ -593,6 +600,52 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     expect(batch.length).toBe(DAY_ONE_NEW_CAP);
   });
 
+  it(
+    'newRoundsToday ignores a word/learn row dated AFTER `now` (round cap must not fire early ' +
+      'under dev time-travel, where `now` can be decoupled from the wall clock)',
+    async () => {
+      const now = new Date();
+      const future = new Date(now.getTime() + 24 * 60 * 60 * 1000); // clearly after `now`
+      const tables: Record<string, Row[]> = {
+        review_state: [],
+        // 15 candidate lemmas — enough to fill DAY_ONE_NEW_CAP (10) if the cap is NOT zeroed.
+        lemmas: Array.from({ length: 15 }, (_, k) => ({
+          id: `new-lemma-${k}`,
+          lemma: `word-${k}`,
+          gloss_en: `gloss-${k}`,
+          audio_url: `new-lemma-${k}.mp3`,
+          native_url: `new-lemma-${k}.mp3`,
+          envelope: [0.5],
+          word_class: 'concrete',
+          utility_rank: k + 1,
+        })),
+        phrases: [],
+        phrase_components: [],
+        minimal_pairs: [],
+        review_log: [
+          // 2 real rounds today (at/before `now`) — below NEW_ROUND_DAY_CAP (3).
+          { user_id: 'u1', item_type: 'lemma', item_id: 'x1', card_kind: 'word/learn-concrete', session_id: 's1', created_at: now.toISOString() },
+          { user_id: 'u1', item_type: 'lemma', item_id: 'x2', card_kind: 'word/learn-concrete', session_id: 's2', created_at: now.toISOString() },
+          // A 3rd distinct-session round, but dated AFTER `now`. Without the lte(now) upper
+          // bound this would push newRoundsToday to 3 === NEW_ROUND_DAY_CAP, zeroing newCap —
+          // it must be excluded.
+          { user_id: 'u1', item_type: 'lemma', item_id: 'x3', card_kind: 'word/learn-concrete', session_id: 's3', created_at: future.toISOString() },
+        ],
+        known_lemmas: [],
+        profiles: [{ id: 'u1', user_id: 'u1', created_at: now.toISOString() }],
+      };
+
+      const svc = makeSvc(tables, {}, now);
+      const batch = await svc.getDueBatch();
+
+      // x1/x2 (dated at `now`) are also counted by introducedToday (same gte/lte bounds),
+      // so the expected allowance is DAY_ONE_NEW_CAP(10) - introducedToday(2) = 8 — NOT the
+      // future-dated x3 round. If the future-dated round were miscounted into newRoundsToday,
+      // the round cap (>= 3) would fire and zero newCap, giving batch.length 0 instead.
+      expect(batch.length).toBe(DAY_ONE_NEW_CAP - 2);
+    },
+  );
+
   it('audio-less + image-less WORD due items ARE re-surfaced (reviewable via the written word)', async () => {
     // One due item with no audio and no image, one with audio
     const dueStates: Row[] = [
@@ -923,6 +976,123 @@ describe('SupabaseSrsService.submit() — E2 recording_id linkage', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Session stamping (earned-phrase gate, spec 2026-07-23): every review_log row carries the
+// service's current round id (session_id), rotated at the top of getDueBatch() — one round =
+// one getDueBatch() call. computeEarned() reads this to tell "recalled in a different round"
+// from "recalled in the same sitting the word was taught".
+// ---------------------------------------------------------------------------
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+describe('SupabaseSrsService — session stamping', () => {
+  it('submit() stamps the review_log insert with a uuid-shaped session_id', async () => {
+    const client = makeSubmitClient();
+    const svc = new SupabaseSrsService(client as never, 'u1');
+
+    await svc.submit(makeCardResult());
+
+    const inserted = (client as { _getLastLogInsert: () => Row | null })._getLastLogInsert();
+    expect(inserted).not.toBeNull();
+    expect(inserted!.session_id).toEqual(expect.stringMatching(UUID_RE));
+  });
+
+  it('two getDueBatch() calls rotate the session id, so subsequent submits() land in different rounds', async () => {
+    const now = new Date();
+    // No pre-seeded review_state row: 'w-a' surfaces as a fresh new candidate (isFresh path in
+    // schedule()), so submit() can grade it without a prior FSRS card in play — keeps this test
+    // about session_id rotation, not FSRS scheduling edge cases.
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [contentRow('w-a', { envelope: [0.5], native_url: 'w-a.mp3', utility_rank: 1 })],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+    const svc = makeSvc(tables, {}, now);
+
+    await svc.getDueBatch();
+    await svc.submit(makeCardResult({ itemId: 'w-a', cardKind: 'word/hear' as CardKind }));
+
+    await svc.getDueBatch();
+    await svc.submit(makeCardResult({ itemId: 'w-a', cardKind: 'word/hear' as CardKind }));
+
+    const logRows = tables.review_log as Array<{ session_id: string }>;
+    expect(logRows).toHaveLength(2);
+    expect(logRows[0]!.session_id).toEqual(expect.stringMatching(UUID_RE));
+    expect(logRows[1]!.session_id).toEqual(expect.stringMatching(UUID_RE));
+    expect(logRows[0]!.session_id).not.toBe(logRows[1]!.session_id);
+  });
+
+  // Regression for task-9-sanity-report.md "Bug 1": the last card of a round can auto-exit to
+  // Home (SessionHost's finished-effect) while its own srs.submit() is still in flight (blocked
+  // on the recording upload). Home's mount calls getDueBatch(), which rotates the SHARED
+  // instance's this.sessionId — on the SAME singleton the still-in-flight submit() belongs to.
+  // Before the fix, both review_log insert paths read `this.sessionId` inline at write time
+  // (after the upload await), so the straggler row got stamped with the NEW round's id instead
+  // of the round it actually happened in.
+  it('submit() stamps its insert with the session id LIVE AT ENTRY, immune to a getDueBatch() rotation that lands while the recording upload is still in flight', async () => {
+    const now = new Date();
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [contentRow('w-a', { envelope: [0.5], native_url: 'w-a.mp3', utility_rank: 1 })],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+
+    let resolveUpload!: (v: string | null) => void;
+    const uploadPromise = new Promise<string | null>((resolve) => { resolveUpload = resolve; });
+    const stubUploader: RecordingUploader = { upload: jest.fn(() => uploadPromise) };
+
+    const svc = new SupabaseSrsService(fakeClient(tables) as never, 'u1', stubUploader, () => now);
+
+    // Round A starts (this is the round the straggler card below belongs to).
+    await svc.getDueBatch();
+    // Anchor: a word/recall submit writes its review_log row inline, with no await beforehand —
+    // it captures round A's session id with no race window, giving us something solid to compare
+    // the racy row against below.
+    await svc.submit(makeCardResult({ itemId: 'anchor-a', cardKind: 'word/recall' as CardKind }));
+
+    // The straggler: round A's last card, whose recording upload we hold open — this is the
+    // in-flight submit() from the repro (auto-exit fires while this promise chain is still going).
+    const racyPromise = svc.submit(
+      makeCardResult({ itemId: 'w-a', cardKind: 'word/hear' as CardKind, recording: 'file:///take.m4a' }),
+    );
+
+    // Drain microtasks so the racy submit()'s own internal awaits (scheduleTemplateRow's
+    // maybeSingle + upsert) progress up to the point where it's blocked on uploader.upload() — it
+    // cannot advance any further without resolveUpload(), so this is deterministic, not timing-luck.
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+
+    // Round B rotates the session id — e.g. Home's post-exit getDueSummary() — WHILE the
+    // straggler above is still awaiting its upload.
+    await svc.getDueBatch();
+    await svc.submit(makeCardResult({ itemId: 'anchor-b', cardKind: 'word/recall' as CardKind }));
+
+    // Now let the straggler's upload resolve and its write land.
+    resolveUpload(null);
+    await racyPromise;
+
+    const logRows = tables.review_log as Array<{ item_id: string; session_id: string }>;
+    const anchorA = logRows.find((r) => r.item_id === 'anchor-a')!;
+    const anchorB = logRows.find((r) => r.item_id === 'anchor-b')!;
+    const racyRow = logRows.find((r) => r.item_id === 'w-a')!;
+
+    expect(anchorA.session_id).not.toBe(anchorB.session_id); // sanity: two genuinely distinct rounds
+    // The straggler belongs to round A — it must carry round A's id, not whichever id happened to
+    // be live on the shared instance by the time its write finally executed.
+    expect(racyRow.session_id).toBe(anchorA.session_id);
+    expect(racyRow.session_id).not.toBe(anchorB.session_id);
+  });
+});
+
 // --- Drill seeding (perception drills have no candidate path; seed them so they can surface) ---
 describe('SupabaseSrsService drill seeding', () => {
   const drillRow = (id: string): Row => ({
@@ -1220,10 +1390,9 @@ describe('SupabaseSrsService.getDueBatch — failed queries reject (no silent co
     await expect(svc.getDueBatch()).rejects.toEqual({ message: 'review_log boom' });
   });
 
-  it('rejects when the known_lemmas query fails (a silent empty set would relock phrases)', async () => {
-    const svc = makeSvc(baseTables(), {}, now, { known_lemmas: { message: 'known_lemmas boom' } });
-    await expect(svc.getDueBatch()).rejects.toEqual({ message: 'known_lemmas boom' });
-  });
+  // The old "known_lemmas query fails" case no longer applies: getDueBatch's earned-set ctx now
+  // comes from loadEarnedLemmaIds(), which reads review_log — already covered by the
+  // review_log-rejects test above (same table, same reject-on-error contract).
 
   it('rejects when the lemmas content query fails (a silent empty map would drop every due word)', async () => {
     const svc = makeSvc(baseTables(), {}, now, { lemmas: { message: 'lemmas boom' } });
@@ -1238,12 +1407,12 @@ describe('SupabaseSrsService.getDueBatch — failed queries reject (no silent co
 
 // ---------------------------------------------------------------------------
 // Pagination past PostgREST's silent ~1000-row default cap (the fake mirrors the cap).
-// review_log grows forever, so the two unbounded reads — recalledLemmaIds and the C2
+// review_log grows forever, so the two unbounded reads — loadEarnedLemmaIds and the C2
 // rep-count query — must page with .range() instead of trusting a single un-ranged select.
 // ---------------------------------------------------------------------------
 
 describe('SupabaseSrsService.getDueBatch — pages past the PostgREST row cap', () => {
-  it('recalledLemmaIds: an anchor recalled beyond the first 1000 log rows still unlocks its phrase', async () => {
+  it('loadEarnedLemmaIds: an anchor with no logged intro, recalled beyond the first 1000 log rows, still unlocks its phrase', async () => {
     const now = new Date();
     // 1000 filler recall rows sort (by id) BEFORE the anchor's recall row, so an un-paginated
     // read never sees the anchor and the fully-known phrase silently never unlocks.
@@ -1454,5 +1623,190 @@ describe('SupabaseSrsService.getDueBatch — phrase candidates are tier-ordered'
     const t2At = ids.indexOf('p-t2');
     expect(t1At).toBeGreaterThanOrEqual(0);
     if (t2At !== -1) expect(t1At).toBeLessThan(t2At);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 6: recall probes (no-FSRS word/recall) — spec 2026-07-23 §4. A same-day-introduced,
+// not-yet-earned lemma gets an MC recognition probe PREPENDED ahead of the normal due order in
+// a later round (session), so it has a chance to earn without ever taking an FSRS grade.
+// ---------------------------------------------------------------------------
+
+describe('SupabaseSrsService.submit() — word/recall is log-only, never an FSRS grade', () => {
+  it('inserts a review_log row (card_kind:word/recall + session_id) and does NOT touch review_state', async () => {
+    let reviewStateTouched = false;
+    const reviewLog: Row[] = [];
+    const client = {
+      from: (table: string) => {
+        if (table === 'review_state') {
+          const b: Record<string, unknown> = {
+            select: () => b,
+            eq: () => b,
+            upsert: async () => { reviewStateTouched = true; return { error: null }; },
+            maybeSingle: async () => { reviewStateTouched = true; return { data: null, error: null }; },
+            then: (resolve: (v: unknown) => unknown) => resolve({ data: null, error: null }),
+          };
+          return b;
+        }
+        if (table === 'review_log') {
+          const b: Record<string, unknown> = {
+            select: () => b,
+            eq: () => b,
+            insert: async (row: Row) => { reviewLog.push(row); return { error: null }; },
+            then: (resolve: (v: { data: Row[]; error: null }) => unknown) =>
+              resolve({ data: reviewLog, error: null }),
+          };
+          return b;
+        }
+        const noop: Record<string, unknown> = {
+          select: () => noop,
+          eq: () => noop,
+          insert: async () => ({ error: null }),
+          upsert: async () => ({ error: null }),
+          maybeSingle: async () => ({ data: null, error: null }),
+          then: (resolve: (v: unknown) => unknown) => resolve({ data: [], error: null }),
+        };
+        return noop;
+      },
+    };
+    const svc = new SupabaseSrsService(client as never, 'u1');
+
+    const result = await svc.submit({ itemId: 'w-a', cardKind: 'word/recall' as CardKind, correct: true });
+
+    // No review_state upsert/maybeSingle — a probe answer never advances FSRS.
+    expect(reviewStateTouched).toBe(false);
+    expect(reviewLog).toHaveLength(1);
+    expect(reviewLog[0]!.item_type).toBe('lemma');
+    expect(reviewLog[0]!.item_id).toBe('w-a');
+    expect(reviewLog[0]!.card_kind).toBe('word/recall');
+    expect(reviewLog[0]!.correct).toBe(true);
+    expect(reviewLog[0]!.session_id).toEqual(expect.stringMatching(UUID_RE));
+    // Return shape still satisfies submit()'s declared interface — callers destructure both fields.
+    expect(result).toEqual({ nextReviewLabel: '', rung: 'recognition' });
+  });
+
+  it('logs correct:false and correct:null the same way (no branch skips the insert)', async () => {
+    const reviewLog: Row[] = [];
+    const client = {
+      from: (table: string) => {
+        const b: Record<string, unknown> = {
+          select: () => b,
+          eq: () => b,
+          insert: async (row: Row) => {
+            if (table === 'review_log') reviewLog.push(row);
+            return { error: null };
+          },
+          upsert: async () => ({ error: null }),
+          maybeSingle: async () => ({ data: null, error: null }),
+          then: (resolve: (v: unknown) => unknown) => resolve({ data: [], error: null }),
+        };
+        return b;
+      },
+    };
+    const svc = new SupabaseSrsService(client as never, 'u1');
+
+    await svc.submit({ itemId: 'w-b', cardKind: 'word/recall' as CardKind, correct: false });
+    await svc.submit({ itemId: 'w-c', cardKind: 'word/recall' as CardKind });
+
+    expect(reviewLog).toHaveLength(2);
+    expect(reviewLog[0]!.correct).toBe(false);
+    expect(reviewLog[1]!.correct).toBeNull();
+  });
+});
+
+describe('SupabaseSrsService.getDueBatch — recall probes (Task 6)', () => {
+  it(
+    'prepends unearned same-day intros (from an earlier round) as probe:true items with MC ' +
+      'choices, excluding lemmas already earned or already due',
+    async () => {
+      const now = new Date();
+      const FUTURE = new Date(now.getTime() + 86_400_000).toISOString();
+      const PAST = new Date(now.getTime() - 5000).toISOString();
+
+      const tables: Record<string, Row[]> = {
+        review_state: [
+          // w-early: introduced earlier today, unearned, not due — the probe candidate.
+          {
+            user_id: 'u1', item_type: 'lemma', item_id: 'w-early', template: 'recognition',
+            stage: 'learning', reps: 1, lapses: 0, stability: 2, difficulty: 5,
+            due_at: FUTURE, last_review: PAST,
+          },
+          // w-earned: introduced earlier today, ALREADY earned (correct recall in a different
+          // session, same day) — must NOT be re-probed.
+          {
+            user_id: 'u1', item_type: 'lemma', item_id: 'w-earned', template: 'recognition',
+            stage: 'learning', reps: 1, lapses: 0, stability: 2, difficulty: 5,
+            due_at: FUTURE, last_review: PAST,
+          },
+          // w-due: introduced earlier today, unearned, but ALSO due this round via the normal
+          // path — must surface exactly once (as a due item), not again as a probe.
+          {
+            user_id: 'u1', item_type: 'lemma', item_id: 'w-due', template: 'recognition',
+            stage: 'review', reps: 2, lapses: 0, stability: 4, difficulty: 5,
+            due_at: PAST, last_review: PAST,
+          },
+        ],
+        lemmas: [
+          contentRow('w-early', { envelope: [0.5], native_url: 'w-early.mp3', word_class: 'concrete', utility_rank: 1 }),
+          contentRow('w-earned', { envelope: [0.5], native_url: 'w-earned.mp3', word_class: 'concrete', utility_rank: 2 }),
+          contentRow('w-due', { envelope: [0.5], native_url: 'w-due.mp3', word_class: 'concrete', utility_rank: 3 }),
+        ],
+        phrases: [],
+        phrase_components: [],
+        minimal_pairs: [],
+        review_log: [
+          { user_id: 'u1', item_type: 'lemma', item_id: 'w-early', card_kind: 'word/learn-concrete', session_id: 's1', correct: null, created_at: now.toISOString() },
+          { user_id: 'u1', item_type: 'lemma', item_id: 'w-earned', card_kind: 'word/learn-concrete', session_id: 's1', correct: null, created_at: now.toISOString() },
+          { user_id: 'u1', item_type: 'lemma', item_id: 'w-earned', card_kind: 'word/hear', session_id: 's2', correct: true, created_at: now.toISOString() },
+          { user_id: 'u1', item_type: 'lemma', item_id: 'w-due', card_kind: 'word/learn-concrete', session_id: 's1', correct: null, created_at: now.toISOString() },
+        ],
+        known_lemmas: [],
+        profiles: [],
+      };
+      const distractors = [
+        { id: 'd1', lemma: 'kabata', gloss_en: 'pocket' },
+        { id: 'd2', lemma: 'kazas', gloss_en: 'wedding' },
+        { id: 'd3', lemma: 'kakls', gloss_en: 'neck' },
+      ];
+      const svc = makeSvc(tables, { get_distractors: distractors }, now);
+
+      const batch = await svc.getDueBatch();
+
+      // w-earned never appears — already earned, not due, not a fresh candidate.
+      expect(batch.find((i) => i.id === 'w-earned')).toBeUndefined();
+
+      // w-early is probed: present, marked probe:true, carries MC choices.
+      const probe = batch.find((i) => i.id === 'w-early');
+      expect(probe).toBeDefined();
+      expect(probe!.probe).toBe(true);
+      expect(probe!.choices).toBeDefined();
+      expect(probe!.choices!.length).toBeGreaterThanOrEqual(2);
+
+      // w-due surfaces exactly once, as an ordinary due item — NOT re-probed.
+      const dueItems = batch.filter((i) => i.id === 'w-due');
+      expect(dueItems).toHaveLength(1);
+      expect(dueItems[0]!.probe).toBeUndefined();
+
+      // Probes are PREPENDED — ahead of the normal interleaved due order.
+      expect(batch[0]!.id).toBe('w-early');
+    },
+  );
+
+  it('probes nothing when nothing was introduced today', async () => {
+    const now = new Date();
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+    const svc = makeSvc(tables, {}, now);
+
+    const batch = await svc.getDueBatch();
+    expect(batch.every((i) => !i.probe)).toBe(true);
   });
 });
