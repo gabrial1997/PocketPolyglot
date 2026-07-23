@@ -214,6 +214,13 @@ function makeBuilder(table: string, tables: Record<string, Row[]>, errors?: Reco
       }
       return { error: null };
     },
+    insert: async (newRows: Row | Row[]) => {
+      if (errors?.[table]) return { error: errors[table] as object };
+      const arr = Array.isArray(newRows) ? newRows : [newRows];
+      const existing = (tables[table] ??= []);
+      existing.push(...arr);
+      return { error: null };
+    },
     then: (resolve: (v: { data: Row[] | null; error: object | null; count: number | null }) => unknown) =>
       resolve(resolved()),
   };
@@ -923,6 +930,58 @@ describe('SupabaseSrsService.submit() — E2 recording_id linkage', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Session stamping (earned-phrase gate, spec 2026-07-23): every review_log row carries the
+// service's current round id (session_id), rotated at the top of getDueBatch() — one round =
+// one getDueBatch() call. computeEarned() reads this to tell "recalled in a different round"
+// from "recalled in the same sitting the word was taught".
+// ---------------------------------------------------------------------------
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+describe('SupabaseSrsService — session stamping', () => {
+  it('submit() stamps the review_log insert with a uuid-shaped session_id', async () => {
+    const client = makeSubmitClient();
+    const svc = new SupabaseSrsService(client as never, 'u1');
+
+    await svc.submit(makeCardResult());
+
+    const inserted = (client as { _getLastLogInsert: () => Row | null })._getLastLogInsert();
+    expect(inserted).not.toBeNull();
+    expect(inserted!.session_id).toEqual(expect.stringMatching(UUID_RE));
+  });
+
+  it('two getDueBatch() calls rotate the session id, so subsequent submits() land in different rounds', async () => {
+    const now = new Date();
+    // No pre-seeded review_state row: 'w-a' surfaces as a fresh new candidate (isFresh path in
+    // schedule()), so submit() can grade it without a prior FSRS card in play — keeps this test
+    // about session_id rotation, not FSRS scheduling edge cases.
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [contentRow('w-a', { envelope: [0.5], native_url: 'w-a.mp3', utility_rank: 1 })],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+    const svc = makeSvc(tables, {}, now);
+
+    await svc.getDueBatch();
+    await svc.submit(makeCardResult({ itemId: 'w-a', cardKind: 'word/hear' as CardKind }));
+
+    await svc.getDueBatch();
+    await svc.submit(makeCardResult({ itemId: 'w-a', cardKind: 'word/hear' as CardKind }));
+
+    const logRows = tables.review_log as Array<{ session_id: string }>;
+    expect(logRows).toHaveLength(2);
+    expect(logRows[0]!.session_id).toEqual(expect.stringMatching(UUID_RE));
+    expect(logRows[1]!.session_id).toEqual(expect.stringMatching(UUID_RE));
+    expect(logRows[0]!.session_id).not.toBe(logRows[1]!.session_id);
+  });
+});
+
 // --- Drill seeding (perception drills have no candidate path; seed them so they can surface) ---
 describe('SupabaseSrsService drill seeding', () => {
   const drillRow = (id: string): Row => ({
@@ -1220,10 +1279,9 @@ describe('SupabaseSrsService.getDueBatch — failed queries reject (no silent co
     await expect(svc.getDueBatch()).rejects.toEqual({ message: 'review_log boom' });
   });
 
-  it('rejects when the known_lemmas query fails (a silent empty set would relock phrases)', async () => {
-    const svc = makeSvc(baseTables(), {}, now, { known_lemmas: { message: 'known_lemmas boom' } });
-    await expect(svc.getDueBatch()).rejects.toEqual({ message: 'known_lemmas boom' });
-  });
+  // The old "known_lemmas query fails" case no longer applies: getDueBatch's earned-set ctx now
+  // comes from loadEarnedLemmaIds(), which reads review_log — already covered by the
+  // review_log-rejects test above (same table, same reject-on-error contract).
 
   it('rejects when the lemmas content query fails (a silent empty map would drop every due word)', async () => {
     const svc = makeSvc(baseTables(), {}, now, { lemmas: { message: 'lemmas boom' } });
@@ -1238,12 +1296,12 @@ describe('SupabaseSrsService.getDueBatch — failed queries reject (no silent co
 
 // ---------------------------------------------------------------------------
 // Pagination past PostgREST's silent ~1000-row default cap (the fake mirrors the cap).
-// review_log grows forever, so the two unbounded reads — recalledLemmaIds and the C2
+// review_log grows forever, so the two unbounded reads — loadEarnedLemmaIds and the C2
 // rep-count query — must page with .range() instead of trusting a single un-ranged select.
 // ---------------------------------------------------------------------------
 
 describe('SupabaseSrsService.getDueBatch — pages past the PostgREST row cap', () => {
-  it('recalledLemmaIds: an anchor recalled beyond the first 1000 log rows still unlocks its phrase', async () => {
+  it('loadEarnedLemmaIds: an anchor with no logged intro, recalled beyond the first 1000 log rows, still unlocks its phrase', async () => {
     const now = new Date();
     // 1000 filler recall rows sort (by id) BEFORE the anchor's recall row, so an un-paginated
     // read never sees the anchor and the fully-known phrase silently never unlocks.

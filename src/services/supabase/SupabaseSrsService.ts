@@ -42,6 +42,8 @@ import type {
   DueRef,
   SelectContext,
 } from '../../session/selectBatch';
+import { loadEarnedLemmaIds } from './earnedLoader';
+import { randomUuid } from '../uuid';
 
 /**
  * Derive the review_state.item_type from a CardKind string (e.g. 'word/say' -> 'lemma').
@@ -108,6 +110,12 @@ export class SupabaseSrsService implements SrsService {
   private now(): Date {
     return this.nowFn ? this.nowFn() : new Date();
   }
+
+  // Per-round identifier stamped onto every review_log row this session writes (earned-phrase
+  // gate, spec 2026-07-23): computeEarned treats a correct recognition in a DIFFERENT session_id
+  // (or a later calendar day) than the item's intro as "earned in a different round". Rotated at
+  // the top of every getDueBatch() call, NOT per submit() — one round = one getDueBatch() call.
+  private sessionId = randomUuid();
 
   constructor(
     private readonly client: SupabaseClient,
@@ -192,43 +200,6 @@ export class SupabaseSrsService implements SrsService {
     if (graded.length < RETENTION_MINIMUM_SAMPLE) return undefined;
     const correct = graded.filter(r => r.correct === true).length;
     return correct / graded.length;
-  }
-
-  /** lemma ids with ≥1 review_log row correct=true (used for the i+1 anchor check). */
-  private async recalledLemmaIds(): Promise<Set<string>> {
-    // review_log grows forever, and an un-ranged select silently truncates at PostgREST's
-    // default 1000-row cap — after ~1000 correct reviews, later-recalled anchors would vanish
-    // and their phrases could never unlock. Page through the full set (ordered by the uuid PK
-    // for a stable page walk, same pattern as lemmaCandidates).
-    const CHUNK = 1000;
-    const ids = new Set<string>();
-    let offset = 0;
-    for (;;) {
-      const { data, error } = await this.client
-        .from('review_log')
-        .select('item_id')
-        .eq('user_id', this.userId)
-        .eq('item_type', 'lemma')
-        .eq('correct', true)
-        .order('id', { ascending: true })
-        .range(offset, offset + CHUNK - 1);
-      if (error) throw error;
-      const rows = (data ?? []) as Array<{ item_id?: string }>;
-      for (const r of rows) if (r.item_id) ids.add(r.item_id);
-      if (rows.length < CHUNK) return ids;
-      offset += CHUNK;
-    }
-  }
-
-  /** lemma ids the user "knows" (known_lemmas view, security_invoker=true verified). */
-  private async knownLemmaIds(): Promise<Set<string>> {
-    const { data, error } = await this.client
-      .from('known_lemmas')
-      .select('lemma_id')
-      .eq('user_id', this.userId);
-    if (error) throw error;
-    if (!data) return new Set();
-    return new Set((data as Array<{ lemma_id?: string }>).map(r => r.lemma_id).filter(Boolean) as string[]);
   }
 
   /**
@@ -430,6 +401,12 @@ export class SupabaseSrsService implements SrsService {
   // -------------------------------------------------------------------------
 
   async getDueBatch(): Promise<ReviewItem[]> {
+    // Rotate the round id FIRST: every review_log row written from here on (this session's
+    // submit() calls) is stamped with this round. Home's getDueSummary() also calls getDueBatch()
+    // for its preview — harmless, since no rows are posted between a preview and the session the
+    // learner actually plays (see the sessionId field doc).
+    this.sessionId = randomUuid();
+
     const now = this.now();
     const nowIso = now.toISOString();
 
@@ -472,14 +449,15 @@ export class SupabaseSrsService implements SrsService {
       intrToday,
       acctAgeDays,
       rolling,
-      recalled,
-      known,
+      earned,
     ] = await Promise.all([
       this.introducedToday(now),
       this.accountAgeDays(now),
       this.rollingRetention(),
-      this.recalledLemmaIds(),
-      this.knownLemmaIds(),
+      // Single shared loader (spec 2026-07-23): a lemma earned via a correct recognition in a
+      // DIFFERENT round (session_id) or later day than its intro. Feeds BOTH the known- and
+      // recalled- ctx slots below for now — Task 4 renames SelectContext to a single earned field.
+      loadEarnedLemmaIds(this.client, this.userId),
     ]);
 
     // ------------------------------------------------------------------
@@ -557,8 +535,8 @@ export class SupabaseSrsService implements SrsService {
       introducedToday: intrToday,
       dueToday: dueRefs.length,
       rollingRetention: rolling,
-      knownLemmaIds: known,
-      recalledLemmaIds: recalled,
+      knownLemmaIds: earned,
+      recalledLemmaIds: earned,
       // Per-batch only (session-scoped): always starts empty, so semantic-field diversity is
       // enforced within this one batch, not across sessions/days. Nothing persists admitted
       // fields between calls. (Matches the SelectContext doc in selectBatch.ts.)
@@ -941,6 +919,7 @@ export class SupabaseSrsService implements SrsService {
       latency_ms: result.latencyMs ?? null,
       interval_label: label,
       recording_id: recordingId,
+      session_id: this.sessionId,
     });
     if (logErr) throw logErr;
 
