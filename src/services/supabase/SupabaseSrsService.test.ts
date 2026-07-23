@@ -1026,6 +1026,71 @@ describe('SupabaseSrsService — session stamping', () => {
     expect(logRows[1]!.session_id).toEqual(expect.stringMatching(UUID_RE));
     expect(logRows[0]!.session_id).not.toBe(logRows[1]!.session_id);
   });
+
+  // Regression for task-9-sanity-report.md "Bug 1": the last card of a round can auto-exit to
+  // Home (SessionHost's finished-effect) while its own srs.submit() is still in flight (blocked
+  // on the recording upload). Home's mount calls getDueBatch(), which rotates the SHARED
+  // instance's this.sessionId — on the SAME singleton the still-in-flight submit() belongs to.
+  // Before the fix, both review_log insert paths read `this.sessionId` inline at write time
+  // (after the upload await), so the straggler row got stamped with the NEW round's id instead
+  // of the round it actually happened in.
+  it('submit() stamps its insert with the session id LIVE AT ENTRY, immune to a getDueBatch() rotation that lands while the recording upload is still in flight', async () => {
+    const now = new Date();
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [contentRow('w-a', { envelope: [0.5], native_url: 'w-a.mp3', utility_rank: 1 })],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+
+    let resolveUpload!: (v: string | null) => void;
+    const uploadPromise = new Promise<string | null>((resolve) => { resolveUpload = resolve; });
+    const stubUploader: RecordingUploader = { upload: jest.fn(() => uploadPromise) };
+
+    const svc = new SupabaseSrsService(fakeClient(tables) as never, 'u1', stubUploader, () => now);
+
+    // Round A starts (this is the round the straggler card below belongs to).
+    await svc.getDueBatch();
+    // Anchor: a word/recall submit writes its review_log row inline, with no await beforehand —
+    // it captures round A's session id with no race window, giving us something solid to compare
+    // the racy row against below.
+    await svc.submit(makeCardResult({ itemId: 'anchor-a', cardKind: 'word/recall' as CardKind }));
+
+    // The straggler: round A's last card, whose recording upload we hold open — this is the
+    // in-flight submit() from the repro (auto-exit fires while this promise chain is still going).
+    const racyPromise = svc.submit(
+      makeCardResult({ itemId: 'w-a', cardKind: 'word/hear' as CardKind, recording: 'file:///take.m4a' }),
+    );
+
+    // Drain microtasks so the racy submit()'s own internal awaits (scheduleTemplateRow's
+    // maybeSingle + upsert) progress up to the point where it's blocked on uploader.upload() — it
+    // cannot advance any further without resolveUpload(), so this is deterministic, not timing-luck.
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+
+    // Round B rotates the session id — e.g. Home's post-exit getDueSummary() — WHILE the
+    // straggler above is still awaiting its upload.
+    await svc.getDueBatch();
+    await svc.submit(makeCardResult({ itemId: 'anchor-b', cardKind: 'word/recall' as CardKind }));
+
+    // Now let the straggler's upload resolve and its write land.
+    resolveUpload(null);
+    await racyPromise;
+
+    const logRows = tables.review_log as Array<{ item_id: string; session_id: string }>;
+    const anchorA = logRows.find((r) => r.item_id === 'anchor-a')!;
+    const anchorB = logRows.find((r) => r.item_id === 'anchor-b')!;
+    const racyRow = logRows.find((r) => r.item_id === 'w-a')!;
+
+    expect(anchorA.session_id).not.toBe(anchorB.session_id); // sanity: two genuinely distinct rounds
+    // The straggler belongs to round A — it must carry round A's id, not whichever id happened to
+    // be live on the shared instance by the time its write finally executed.
+    expect(racyRow.session_id).toBe(anchorA.session_id);
+    expect(racyRow.session_id).not.toBe(anchorB.session_id);
+  });
 });
 
 // --- Drill seeding (perception drills have no candidate path; seed them so they can surface) ---

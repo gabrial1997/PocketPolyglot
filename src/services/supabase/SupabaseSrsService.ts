@@ -1007,13 +1007,22 @@ export class SupabaseSrsService implements SrsService {
   }
 
   async submit(result: CardResult): Promise<{ nextReviewLabel: string; rung: import('../../session/ladder').Rung }> {
+    // Capture the round id SYNCHRONOUSLY, before any await in this call — this.sessionId is a
+    // field on a shared singleton instance that getDueBatch() can rotate mid-flight (e.g. Home's
+    // auto-exit mount calling getDueSummary() while the last card's own submit() is still awaiting
+    // its recording upload). Every insert below must use this captured value, not the live field,
+    // so a straggler write always lands in the round it actually happened in (task-9-sanity-report
+    // "Bug 1" — a phantom-stamped row otherwise falsely reads as "a different round" to the
+    // earned-phrase gate, and inflates the newRoundsToday/day-cap count).
+    const roundSessionId = this.sessionId;
+
     if (result.cardKind === 'word/recall') {
       // Recall probe (spec 2026-07-23 §4): evidence for the earned gate, NEVER an FSRS grade —
       // a same-day extra Good inflates intervals (2026-07-22 pacing artifact).
       const { error } = await this.client.from('review_log').insert({
         user_id: this.userId, item_type: 'lemma', item_id: result.itemId,
         card_kind: 'word/recall', correct: result.correct ?? null,
-        session_id: this.sessionId,
+        session_id: roundSessionId,
       });
       if (error) throw error;
       return { nextReviewLabel: '', rung: computeRung(0, 0) }; // label unused by probe cards
@@ -1062,7 +1071,7 @@ export class SupabaseSrsService implements SrsService {
       latency_ms: result.latencyMs ?? null,
       interval_label: label,
       recording_id: recordingId,
-      session_id: this.sessionId,
+      session_id: roundSessionId,
     });
     if (logErr) throw logErr;
 
