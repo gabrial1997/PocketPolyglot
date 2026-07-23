@@ -42,6 +42,13 @@ describe('computeEarned', () => {
     ]).has('a')).toBe(false);
   });
 
+  it('mixed null/non-null sessions same day do NOT earn (conservative: can\'t prove a different sitting)', () => {
+    expect(computeEarned([
+      intro('a', null, '2026-07-23T10:00:00Z'),
+      hear('a', 's2', '2026-07-23T11:00:00Z'),
+    ]).has('a')).toBe(false);
+  });
+
   it('incorrect answers never earn', () => {
     expect(computeEarned([
       intro('a', 's1', '2026-07-23T10:00:00Z'),

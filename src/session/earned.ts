@@ -31,6 +31,10 @@ export function computeEarned(rows: EarnedLogRow[]): Set<string> {
     if (r.correct !== true || !RECOGNITION_KINDS.has(r.card_kind)) continue;
     const i = introBy.get(r.item_id);
     if (!i) { earned.add(r.item_id); continue; } // legacy: no intro row recorded
+    // Both session_ids must be non-null to assert a different session: a legacy null intro
+    // + a real-session recognition same day (mixed null/non-null) cannot prove different
+    // sitting, so stays unearned. Earns next day via laterDay. Conservative: avoids false
+    // positives during data migration or time-travel scenarios.
     const differentSession =
       r.session_id !== null && i.session_id !== null && r.session_id !== i.session_id;
     const laterDay = day(r.created_at) > day(i.created_at);
