@@ -145,39 +145,26 @@ async function submitSpeakRetest(u: ReturnType<typeof render>, w: string): Promi
   await settle(() => undefined, 25, 50);
 }
 
-it('locked -> learn 3 words -> unlock -> hear: the hear card actually appears (no freeze/loop)', async () => {
+// Updated 2026-07-23 (earned-phrase gating): same-session unlock is impossible BY DESIGN now — a
+// phrase's components only read as "known" once they're EARNED (correct recognition/recall in a
+// DIFFERENT round or day than their own intro; see src/session/earned.ts), never from in-session
+// learning. So this regression walk seeds the phrase's components as already-earned (as if learned
+// on an earlier day) and drives straight from the unlock reveal into the hear card — still
+// exercising the exact unlock->hear glide/audio-loop regression this test guards.
+it('unlock -> hear: the hear card actually appears (no freeze/loop)', async () => {
   const play = jest.fn(async () => {});
   const u = render(
     <ThemeProvider>
-      <ServiceProvider services={fakeServices([phrase, word('labdien'), word('es'), word('esmu')], play)}>
+      <ServiceProvider
+        services={fakeServices([phrase], play, new Set(['labdien', 'es', 'esmu']))}
+      >
         <SessionHost onExit={() => undefined} />
       </ServiceProvider>
     </ThemeProvider>,
   );
 
-  // Phrase starts LOCKED (the dim upcoming-phrase glimpse; Eyebrow renders uppercase).
-  await settle(() => expect(u.getByText('UPCOMING PHRASE')).toBeTruthy());
-  fireEvent.press(u.getByLabelText('Continue')); // gate advance -> re-queue after esmu
-
-  // Learn the three component words (each is a word/learn-function card). During a glide both the
-  // leaving and entering cards are briefly mounted, so press the entering card's Continue (last).
-  for (const w of ['labdien', 'es', 'esmu']) {
-    await settle(() => expect(u.getByText(w)).toBeTruthy());
-    const continues = u.getAllByText('Continue');
-    fireEvent.press(continues[continues.length - 1]);
-  }
-
-  // expandLearningSteps produces a 3-phase arc for the group: all intros, then all MC retests,
-  // then all speak retests (never interleaved per word). requeuePhraseAfterComponents places p1
-  // after the last retest (all share ids with originals).
-  for (const w of ['labdien', 'es', 'esmu']) {
-    await submitMcRetest(u, w);
-  }
-  for (const w of ['labdien', 'es', 'esmu']) {
-    await submitSpeakRetest(u, w);
-  }
-
-  // All words known -> the one-time unlock reveal (the chime card; Eyebrow-style uppercase label).
+  // All words already earned (an earlier day/round) -> the phrase's first (and only) encounter is
+  // the one-time unlock reveal (the chime card; Eyebrow-style uppercase label) — no locked stage.
   await settle(() => expect(u.getByText('PHRASE UNLOCKED')).toBeTruthy());
 
   // It auto-flows into hearing the phrase. THIS is the bug: previously the unlock node froze and
@@ -256,12 +243,14 @@ it('intro word/hear followed by a same-kind MC retest: the retest remounts fresh
   await settle(() => expect(onExit).toHaveBeenCalled());
 });
 
-// Mirrors the SEEDED golden-slice walk after the Task 5 re-tune: the FIRST unlock the user meets is
-// 'Vienu kafiju, lūdzu.' (ph-kafija). Its components are viens/kafija/ludzu, but viens + kafija are
-// in knownForTestUser, so only ONE word (ludzu) must be learned in-session before the unlock fires.
-// The seed orders ph-kafija(1) -> ludzu(2), so the batch reaching the controller is [phrase, ludzu].
-it('seed walk: ph-kafija locked on one word -> learn ludzu -> unlock fires (single-word path)', async () => {
+// Mirrors the SEEDED golden-slice walk: the FIRST teaser the user meets is 'Vienu kafiju, lūdzu.'
+// (ph-kafija). Its components are viens/kafija/ludzu; viens + kafija are already earned, ludzu is
+// not. Updated 2026-07-23 (earned-phrase gating): learning ludzu in-session no longer earns it for
+// this session's gate (earned = a DIFFERENT round/day than the intro) — the teaser shows exactly
+// once and the session ends without the phrase ever reappearing, even after ludzu's full arc.
+it('seed walk: ph-kafija locked on one word -> learn ludzu in-session -> phrase does NOT re-surface this session', async () => {
   const play = jest.fn(async () => {});
+  const onExit = jest.fn();
   const kafijaPhrase: ReviewItem = {
     id: 'ph-kafija',
     type: 'phrase',
@@ -269,10 +258,8 @@ it('seed walk: ph-kafija locked on one word -> learn ludzu -> unlock fires (sing
     reps: 0,
     target: 'Vienu kafiju, lūdzu.',
     gloss: 'One coffee, please.',
-    // envelope included for production-rung gating (phrase/sayit requires audio); stage=new always
-    // routes to phrase/hear regardless of audio (Task 4 routing: new→hear, review→meaning/sayit).
     audio: { nativeUrl: 'ph-kafija.mp3', envelope: [0.2, 0.6, 1] },
-    componentLemmaIds: ['viens', 'kafija', 'ludzu'], // viens + kafija pre-known; ludzu is the blocker
+    componentLemmaIds: ['viens', 'kafija', 'ludzu'], // viens + kafija pre-earned; ludzu is the blocker
     receptiveReps: 0,
     productiveReps: 0,
     translationVisibility: 'auto',
@@ -282,28 +269,25 @@ it('seed walk: ph-kafija locked on one word -> learn ludzu -> unlock fires (sing
       <ServiceProvider
         services={fakeServices([kafijaPhrase, word('ludzu')], play, new Set(['viens', 'kafija']))}
       >
-        <SessionHost onExit={() => undefined} />
+        <SessionHost onExit={onExit} />
       </ServiceProvider>
     </ThemeProvider>,
   );
 
-  // Phrase starts LOCKED — two of three components already known, ludzu still missing.
+  // Phrase starts LOCKED — two of three components already earned, ludzu still missing.
   await settle(() => expect(u.getByText('UPCOMING PHRASE')).toBeTruthy());
-  fireEvent.press(u.getByLabelText('Continue')); // gate advance -> re-queue after ludzu
+  fireEvent.press(u.getByLabelText('Continue')); // gate advance -> NOT re-queued (teaser shows once)
 
-  // Learn the single blocking word (word/learn-* intro card).
+  // Learn the single blocking word anyway (word/learn-* intro card, then its MC + speak retests).
   await settle(() => expect(u.getByText('ludzu')).toBeTruthy());
   const continues = u.getAllByText('Continue');
   fireEvent.press(continues[continues.length - 1]);
-
-  // expandLearningSteps produces a 3-phase arc: intro -> MC retest -> speak retest (a single-word
-  // group, so the phases collapse to one word each). requeuePhraseAfterComponents places the
-  // phrase after the last queue item matching ludzu's id, which is the speak retest.
   await submitMcRetest(u, 'ludzu');
   await submitSpeakRetest(u, 'ludzu');
 
-  // All three components now known -> the one-time unlock reveal (the chime card) fires...
-  await settle(() => expect(u.getByText('PHRASE UNLOCKED')).toBeTruthy());
-  // ...and flows into hearing the new phrase, exactly as the multi-word loop does.
-  await settle(() => expect(u.getByText('NEW PHRASE')).toBeTruthy());
+  // The batch is exhausted -> SessionHost bounces out. The phrase never re-surfaced this session:
+  // no unlock reveal, no hear card.
+  await settle(() => expect(onExit).toHaveBeenCalled());
+  expect(u.queryByText('PHRASE UNLOCKED')).toBeNull();
+  expect(u.queryByText('NEW PHRASE')).toBeNull();
 });

@@ -1,16 +1,9 @@
-import { requeuePhraseAfterComponents, requeueArcNext, lockHint } from './requeue';
+import { requeueArcNext, lockHint } from './requeue';
 import type { ReviewItem } from '../types/reviewItem';
 
 const word = (id: string): ReviewItem => ({ id, type: 'word', stage: 'new', reps: 0, target: id, gloss: id, audio: { nativeUrl: `${id}.mp3` }, receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' });
 const phrase: ReviewItem = { id: 'p1', type: 'phrase', stage: 'new', reps: 0, target: 'P', gloss: 'P', audio: { nativeUrl: 'p.mp3' }, componentLemmaIds: ['labdien', 'es', 'esmu'], receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' };
 const phraseItem = (id: string): ReviewItem => ({ id, type: 'phrase', stage: 'new', reps: 0, target: id, gloss: id, audio: { nativeUrl: `${id}.mp3` }, receptiveReps: 0, productiveReps: 0, translationVisibility: 'auto' });
-
-it('re-queues a phrase right after the last of its component words ahead', () => {
-  const q = [phrase, word('labdien'), word('es'), word('esmu'), word('ka')];
-  // from pos 0 (the locked phrase), insert after 'esmu' (index 3)
-  const out = requeuePhraseAfterComponents(q, 0, phrase);
-  expect(out.map((i) => i.id)).toEqual(['p1', 'labdien', 'es', 'esmu', 'p1', 'ka']);
-});
 
 describe('requeueArcNext', () => {
   it('inserts the full hear→mc→speak arc immediately after fromPos', () => {

@@ -43,3 +43,19 @@ it('a due (non-new) phrase never shows the unlock', () => {
   ] });
   expect(decideKind(due, allKnown, empty).kind).toBe('phrase/meaning');
 });
+
+it('no-re-lock rule: a review-stage phrase with an unearned component renders its review kind, NOT phrase/locked', () => {
+  const unearned = new Set(['labdien']); // 'es' and 'esmu' are not (yet) earned
+  const due = phrase({ stage: 'review', receptiveReps: 2, productiveReps: 0, choices: [
+    { value: 'a', correct: true }, { value: 'b', correct: false },
+  ] });
+  expect(decideKind(due, unearned, empty).kind).toBe('phrase/meaning');
+});
+
+it('the lock/unlock gate applies only to stage: new phrases', () => {
+  const partiallyEarned = new Set(['labdien', 'es']); // 'esmu' unearned
+  // stage: 'new' with one unearned component -> locked.
+  expect(decideKind(phrase({ stage: 'new' }), partiallyEarned, empty).kind).toBe('phrase/locked');
+  // stage: 'new' with everything earned and not yet revealed -> the unlock reveal.
+  expect(decideKind(phrase({ stage: 'new' }), allKnown, empty).kind).toBe('phrase/unlock');
+});
