@@ -1,47 +1,75 @@
-// phrase/locked — gating glimpse (BACKEND_INTEGRATION §4). The phrase is visible but greyed; it
-// unlocks only once every component word is known (the controller decides via KnownWordsStore).
-// This is a GATE, not a review: Continue advances past the glimpse WITHOUT posting a CardResult.
-//
-// 2026-06-19 VISUAL SYNC: rebuilt to the mockup (screens-phrase.jsx `PhraseLocked`). Top eyebrow
-// "UPCOMING PHRASE"; the phrase dimmed (PhraseLine dim); a quiet lock hint ("1 word to go — learn
-// dzert") + the in-phrase form ("It appears here as 'dzeru'."). Calm, nothing to dwell on, so the
-// advance is a faint text button — not the filled CTA.
-//
-// Dynamic hint fields are optional on ReviewItem (typed there directly):
-//   lockRemaining?: number — words still to learn (default 1)
-//   lockLemma?: string     — the dictionary form to go learn (e.g. "dzert")
-//   newForm?: string       — how it appears inflected in this phrase (e.g. "dzeru")
-// All degrade gracefully: with none present the hint falls back to "Unlocks when you know its words."
+// phrase/locked — gating glimpse rebuilt to the founder mockup (spec 2026-07-23 §6).
+// Chips show each word AS IT APPEARS in the phrase; earned words carry a "form of <lemma>"
+// bridge when the surface differs from what was taught (the Man/ir fix, bug e9e78a2a).
+// Still a GATE, not a review: Continue advances WITHOUT posting a CardResult.
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Screen } from '../components';
-import { CardIcon, Eyebrow, PhraseLine } from '../components/cardChrome';
+import { View, Text, StyleSheet } from 'react-native';
+import { Screen, CtaButton } from '../components';
+import { CardIcon, PhraseLine } from '../components/cardChrome';
 import { useTheme } from '../theme/ThemeProvider';
 import { fonts } from '../theme/tokens';
 import type { PhraseGateProps } from './cardProps';
 
+const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+const numberWord = (n: number): string => NUMBER_WORDS[n] ?? String(n);
+
+function countCopy(known: number, remaining: number): string {
+  if (known === 0) return 'Learn these words and the phrase opens.';
+  // "these words" refers to the phrase's whole set of component words (always plural, since a
+  // phrase gate always has 2+ components) — NOT to the count just learned, so this stays "words"
+  // even when known === 1 ("You already know one of these words.").
+  const knowLine = `You already know ${numberWord(known)} of these words.`;
+  const learnLine = `Learn ${remaining === 1 ? 'one more' : `${numberWord(remaining)} more`} and the phrase opens.`;
+  return `${knowLine}\n${learnLine}`;
+}
+
 export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.Element {
   const T = useTheme();
-  const remaining = item.lockRemaining ?? 1;
+  const chips = item.componentBreakdown ?? [];
+  const knownCount = chips.filter((c) => c.known).length;
+  const remaining = item.lockRemaining ?? Math.max(1, chips.length - knownCount);
 
   return (
     <Screen>
-      {/* Eyebrow lives INSIDE the centered body (like phrase/hear) — a top-of-screen head row sat
-          underneath the floating session chrome and collided with the close button + progress bar
-          (beta report 2026-06-26). */}
-      <View style={styles.body}>
-        <Eyebrow>Upcoming phrase</Eyebrow>
-
-        <View style={{ marginTop: 22 }}>
-          <PhraseLine phrase={item.target} dim size={32} />
+      {chips.length > 0 ? (
+        <View style={styles.chipRow}>
+          {chips.map((c, i) => (
+            <View
+              key={i}
+              style={[
+                styles.chip,
+                c.known
+                  ? { backgroundColor: T.surface, borderColor: T.hair }
+                  : { backgroundColor: T.sunken, borderColor: T.sunken },
+              ]}
+            >
+              <Text style={[styles.chipWord, { color: c.known ? T.ink : T.sub }]}>{c.surface}</Text>
+              <View style={styles.chipStatus}>
+                <CardIcon name={c.known ? 'check' : 'lock'} size={11} color={c.known ? T.good : T.faint} />
+                <Text style={[styles.chipStatusText, { color: T.faint }]}>
+                  {c.known
+                    ? c.surface.toLowerCase() !== c.lemma.toLowerCase() ? `form of ${c.lemma}` : 'known'
+                    : 'new'}
+                </Text>
+              </View>
+            </View>
+          ))}
         </View>
+      ) : null}
 
-        <View style={styles.hintRow}>
-          <CardIcon name="lock" size={15} color={T.faint} />
-          <Text style={[styles.hint, { color: T.sub }]}>
+      <View style={styles.body}>
+        {chips.length > 0 ? (
+          <Text style={[styles.count, { color: T.sub }]}>{countCopy(knownCount, remaining)}</Text>
+        ) : null}
+        <View style={{ marginTop: 18 }}>
+          <PhraseLine phrase={item.target} size={32} />
+        </View>
+        <View style={[styles.pill, { borderColor: T.hair }]}>
+          <CardIcon name="lock" size={14} color={T.faint} />
+          <Text style={[styles.pillText, { color: T.sub }]}>
             {item.lockLemma ? (
               <>
-                {remaining} {remaining === 1 ? 'word' : 'words'} to go — learn{' '}
+                {item.lockRemaining ?? 1} {(item.lockRemaining ?? 1) === 1 ? 'word' : 'words'} to go — learn{' '}
                 <Text style={{ fontFamily: fonts.headline, fontWeight: '600', color: T.ink }}>{item.lockLemma}</Text>
               </>
             ) : (
@@ -49,25 +77,24 @@ export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.El
             )}
           </Text>
         </View>
-
-        {item.newForm ? (
-          <Text style={[styles.appears, { color: T.faint }]}>It appears here as “{item.newForm}”.</Text>
-        ) : null}
       </View>
 
-      {/* Gate advance — restrained, not the filled CTA (matches the calm glimpse). */}
-      <Pressable accessibilityRole="button" accessibilityLabel="Continue" onPress={() => onAdvance?.()} style={styles.continue}>
-        <Text style={[styles.continueText, { color: T.faint }]}>Continue</Text>
-      </Pressable>
+      <View style={styles.footer}>
+        <CtaButton title="Continue" onPress={() => onAdvance?.()} />
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 60 },
-  hintRow: { flexDirection: 'row', alignItems: 'center', columnGap: 8, marginTop: 28 },
-  hint: { fontSize: 15 },
-  appears: { fontSize: 13, marginTop: 10 },
-  continue: { paddingBottom: 30, paddingTop: 8, alignItems: 'center' },
-  continueText: { fontSize: 14.5, fontWeight: '600' },
+  chipRow: { flexDirection: 'row', justifyContent: 'center', columnGap: 10, marginTop: 8 },
+  chip: { minWidth: 86, borderRadius: 12, borderWidth: 1, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center' },
+  chipWord: { fontFamily: fonts.headline, fontSize: 17 },
+  chipStatus: { flexDirection: 'row', alignItems: 'center', columnGap: 4, marginTop: 6 },
+  chipStatusText: { fontSize: 11.5 },
+  body: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  count: { fontSize: 14.5, lineHeight: 21, textAlign: 'center' },
+  pill: { flexDirection: 'row', alignItems: 'center', columnGap: 7, borderWidth: 1, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16, marginTop: 26 },
+  pillText: { fontSize: 14 },
+  footer: { paddingBottom: 12 },
 });
