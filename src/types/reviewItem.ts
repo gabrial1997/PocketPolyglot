@@ -84,7 +84,17 @@ export interface ReviewItem {
   // phrase items only — per-word breakdown for the intro card: the surface token as it appears
   // in the phrase, the dictionary lemma it comes from, and the lemma's gloss. Lets the learner
   // recognize "nav" as a form of "būt" the moment a phrase built from known lemmas arrives.
-  componentBreakdown?: Array<{ surface: string; lemma: string; gloss: string }>;
+  // `lemmaId` is a pass-through of the DB component's lemma id (for the `known` decoration
+  // below). `known` is set ONLY by the controller, ONLY on the phrase/locked item (earned-phrase
+  // gating, 2026-07-23) — true iff that lemma is in the earned set; it drives the per-word chip
+  // decoration on the PhraseLocked card.
+  componentBreakdown?: Array<{
+    surface: string;
+    lemma: string;
+    gloss: string;
+    lemmaId?: string;
+    known?: boolean;
+  }>;
 
   // --- visual-sync installment 2 (optional, presentational) ---
   newForm?: string;

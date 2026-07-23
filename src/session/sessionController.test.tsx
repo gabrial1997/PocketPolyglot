@@ -536,3 +536,34 @@ it('unlock inserts the full arc: advancing walks phrase/hear -> phrase/meaning -
 
   expect(kinds).toEqual(['phrase/hear', 'phrase/meaning', 'phrase/sayit']);
 });
+
+// --- Task 7: componentBreakdown chip decoration — controller sets `known` ONLY on the
+// phrase/locked item, keyed to the earned set (same decoration site as lockHint). ---
+it('phrase/locked decorates componentBreakdown with known:true only for earned lemma ids', async () => {
+  const p1: ReviewItem = {
+    id: 'p1',
+    type: 'phrase',
+    stage: 'new',
+    reps: 0,
+    target: 'Man ir labi.',
+    gloss: 'I am well.',
+    componentLemmaIds: ['es', 'but', 'labi'], // 2 unknown ('but', 'labi') -> locked
+    componentBreakdown: [
+      { surface: 'Man', lemma: 'es', gloss: 'I', lemmaId: 'es' },
+      { surface: 'ir', lemma: 'būt', gloss: 'to be', lemmaId: 'but' },
+      { surface: 'labi', lemma: 'labi', gloss: 'well', lemmaId: 'labi' },
+    ],
+    receptiveReps: 0,
+    productiveReps: 0,
+    translationVisibility: 'auto',
+  };
+  // Only 'es' is earned.
+  const { result } = renderSessionHook([p1], new Set(['es']));
+
+  await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
+  expect(result.current.current?.item.componentBreakdown).toEqual([
+    { surface: 'Man', lemma: 'es', gloss: 'I', lemmaId: 'es', known: true },
+    { surface: 'ir', lemma: 'būt', gloss: 'to be', lemmaId: 'but', known: false },
+    { surface: 'labi', lemma: 'labi', gloss: 'well', lemmaId: 'labi', known: false },
+  ]);
+});

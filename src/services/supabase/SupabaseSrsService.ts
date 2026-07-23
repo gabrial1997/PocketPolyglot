@@ -891,7 +891,9 @@ export class SupabaseSrsService implements SrsService {
           item.target,
           comps.flatMap((c) => {
             const l = lemmaMap.get(c.lemma_id);
-            return l ? [{ position: c.position, lemma: l.lemma, gloss: l.gloss_en }] : [];
+            return l
+              ? [{ position: c.position, lemma: l.lemma, gloss: l.gloss_en, lemmaId: c.lemma_id }]
+              : [];
           }),
         );
       }

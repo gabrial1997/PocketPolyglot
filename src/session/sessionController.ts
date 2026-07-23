@@ -156,11 +156,19 @@ export function useSession(): SessionState {
 
   const done = !loading && pos >= queue.length;
 
-  // On the locked card, enrich the item with the live "N words to go — learn X" hint.
+  // On the locked card, enrich the item with the live "N words to go — learn X" hint AND decorate
+  // each componentBreakdown chip with a `known` flag (true iff that lemma is in the earned set) —
+  // this is the ONLY place `known` is set (cards stay pure; Task 8's PhraseLocked chips read it).
+  const withChips = (it: ReviewItem): ReviewItem => ({
+    ...it,
+    ...lockHint(queue, it, earned),
+    componentBreakdown: it.componentBreakdown?.map((c) => ({
+      ...c,
+      known: c.lemmaId ? earned.has(c.lemmaId) : false,
+    })),
+  });
   const current =
-    item && kind
-      ? { item: kind === 'phrase/locked' ? { ...item, ...lockHint(queue, item, earned) } : item, kind }
-      : null;
+    item && kind ? { item: kind === 'phrase/locked' ? withChips(item) : item, kind } : null;
 
   return {
     loading,

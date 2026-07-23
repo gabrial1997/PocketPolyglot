@@ -600,4 +600,19 @@ describe('buildComponentBreakdown', () => {
     expect(buildComponentBreakdown('Nav par ko!', [])).toEqual([]);
     expect(buildComponentBreakdown('', [{ position: 0, lemma: 'x', gloss: 'y' }])).toEqual([]);
   });
+
+  // Task 7: componentBreakdown gains lemmaId (pass-through), so the controller can decorate
+  // locked-phrase chips with a `known` flag keyed to the earned set.
+  it('carries lemmaId through as a pass-through field', () => {
+    const out = buildComponentBreakdown('Man ir labi.', [
+      { position: 0, lemma: 'es', gloss: 'I', lemmaId: 'L1' },
+      { position: 1, lemma: 'būt', gloss: 'to be', lemmaId: 'L2' },
+      { position: 2, lemma: 'labi', gloss: 'well', lemmaId: 'L3' },
+    ]);
+    expect(out).toEqual([
+      { surface: 'man', lemma: 'es', gloss: 'I', lemmaId: 'L1' },
+      { surface: 'ir', lemma: 'būt', gloss: 'to be', lemmaId: 'L2' },
+      { surface: 'labi', lemma: 'labi', gloss: 'well', lemmaId: 'L3' },
+    ]);
+  });
 });
