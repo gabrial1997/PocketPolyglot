@@ -279,11 +279,14 @@ it('interleaves new-word intros with in-session retest quizzes', async () => {
   await settleHook(() => expect(result.current.total).toBe(12));
 });
 
-// --- correctness gate on the in-session known overlay ---
-// A WRONG answer on a component word must NOT add it to `learned` (phrase stays locked).
-// A CORRECT answer must add it (phrase may unlock).
+// --- no session overlay: in-session correctness is irrelevant to the gate ---
+// No in-session "learned" overlay exists (removed in earned-phrase gating, 2026-07-23) — the gate
+// reads ONLY the earned store (`known.all()`), which does not change mid-session. So a WRONG
+// answer here stays locked for the same reason a CORRECT answer does too (see the flipped test
+// right below): neither can touch the gate. Kept as its own test because "wrong answer -> still
+// locked" is a true, independently-worth-pinning invariant, not because correctness is checked.
 // Use stage:'review' words so expandLearningSteps leaves them unexpanded.
-it('a WRONG answer on a component word does NOT unlock its phrase (correctness-gated)', async () => {
+it('a WRONG answer on a component word does NOT unlock its phrase (no session overlay to add to)', async () => {
   const wordA: ReviewItem = {
     id: 'a', type: 'word', stage: 'review', reps: 1, target: 'a', gloss: 'a',
     wordClass: 'concrete', receptiveReps: 1, productiveReps: 0, translationVisibility: 'auto',
@@ -299,7 +302,8 @@ it('a WRONG answer on a component word does NOT unlock its phrase (correctness-g
   await act(async () => {
     await result.current.submit({ itemId: 'a', cardKind: 'word/hear', correct: false, spoke: false });
   });
-  // 'a' was answered wrong → still not in learned overlay → phrase stays locked.
+  // 'a' was answered wrong — irrelevant either way, since no session overlay exists to add to;
+  // the gate still reads only the (unchanged) earned store, so the phrase stays locked.
   await settleHook(() => expect(result.current.current?.kind).toBe('phrase/locked'));
 });
 
@@ -411,9 +415,11 @@ it('phrase/locked with a component word ahead: advance() still does NOT re-queue
 it('a fully-known phrase at position 0 renders phrase/unlock once known.refresh() lands (no stale knownUnion)', async () => {
   // The real KnownWordsStore is a stable service instance whose all() returns a mutable internal
   // set that is EMPTY until refresh() resolves. Before the refresh-generation fix, the first
-  // card's knownUnion was memoized from the pre-refresh (empty) set and nothing recomputed it for
-  // position 0 (setPos(0) bails, `known` never changes identity) — so a fully-known phrase at
-  // position 0 rendered phrase/locked and was silently dropped by advance().
+  // card's known set (pre-Task-5: the `knownUnion` memo — since renamed to `earned` and no longer
+  // unioned with anything session-local, but the same staleness hazard applies) was memoized from
+  // the pre-refresh (empty) set and nothing recomputed it for position 0 (setPos(0) bails, `known`
+  // never changes identity) — so a fully-known phrase at position 0 rendered phrase/locked and was
+  // silently dropped by advance().
   const p1: ReviewItem = {
     id: 'p1',
     type: 'phrase',
