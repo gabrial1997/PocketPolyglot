@@ -600,6 +600,52 @@ describe('SupabaseSrsService.getDueBatch — B2 candidate sourcing', () => {
     expect(batch.length).toBe(DAY_ONE_NEW_CAP);
   });
 
+  it(
+    'newRoundsToday ignores a word/learn row dated AFTER `now` (round cap must not fire early ' +
+      'under dev time-travel, where `now` can be decoupled from the wall clock)',
+    async () => {
+      const now = new Date();
+      const future = new Date(now.getTime() + 24 * 60 * 60 * 1000); // clearly after `now`
+      const tables: Record<string, Row[]> = {
+        review_state: [],
+        // 15 candidate lemmas — enough to fill DAY_ONE_NEW_CAP (10) if the cap is NOT zeroed.
+        lemmas: Array.from({ length: 15 }, (_, k) => ({
+          id: `new-lemma-${k}`,
+          lemma: `word-${k}`,
+          gloss_en: `gloss-${k}`,
+          audio_url: `new-lemma-${k}.mp3`,
+          native_url: `new-lemma-${k}.mp3`,
+          envelope: [0.5],
+          word_class: 'concrete',
+          utility_rank: k + 1,
+        })),
+        phrases: [],
+        phrase_components: [],
+        minimal_pairs: [],
+        review_log: [
+          // 2 real rounds today (at/before `now`) — below NEW_ROUND_DAY_CAP (3).
+          { user_id: 'u1', item_type: 'lemma', item_id: 'x1', card_kind: 'word/learn-concrete', session_id: 's1', created_at: now.toISOString() },
+          { user_id: 'u1', item_type: 'lemma', item_id: 'x2', card_kind: 'word/learn-concrete', session_id: 's2', created_at: now.toISOString() },
+          // A 3rd distinct-session round, but dated AFTER `now`. Without the lte(now) upper
+          // bound this would push newRoundsToday to 3 === NEW_ROUND_DAY_CAP, zeroing newCap —
+          // it must be excluded.
+          { user_id: 'u1', item_type: 'lemma', item_id: 'x3', card_kind: 'word/learn-concrete', session_id: 's3', created_at: future.toISOString() },
+        ],
+        known_lemmas: [],
+        profiles: [{ id: 'u1', user_id: 'u1', created_at: now.toISOString() }],
+      };
+
+      const svc = makeSvc(tables, {}, now);
+      const batch = await svc.getDueBatch();
+
+      // x1/x2 (dated at `now`) are also counted by introducedToday (same gte/lte bounds),
+      // so the expected allowance is DAY_ONE_NEW_CAP(10) - introducedToday(2) = 8 — NOT the
+      // future-dated x3 round. If the future-dated round were miscounted into newRoundsToday,
+      // the round cap (>= 3) would fire and zero newCap, giving batch.length 0 instead.
+      expect(batch.length).toBe(DAY_ONE_NEW_CAP - 2);
+    },
+  );
+
   it('audio-less + image-less WORD due items ARE re-surfaced (reviewable via the written word)', async () => {
     // One due item with no audio and no image, one with audio
     const dueStates: Row[] = [

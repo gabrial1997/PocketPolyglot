@@ -150,10 +150,13 @@ export class SupabaseSrsService implements SrsService {
   /**
    * Count distinct ROUNDS (session_id) that introduced new words today (word/learn-* card_kind).
    * The round-cap input for NEW_ROUND_DAY_CAP (spec 2026-07-23). Reuses introducedToday's exact
-   * day-start boundary. Legacy same-day rows with a null session_id (pre-migration-0021 data)
-   * count as a single additional round — they can't be told apart, but they did happen, so
-   * collapsing them to "one more round" is the conservative (under- rather than over-counting)
-   * choice.
+   * day-start AND upper-bound boundary verbatim (gte dayStart, lte now) — under dev time-travel
+   * `now` is decoupled from the wall clock, so without the upper bound this query and
+   * introducedToday's could disagree about what "today" is, and a wall-clock-stamped row after a
+   * synthetic `now` would zero newCap for a round that hasn't happened yet by the app's own
+   * clock. Legacy same-day rows with a null session_id (pre-migration-0021 data) count as a
+   * single additional round — they can't be told apart, but they did happen, so collapsing them
+   * to "one more round" is the conservative (under- rather than over-counting) choice.
    */
   private async newRoundsToday(now: Date): Promise<number> {
     const dayStart = startOfLocalDay(now).toISOString();
@@ -162,7 +165,8 @@ export class SupabaseSrsService implements SrsService {
       .select('session_id,card_kind,created_at')
       .eq('user_id', this.userId)
       .like('card_kind', 'word/learn-%')
-      .gte('created_at', dayStart);
+      .gte('created_at', dayStart)
+      .lte('created_at', now.toISOString());
     if (error) throw error;
     if (!data) return 0;
     const rows = data as Array<{ session_id?: string | null }>;
