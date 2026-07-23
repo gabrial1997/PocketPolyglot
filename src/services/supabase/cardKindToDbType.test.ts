@@ -21,6 +21,7 @@ const EXPECTED: Record<CardKind, DbItemType> = {
   'word/pic-review': 'lemma',
   'word/hear': 'lemma',
   'word/say': 'lemma',
+  'word/recall': 'lemma',
   'phrase/locked': 'phrase',
   'phrase/unlock': 'phrase',
   'phrase/hear': 'phrase',

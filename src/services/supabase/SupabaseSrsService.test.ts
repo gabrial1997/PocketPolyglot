@@ -1560,3 +1560,188 @@ describe('SupabaseSrsService.getDueBatch — phrase candidates are tier-ordered'
     if (t2At !== -1) expect(t1At).toBeLessThan(t2At);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 6: recall probes (no-FSRS word/recall) — spec 2026-07-23 §4. A same-day-introduced,
+// not-yet-earned lemma gets an MC recognition probe PREPENDED ahead of the normal due order in
+// a later round (session), so it has a chance to earn without ever taking an FSRS grade.
+// ---------------------------------------------------------------------------
+
+describe('SupabaseSrsService.submit() — word/recall is log-only, never an FSRS grade', () => {
+  it('inserts a review_log row (card_kind:word/recall + session_id) and does NOT touch review_state', async () => {
+    let reviewStateTouched = false;
+    const reviewLog: Row[] = [];
+    const client = {
+      from: (table: string) => {
+        if (table === 'review_state') {
+          const b: Record<string, unknown> = {
+            select: () => b,
+            eq: () => b,
+            upsert: async () => { reviewStateTouched = true; return { error: null }; },
+            maybeSingle: async () => { reviewStateTouched = true; return { data: null, error: null }; },
+            then: (resolve: (v: unknown) => unknown) => resolve({ data: null, error: null }),
+          };
+          return b;
+        }
+        if (table === 'review_log') {
+          const b: Record<string, unknown> = {
+            select: () => b,
+            eq: () => b,
+            insert: async (row: Row) => { reviewLog.push(row); return { error: null }; },
+            then: (resolve: (v: { data: Row[]; error: null }) => unknown) =>
+              resolve({ data: reviewLog, error: null }),
+          };
+          return b;
+        }
+        const noop: Record<string, unknown> = {
+          select: () => noop,
+          eq: () => noop,
+          insert: async () => ({ error: null }),
+          upsert: async () => ({ error: null }),
+          maybeSingle: async () => ({ data: null, error: null }),
+          then: (resolve: (v: unknown) => unknown) => resolve({ data: [], error: null }),
+        };
+        return noop;
+      },
+    };
+    const svc = new SupabaseSrsService(client as never, 'u1');
+
+    const result = await svc.submit({ itemId: 'w-a', cardKind: 'word/recall' as CardKind, correct: true });
+
+    // No review_state upsert/maybeSingle — a probe answer never advances FSRS.
+    expect(reviewStateTouched).toBe(false);
+    expect(reviewLog).toHaveLength(1);
+    expect(reviewLog[0]!.item_type).toBe('lemma');
+    expect(reviewLog[0]!.item_id).toBe('w-a');
+    expect(reviewLog[0]!.card_kind).toBe('word/recall');
+    expect(reviewLog[0]!.correct).toBe(true);
+    expect(reviewLog[0]!.session_id).toEqual(expect.stringMatching(UUID_RE));
+    // Return shape still satisfies submit()'s declared interface — callers destructure both fields.
+    expect(result).toEqual({ nextReviewLabel: '', rung: 'recognition' });
+  });
+
+  it('logs correct:false and correct:null the same way (no branch skips the insert)', async () => {
+    const reviewLog: Row[] = [];
+    const client = {
+      from: (table: string) => {
+        const b: Record<string, unknown> = {
+          select: () => b,
+          eq: () => b,
+          insert: async (row: Row) => {
+            if (table === 'review_log') reviewLog.push(row);
+            return { error: null };
+          },
+          upsert: async () => ({ error: null }),
+          maybeSingle: async () => ({ data: null, error: null }),
+          then: (resolve: (v: unknown) => unknown) => resolve({ data: [], error: null }),
+        };
+        return b;
+      },
+    };
+    const svc = new SupabaseSrsService(client as never, 'u1');
+
+    await svc.submit({ itemId: 'w-b', cardKind: 'word/recall' as CardKind, correct: false });
+    await svc.submit({ itemId: 'w-c', cardKind: 'word/recall' as CardKind });
+
+    expect(reviewLog).toHaveLength(2);
+    expect(reviewLog[0]!.correct).toBe(false);
+    expect(reviewLog[1]!.correct).toBeNull();
+  });
+});
+
+describe('SupabaseSrsService.getDueBatch — recall probes (Task 6)', () => {
+  it(
+    'prepends unearned same-day intros (from an earlier round) as probe:true items with MC ' +
+      'choices, excluding lemmas already earned or already due',
+    async () => {
+      const now = new Date();
+      const FUTURE = new Date(now.getTime() + 86_400_000).toISOString();
+      const PAST = new Date(now.getTime() - 5000).toISOString();
+
+      const tables: Record<string, Row[]> = {
+        review_state: [
+          // w-early: introduced earlier today, unearned, not due — the probe candidate.
+          {
+            user_id: 'u1', item_type: 'lemma', item_id: 'w-early', template: 'recognition',
+            stage: 'learning', reps: 1, lapses: 0, stability: 2, difficulty: 5,
+            due_at: FUTURE, last_review: PAST,
+          },
+          // w-earned: introduced earlier today, ALREADY earned (correct recall in a different
+          // session, same day) — must NOT be re-probed.
+          {
+            user_id: 'u1', item_type: 'lemma', item_id: 'w-earned', template: 'recognition',
+            stage: 'learning', reps: 1, lapses: 0, stability: 2, difficulty: 5,
+            due_at: FUTURE, last_review: PAST,
+          },
+          // w-due: introduced earlier today, unearned, but ALSO due this round via the normal
+          // path — must surface exactly once (as a due item), not again as a probe.
+          {
+            user_id: 'u1', item_type: 'lemma', item_id: 'w-due', template: 'recognition',
+            stage: 'review', reps: 2, lapses: 0, stability: 4, difficulty: 5,
+            due_at: PAST, last_review: PAST,
+          },
+        ],
+        lemmas: [
+          contentRow('w-early', { envelope: [0.5], native_url: 'w-early.mp3', word_class: 'concrete', utility_rank: 1 }),
+          contentRow('w-earned', { envelope: [0.5], native_url: 'w-earned.mp3', word_class: 'concrete', utility_rank: 2 }),
+          contentRow('w-due', { envelope: [0.5], native_url: 'w-due.mp3', word_class: 'concrete', utility_rank: 3 }),
+        ],
+        phrases: [],
+        phrase_components: [],
+        minimal_pairs: [],
+        review_log: [
+          { user_id: 'u1', item_type: 'lemma', item_id: 'w-early', card_kind: 'word/learn-concrete', session_id: 's1', correct: null, created_at: now.toISOString() },
+          { user_id: 'u1', item_type: 'lemma', item_id: 'w-earned', card_kind: 'word/learn-concrete', session_id: 's1', correct: null, created_at: now.toISOString() },
+          { user_id: 'u1', item_type: 'lemma', item_id: 'w-earned', card_kind: 'word/hear', session_id: 's2', correct: true, created_at: now.toISOString() },
+          { user_id: 'u1', item_type: 'lemma', item_id: 'w-due', card_kind: 'word/learn-concrete', session_id: 's1', correct: null, created_at: now.toISOString() },
+        ],
+        known_lemmas: [],
+        profiles: [],
+      };
+      const distractors = [
+        { id: 'd1', lemma: 'kabata', gloss_en: 'pocket' },
+        { id: 'd2', lemma: 'kazas', gloss_en: 'wedding' },
+        { id: 'd3', lemma: 'kakls', gloss_en: 'neck' },
+      ];
+      const svc = makeSvc(tables, { get_distractors: distractors }, now);
+
+      const batch = await svc.getDueBatch();
+
+      // w-earned never appears — already earned, not due, not a fresh candidate.
+      expect(batch.find((i) => i.id === 'w-earned')).toBeUndefined();
+
+      // w-early is probed: present, marked probe:true, carries MC choices.
+      const probe = batch.find((i) => i.id === 'w-early');
+      expect(probe).toBeDefined();
+      expect(probe!.probe).toBe(true);
+      expect(probe!.choices).toBeDefined();
+      expect(probe!.choices!.length).toBeGreaterThanOrEqual(2);
+
+      // w-due surfaces exactly once, as an ordinary due item — NOT re-probed.
+      const dueItems = batch.filter((i) => i.id === 'w-due');
+      expect(dueItems).toHaveLength(1);
+      expect(dueItems[0]!.probe).toBeUndefined();
+
+      // Probes are PREPENDED — ahead of the normal interleaved due order.
+      expect(batch[0]!.id).toBe('w-early');
+    },
+  );
+
+  it('probes nothing when nothing was introduced today', async () => {
+    const now = new Date();
+    const tables: Record<string, Row[]> = {
+      review_state: [],
+      lemmas: [],
+      phrases: [],
+      phrase_components: [],
+      minimal_pairs: [],
+      review_log: [],
+      known_lemmas: [],
+      profiles: [],
+    };
+    const svc = makeSvc(tables, {}, now);
+
+    const batch = await svc.getDueBatch();
+    expect(batch.every((i) => !i.probe)).toBe(true);
+  });
+});

@@ -13,7 +13,12 @@
 import type { ReviewItem } from '../types/reviewItem';
 
 function isGroupableNewWord(item: ReviewItem): boolean {
-  return item.type === 'word' && item.stage === 'new' && !item.media?.imageUrl;
+  // Recall probes (spec 2026-07-23 §4) are excluded even when stage:'new' (the learner saw only
+  // the teach card and quit before the earlier round's own MC step wrote a review_state row —
+  // buildProbeItems' synthetic-row fallback). Without this guard a probe would be regrouped into
+  // its own fresh intro->MC->speak arc — showing the SAME word/hear probe three times in a row —
+  // instead of the single no-FSRS check it's meant to be.
+  return item.type === 'word' && item.stage === 'new' && !item.media?.imageUrl && !item.probe;
 }
 
 function isNewPhrase(item: ReviewItem): boolean {

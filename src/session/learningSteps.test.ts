@@ -46,6 +46,18 @@ describe('expandLearningSteps', () => {
     expect(out[0]!.retest).toBeUndefined();
   });
 
+  // Recall probes (spec 2026-07-23 §4): a probe's review_state row can still read stage:'new'
+  // (buildProbeItems' synthetic-row fallback for a word whose earlier round only reached the
+  // teach card). Regression: without the probe guard in isGroupableNewWord, this word gets
+  // regrouped into its own intro->MC->speak arc — the SAME probe shown three times.
+  it('passes a probe word (stage:new) through single — never regrouped into its own arc', () => {
+    const probe: ReviewItem = { ...word('pw'), probe: true };
+    const out = expandLearningSteps([probe], 3);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.retest).toBeUndefined();
+    expect(out[0]!.probe).toBe(true);
+  });
+
   it('passes every new phrase through single — the unlock reveal + requeueArcNext own its arc', () => {
     // Both a fully-known phrase and a locked teaser: no expansion here, no retest copies.
     const out = expandLearningSteps([phrase('p', ['w1', 'w2']), phrase('q', ['w9'])], 3);

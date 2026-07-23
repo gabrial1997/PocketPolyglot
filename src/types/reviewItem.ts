@@ -116,4 +116,11 @@ export interface ReviewItem {
   // 'mc' = the recognition/meaning MC step; 'speak' = the production (say-it) step.
   // renderFor routes by this marker. Derived/in-memory only — never persisted.
   retest?: 'mc' | 'speak';
+
+  // Recall probe (earned-phrase gating, spec 2026-07-23 §4): a same-day-introduced, not-yet-
+  // earned lemma re-presented as a no-FSRS MC recognition check in a later round, so it has a
+  // chance to earn without taking a real FSRS grade. renderFor serves it as word/hear; submit()
+  // logs its outcome as card_kind 'word/recall' instead of the normal graded kind. In-memory
+  // only — never persisted (same precedent as `retest` above).
+  probe?: true;
 }

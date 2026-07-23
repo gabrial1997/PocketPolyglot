@@ -32,6 +32,10 @@ export const CARD_REGISTRY: Record<CardKind, AnyCard> = {
   'word/pic-review': WordPicReview,
   'word/hear': WordHear,
   'word/say': WordSay,
+  // word/recall (spec 2026-07-23 §4): renderFor() never returns this key — a probe item always
+  // renders as 'word/hear' — but CARD_REGISTRY must stay exhaustive over CardKind. Same screen
+  // as the kind it stands in for, kept purely so the registry type-checks.
+  'word/recall': WordHear,
   'phrase/locked': PhraseLocked,
   'phrase/unlock': PhraseUnlock,
   'phrase/hear': PhraseHear,

@@ -112,19 +112,29 @@ export function useSession(): SessionState {
       // Idempotency: a double-tapped Continue must not advance twice or post twice (see `advancing`).
       if (advancing.current) return;
       advancing.current = true;
+      // Recall probes (spec 2026-07-23 §4): the card underneath renders as the ordinary
+      // word/hear MC (renderFor serves probe:true as word/hear), so the card itself always
+      // reports cardKind:'word/hear'. Rewrite it to 'word/recall' here so srs.submit() takes the
+      // no-FSRS log-only branch instead of grading it — a same-day extra Good would inflate
+      // intervals (2026-07-22 pacing artifact). No separate unlock bookkeeping to skip: the
+      // earned set only recomputes on the NEXT reload() (next round), matching "never a
+      // same-session unlock" — a probe answered right this round can't unlock anything until then.
+      const posted: CardResult = item?.probe ? { ...result, cardKind: 'word/recall' } : result;
       // Advance the deck IMMEDIATELY, before awaiting the network. A slow or failing srs.submit must
       // never strand the learner on a card whose Continue has already fired and now does nothing
       // (bug 4 — the dead-CTA hang). Post in the background and reconcile the review label when it
       // lands; a failed post is logged, not surfaced — the item just stays due and re-surfaces.
       setPos((p) => p + 1);
       try {
-        await srs.submit(result);
+        await srs.submit(posted);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.warn('[session] srs.submit failed; deck already advanced', err);
       }
     },
-    [srs],
+    // `item` is a genuine dependency now (read for the probe rewrite above) — NOT the stale-ref
+    // pattern the `pos`-only effects elsewhere use; this callback must see the CURRENT card.
+    [srs, item],
   );
 
   // Gate advance (locked/unlock): NO srs.submit — these produce no CardResult (BACKEND_INTEGRATION

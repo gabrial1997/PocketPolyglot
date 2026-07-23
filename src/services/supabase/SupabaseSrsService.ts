@@ -441,6 +441,7 @@ export class SupabaseSrsService implements SrsService {
 
     const now = this.now();
     const nowIso = now.toISOString();
+    const dayStart = startOfLocalDay(now).toISOString();
 
     // ------------------------------------------------------------------
     // 0. Make sure perception drills can enter the loop. Unlike lemmas/phrases, minimal-pair
@@ -493,6 +494,13 @@ export class SupabaseSrsService implements SrsService {
       loadEarnedLemmaIds(this.client, this.userId),
       this.newRoundsToday(now),
     ]);
+
+    // ------------------------------------------------------------------
+    // 2.5 Recall probes (spec 2026-07-23 §4): lemmas introduced earlier TODAY, in a DIFFERENT
+    //     round than this one, still unearned, and not already surfacing via the normal due
+    //     path — prepended below as no-FSRS MC checks (see buildProbeItems doc).
+    // ------------------------------------------------------------------
+    const probeItems = await this.buildProbeItems(now, dayStart, nowIso, allDueRows, earned);
 
     // ------------------------------------------------------------------
     // 3. Load candidates: content rows without a review_state row.
@@ -596,10 +604,10 @@ export class SupabaseSrsService implements SrsService {
         .limit(PRACTICE_BATCH);
       if (practiceErr) throw practiceErr;
       const practiceRows: ReviewStateRow[] = (practice ?? []) as ReviewStateRow[];
-      if (practiceRows.length === 0) return [];
+      if (practiceRows.length === 0) return probeItems;
       // Build a minimal batch from practice rows (review-only, no new candidates).
       // We reuse the existing enrichment path below by re-routing through `rows`.
-      return this.enrichAndReorder(practiceRows, now);
+      return [...probeItems, ...(await this.enrichAndReorder(practiceRows, now))];
     }
 
     // ------------------------------------------------------------------
@@ -635,13 +643,100 @@ export class SupabaseSrsService implements SrsService {
       }
     }
 
-    return this.enrichAndReorder(orderedStates, now, {
-      dueLemmaMap,
-      duePhraseMap,
-      duePairMap,
-      candidateLemmaRows: lemmaRows,
-      candidatePhraseRows: phraseRows,
+    return [
+      ...probeItems,
+      ...(await this.enrichAndReorder(orderedStates, now, {
+        dueLemmaMap,
+        duePhraseMap,
+        duePairMap,
+        candidateLemmaRows: lemmaRows,
+        candidatePhraseRows: phraseRows,
+      })),
+    ];
+  }
+
+  /**
+   * Recall probes (earned-phrase gating, spec 2026-07-23 §4). computeEarned requires a correct
+   * word/hear|word/recall row in a DIFFERENT round (or a later day) than a lemma's intro — so a
+   * word taught in round 1 of a multi-round day would otherwise never get a second chance to
+   * earn that same day. This builds that second chance: an MC recognition probe for every lemma
+   * introduced earlier TODAY (session_id ≠ this round's, or a legacy null session_id) that is
+   * still unearned AND not already surfacing via the normal due path.
+   *
+   * Reuses enrichAndReorder — the SAME enrichment path due items go through (distractor RPC,
+   * reviewPreview, C2 rep counts) — so a probe item is indistinguishable from a due item except
+   * for the `probe:true` marker renderFor() and submit() key off of. Returns [] when nothing
+   * qualifies (the common case: day 1, or a single-round day).
+   */
+  private async buildProbeItems(
+    now: Date,
+    dayStart: string,
+    nowIso: string,
+    allDueRows: ReviewStateRow[],
+    earned: Set<string>,
+  ): Promise<ReviewItem[]> {
+    const { data: introRows, error: introErr } = await this.client
+      .from('review_log')
+      .select('item_id,session_id')
+      .eq('user_id', this.userId)
+      .eq('item_type', 'lemma')
+      .like('card_kind', 'word/learn-%')
+      .gte('created_at', dayStart)
+      .lte('created_at', nowIso);
+    if (introErr) throw introErr;
+
+    const todaysIntroIds = new Set<string>();
+    for (const r of (introRows ?? []) as Array<{ item_id?: string; session_id?: string | null }>) {
+      if (!r.item_id) continue;
+      // A legacy null session_id (pre-0021 data) can't be proven "this round" — treat it as a
+      // different round too (same conservative-toward-probing call as computeEarned's own null
+      // handling; see earned.ts).
+      if (r.session_id == null || r.session_id !== this.sessionId) todaysIntroIds.add(r.item_id);
+    }
+    if (todaysIntroIds.size === 0) return [];
+
+    const dueLemmaIds = new Set(
+      allDueRows.filter((s) => s.item_type === 'lemma').map((s) => s.item_id),
+    );
+    const probeIds = [...todaysIntroIds].filter((id) => !earned.has(id) && !dueLemmaIds.has(id));
+    if (probeIds.length === 0) return [];
+
+    const { data: stateRows, error: stateErr } = await this.client
+      .from('review_state')
+      .select('*')
+      .eq('user_id', this.userId)
+      .eq('item_type', 'lemma')
+      .eq('template', 'recognition')
+      .in('item_id', probeIds);
+    if (stateErr) throw stateErr;
+    const stateMap = new Map<string, ReviewStateRow>();
+    for (const s of (stateRows ?? []) as ReviewStateRow[]) stateMap.set(s.item_id, s);
+
+    const probeStates: ReviewStateRow[] = probeIds.map((id) => {
+      const existing = stateMap.get(id);
+      if (existing) return existing;
+      // No review_state row yet (the learner saw only the teach card and quit before the
+      // earlier round's own MC step graded it) — a stage:'new' synthetic row, same shape as
+      // getDueBatch's own new-item synthesis above. renderFor()'s probe check runs ahead of the
+      // new-word learn branch specifically so this doesn't render a second teach card.
+      return {
+        user_id: this.userId,
+        item_type: 'lemma',
+        item_id: id,
+        template: 'recognition',
+        stage: 'new',
+        reps: 0,
+        lapses: 0,
+        stability: null,
+        difficulty: null,
+        due_at: null,
+        last_review: null,
+      };
     });
+
+    const items = await this.enrichAndReorder(probeStates, now);
+    for (const item of items) item.probe = true;
+    return items;
   }
 
   /**
@@ -910,6 +1005,18 @@ export class SupabaseSrsService implements SrsService {
   }
 
   async submit(result: CardResult): Promise<{ nextReviewLabel: string; rung: import('../../session/ladder').Rung }> {
+    if (result.cardKind === 'word/recall') {
+      // Recall probe (spec 2026-07-23 §4): evidence for the earned gate, NEVER an FSRS grade —
+      // a same-day extra Good inflates intervals (2026-07-22 pacing artifact).
+      const { error } = await this.client.from('review_log').insert({
+        user_id: this.userId, item_type: 'lemma', item_id: result.itemId,
+        card_kind: 'word/recall', correct: result.correct ?? null,
+        session_id: this.sessionId,
+      });
+      if (error) throw error;
+      return { nextReviewLabel: '', rung: computeRung(0, 0) }; // label unused by probe cards
+    }
+
     const now = this.now();
     const itemType = cardKindToDbType(result.cardKind);
     const template = cardKindToTemplate(result.cardKind);
