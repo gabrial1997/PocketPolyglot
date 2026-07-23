@@ -152,4 +152,23 @@ describe('PhraseLocked', () => {
     const u = renderCard();
     expect(() => fireEvent.press(u.getByText('Continue'))).not.toThrow();
   });
+
+  // Pins the chip-row wrap fix: a 4-component phrase ("Vai jums tas ir?") must not clip
+  // off-screen on a 390pt phone. Layout metrics aren't available in jsdom, so the honest pin is
+  // a style-presence assertion — the row must allow wrapping, not that it visually wraps.
+  it('lets the chip row wrap (flexWrap) so a 4-chip phrase does not clip off-screen', () => {
+    const u = renderCard({
+      componentBreakdown: [
+        { surface: 'Vai', lemma: 'vai', gloss: 'is it that', known: true },
+        { surface: 'jums', lemma: 'jūs', gloss: 'to you', known: true },
+        { surface: 'tas', lemma: 'tas', gloss: 'it/that', known: false },
+        { surface: 'ir', lemma: 'būt', gloss: 'is/to be', known: true },
+      ],
+    });
+    const row = u.getByTestId('phrase-locked-chip-row');
+    const flatStyle = Array.isArray(row.props.style)
+      ? Object.assign({}, ...row.props.style)
+      : row.props.style;
+    expect(flatStyle.flexWrap).toBe('wrap');
+  });
 });

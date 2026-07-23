@@ -4,7 +4,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { computeEarned, type EarnedLogRow } from '../../session/earned';
 
-const CHUNK = 1000; // page: review_log grows forever (see recalledLemmaIds's cap note)
+// page: review_log grows forever, and an un-ranged select silently truncates at PostgREST's
+// default 1000-row cap — same defense as the C2 review_log page in SupabaseSrsService.getDueBatch.
+const CHUNK = 1000;
 
 export async function loadEarnedLemmaIds(
   client: SupabaseClient,

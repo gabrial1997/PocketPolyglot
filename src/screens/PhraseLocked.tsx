@@ -37,7 +37,7 @@ export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.El
   return (
     <Screen>
       {chips.length > 0 ? (
-        <View style={styles.chipRow}>
+        <View style={styles.chipRow} testID="phrase-locked-chip-row">
           {chips.map((c, i) => (
             <View
               key={i}
@@ -92,8 +92,12 @@ export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.El
 }
 
 const styles = StyleSheet.create({
-  chipRow: { flexDirection: 'row', justifyContent: 'center', columnGap: 10, marginTop: 8 },
-  chip: { minWidth: 86, borderRadius: 12, borderWidth: 1, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center' },
+  // flexWrap + rowGap: 4-component phrases ("Vai jums tas ir?") outrun a single row on a
+  // 390pt-wide phone (4 chips * ~118px incl. gaps > ~342px usable) — wrap instead of clipping.
+  // flexShrink on the chip lets it give up width before wrapping is strictly forced, so the
+  // common 2-3 chip case still reads as one centered row (the designed look), not a premature wrap.
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 10, rowGap: 10, marginTop: 8 },
+  chip: { minWidth: 86, flexShrink: 1, borderRadius: 12, borderWidth: 1, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center' },
   chipWord: { fontFamily: fonts.headline, fontSize: 17 },
   chipStatus: { flexDirection: 'row', alignItems: 'center', columnGap: 4, marginTop: 6 },
   chipStatusText: { fontSize: 11.5 },

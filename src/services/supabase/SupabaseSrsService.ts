@@ -913,7 +913,8 @@ export class SupabaseSrsService implements SrsService {
       const assembledIds = items.map(i => i.id);
       // A batch item's review_log rows grow forever; an un-ranged select silently truncates at
       // PostgREST's default 1000-row cap, zeroing/undercounting rep counts for long-lived
-      // accounts. Page through (uuid PK order for a stable walk), same as recalledLemmaIds.
+      // accounts. Page through (uuid PK order for a stable walk) — same defense as the review_log
+      // paging in earnedLoader.ts's loadEarnedLemmaIds.
       const CHUNK = 1000;
       const logRows: ReviewLogRow[] = [];
       let offset = 0;
