@@ -274,9 +274,12 @@ it('seed walk: ph-kafija locked on one word -> learn ludzu in-session -> phrase 
     </ThemeProvider>,
   );
 
-  // Phrase starts LOCKED — two of three components already earned, ludzu still missing.
-  await settle(() => expect(u.getByText('UPCOMING PHRASE')).toBeTruthy());
-  fireEvent.press(u.getByLabelText('Continue')); // gate advance -> NOT re-queued (teaser shows once)
+  // Phrase starts LOCKED — two of three components already earned, ludzu still missing. Assert
+  // on the lock pill (PhraseLocked rebuild, Task 8, 2026-07-23): "1 word to go — learn ludzu"
+  // pins the same fact the old "UPCOMING PHRASE" eyebrow did (and is more precise about it).
+  await settle(() => expect(u.getByText(/1 word to go — learn/)).toBeTruthy());
+  expect(u.getByText('ludzu')).toBeTruthy();
+  fireEvent.press(u.getByText('Continue')); // gate advance -> NOT re-queued (teaser shows once)
 
   // Learn the single blocking word anyway (word/learn-* intro card, then its MC + speak retests).
   await settle(() => expect(u.getByText('ludzu')).toBeTruthy());

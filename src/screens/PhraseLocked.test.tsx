@@ -115,6 +115,23 @@ describe('PhraseLocked', () => {
     expect(u.getByText('Unlocks when you know its words.')).toBeTruthy();
   });
 
+  // Pins the "single remaining computation" fix: when lockLemma is set but lockRemaining is NOT
+  // (so the pill must fall back to the derived count), the pill and the count copy must agree —
+  // both say "two", not one derived from chips and the other defaulting to 1.
+  it('keeps the count copy and the lock pill in agreement when lockRemaining is derived, not given', () => {
+    const u = renderCard({
+      componentBreakdown: [
+        { surface: 'Man', lemma: 'es', gloss: 'me/I', known: true },
+        { surface: 'ir', lemma: 'būt', gloss: 'is/to be', known: false },
+        { surface: 'labi', lemma: 'labi', gloss: 'well/good', known: false },
+      ],
+      lockLemma: 'labi',
+      lockRemaining: undefined,
+    });
+    expect(u.getByText(/Learn two more and the phrase opens\./)).toBeTruthy();
+    expect(u.getByText(/2 words to go — learn/)).toBeTruthy();
+  });
+
   it('degrades gracefully with no componentBreakdown: no chip row, no count copy, phrase + pill + CTA still render', () => {
     const u = renderCard({ componentBreakdown: undefined, target: 'Labrīt!', lockLemma: 'dzert', lockRemaining: 1 });
     expect(u.getByText('Labrīt!')).toBeTruthy();

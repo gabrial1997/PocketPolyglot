@@ -26,7 +26,12 @@ function countCopy(known: number, remaining: number): string {
 export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.Element {
   const T = useTheme();
   const chips = item.componentBreakdown ?? [];
+  // `known` is undefined on every non-phrase/locked item (the controller only decorates it here) —
+  // treated as falsy, so an undecorated chip renders as "new"/locked, never "known" by accident.
   const knownCount = chips.filter((c) => c.known).length;
+  // Computed ONCE and shared by the count copy and the lock pill — they must never disagree about
+  // how many words are still missing (reviewer finding: two independent `?? ` fallbacks could
+  // diverge when lockLemma is set without lockRemaining and >1 chips are unknown).
   const remaining = item.lockRemaining ?? Math.max(1, chips.length - knownCount);
 
   return (
@@ -69,7 +74,7 @@ export function PhraseLocked({ item, onAdvance }: PhraseGateProps): React.JSX.El
           <Text style={[styles.pillText, { color: T.sub }]}>
             {item.lockLemma ? (
               <>
-                {item.lockRemaining ?? 1} {(item.lockRemaining ?? 1) === 1 ? 'word' : 'words'} to go — learn{' '}
+                {remaining} {remaining === 1 ? 'word' : 'words'} to go — learn{' '}
                 <Text style={{ fontFamily: fonts.headline, fontWeight: '600', color: T.ink }}>{item.lockLemma}</Text>
               </>
             ) : (
